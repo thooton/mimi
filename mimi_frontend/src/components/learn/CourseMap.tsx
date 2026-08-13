@@ -327,14 +327,14 @@ export default function CourseMap({
     starting: boolean;
 }) {
     const target = useRef<HTMLDivElement>(null);
-    useEffect(
-        () =>
-            target.current?.scrollIntoView({
-                block: "center",
-                behavior: "auto",
-            }),
-        [tree],
-    );
+    /* block body, not a concise arrow: whatever scrollIntoView returns must
+       not become the effect's cleanup — React would call it on the next run */
+    useEffect(() => {
+        target.current?.scrollIntoView({
+            block: "center",
+            behavior: "auto",
+        });
+    }, [tree]);
     let marked = false;
     return (
         <div className="course-map skill-tree">
