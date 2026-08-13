@@ -5,9 +5,9 @@
    the other direction. The same event that delivers a stored message to its
    recipient delivers it to the sender's other tabs and the sending tab.
 
-   This module is the wire and nothing else — it parses events, hands them to
+   This module is the wire and nothing else, it parses events, hands them to
    the handlers it was given, issues commands, and lets EventSource reconnect
-   when the feed drops. What any of it *means* to the page belongs to InboxApp,
+   when the feed drops. What any of it means to the page belongs to InboxApp,
    which is the only thing that knows which conversation is on screen.
 
    Event types live here rather than in api.ts because they form one small
@@ -17,7 +17,7 @@
 
 /** one message, exactly as the backend stores it */
 export interface Message {
-  /** its place in the thread — the order messages are in, and what "read up
+  /** its place in the thread, the order messages are in, and what "read up
       to here" is counted in */
   id: number;
   from: string;
@@ -27,7 +27,7 @@ export interface Message {
 
 /** one row of the thread list: a conversation, seen from the reader's side */
 export interface Thread {
-  /** the *other* person: a thread is named by whoever isn't reading it */
+  /** the other person: a thread is named by whoever isn't reading it */
   with: string;
   display: string;
   /** so the row can say "You: …" rather than guess from the body */
@@ -82,7 +82,7 @@ function thread(wire: WireThread): Thread {
 }
 
 export interface InboxHandlers {
-  /** the list, which arrives unasked the moment the feed opens — and again
+  /** the list, which arrives unasked the moment the feed opens, and again
       after a reconnection, which is why it replaces rather than merges */
   onThreads(me: string, threads: Thread[]): void;
   onThread(username: string, display: string, messages: Message[]): void;
@@ -213,7 +213,7 @@ export function ago(sentAt: number, now: number): string {
 }
 
 /** Where the thread list puts a conversation that has just been written in:
-    at the top, and only once — the same pair is the same thread, so an
+    at the top, and only once, the same pair is the same thread, so an
     arriving message moves the row it belongs to rather than adding one. */
 export function withMessage(
   threads: Thread[],

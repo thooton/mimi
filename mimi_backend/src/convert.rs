@@ -1,53 +1,44 @@
 // Turn a wiki snapshot into course definitions.
 //
 // A pure function of the snapshot: no network, no clock, no filesystem. That is
-// deliberate, and it is what makes an incremental poll trustworthy — the course
-// built after patching three pages is the course a full refetch would have
-// produced, because both run this same transform over the same cache.
+// what makes an incremental poll trustworthy, since the course built after
+// patching three pages is the course a full refetch would have produced.
 //
-// The two formats disagree in ways worth naming, because most of this file is
-// those disagreements:
+// Most of this file is the ways the two formats disagree:
 //
-// * **The wiki names things; the course identifies them.** A course is
+// * The wiki names things; the course identifies them. A course is
 //   `Course:Spanish for English speakers` and a skill is a page title. The
 //   loader wants `spanish`, `es`/`en`, and `family_and_people`. Everything is
 //   slugged here, once.
-// * **A wiki sentence belongs to one word; a course sentence tags a list.** An
-//   author files a sentence under the one word it illustrates, but the sentence
-//   they wrote usually *uses* other words of the same skill — that is what a
-//   skill is, a batch taught together — so it is tagged with every one of them
-//   it actually contains (see `tag_words_used`), and nothing is held back to
-//   keep a sentence down to one word.
-// * **Forms and glosses live in the glossary, not the skill.** A skill says
-//   which words it teaches; the glossary says how each is spelt and what it
-//   means.
-// * **The loader parses brackets.** `[Hello/Hi]` is two wordings to it, and the
-//   wiki has no such convention, so a sentence containing a literal bracket
-//   cannot be represented and is dropped rather than silently reinterpreted.
+// * A wiki sentence belongs to one word; a course sentence tags a list. An
+//   author files a sentence under the one word it illustrates, but a skill is a
+//   batch taught together, so the sentence usually uses others too and is
+//   tagged with every one it contains (see `tag_words_used`).
+// * Forms and glosses live in the glossary, not the skill. A skill says which
+//   words it teaches; the glossary says how each is spelt and what it means.
+// * The loader parses brackets. `[Hello/Hi]` is two wordings to it and the wiki
+//   has no such convention, so a sentence containing a literal bracket cannot
+//   be represented and is dropped rather than reinterpreted.
 //
 // Everything `loader::assemble` rejects, this refuses to emit: a word with no
 // forms, a word in two skills, a skill teaching nothing, a word with nothing to
-// introduce it, an empty row, a castle with no rows. Where the wiki holds work
-// in progress — a red-linked skill, a word nobody has written a sentence for —
-// the page is left out and a warning is reported, because half-written content
-// is the normal state of a wiki and not an error.
+// introduce it, an empty row, a castle with no rows. Work in progress (a
+// red-linked skill, a word nobody has written a sentence for) is left out with
+// a warning, since half-written content is the normal state of a wiki.
 //
 // # The glossary is read twice, for two different jobs
 //
-// It is the one page that says how a word is spelt and what it means, and the
-// course needs that fact in two shapes:
+// It is the one page saying how a word is spelt and what it means, and the
+// course needs that in two shapes:
 //
-// * grouped **lemma -> forms**, it is the *vocabulary*: the concepts a skill
-//   teaches, each with the spellings that let `sentence::locate` find it in a
-//   sentence and grade it word by word;
-// * flattened **form -> translations**, it is the *dictionary*: what any word
-//   of a sentence means when a learner taps it, including scenery the course
-//   never teaches.
+// * grouped lemma -> forms, the vocabulary: the concepts a skill teaches, each
+//   with the spellings that let `sentence::locate` find it in a sentence;
+// * flattened form -> translations, the dictionary: what any word of a sentence
+//   means when a learner taps it, including scenery the course never teaches.
 //
-// So a lemma no skill teaches is not an error and not waste — it glosses. Only
-// the taught lemmas become vocabulary, which is what keeps `assemble`'s rule
-// that every word belong to exactly one skill satisfiable while the glossary
-// grows to cover the whole language.
+// So a lemma no skill teaches still glosses. Only taught lemmas become
+// vocabulary, which keeps `assemble`'s one-skill-per-word rule satisfiable
+// while the glossary grows to cover the whole language.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -63,9 +54,9 @@ use crate::skill::SKILL_LESSONS;
 use crate::snapshot::{Snapshot, course_of};
 
 // Language names as a course title writes them, to the codes the course uses.
-// The wiki deliberately stores no code — a course page is named after its
-// language pair — so the mapping has to live somewhere, and a table that can be
-// overridden beats guessing from the first two letters.
+// The wiki stores no code (a course page is named after its language pair), so
+// the mapping has to live somewhere, and an overridable table beats guessing
+// from the first two letters.
 const LANGUAGE_CODES: [(&str, &str); 32] = [
     ("arabic", "ar"),
     ("bengali", "bn"),
@@ -121,9 +112,8 @@ pub struct Conversion {
 // An ascii identifier: `Family and people` -> `family_and_people`.
 //
 // Accents are folded rather than dropped, so `adiós` becomes `adios` and not
-// `adis`. Ids are only ever generated, never authored — but they are also the
-// keys a learner's progress is stored under, so stability across a rebuild is
-// the property that matters most.
+// `adis`. Ids are generated rather than authored, but they are also the keys a
+// learner's progress is stored under, so stability across a rebuild matters.
 pub fn slug(text: &str) -> String {
     let folded: String = text
         .nfkd()
@@ -159,10 +149,9 @@ fn unique(identifier: &str, taken: &mut HashSet<String>) -> String {
 
 // The pair a course name states, as `CourseName::languages` reads it.
 //
-// Split at the *last* " for ", because a language whose name contains one
-// ("Middle English for English speakers" is fine, but consider a hypothetical
-// "X for Y for Z speakers") must not be cut in the wrong place — the same thing
-// the wiki's own greedy `^(.+) for (.+) speakers$` does.
+// Split at the last " for ", so a language whose own name contains one is not
+// cut in the wrong place. This is what the wiki's greedy
+// `^(.+) for (.+) speakers$` does.
 fn languages(course_name: &str) -> Option<(String, String)> {
     let rest = course_name.strip_suffix(" speakers")?;
     let (target, source) = rest.rsplit_once(" for ")?;
@@ -334,10 +323,10 @@ fn convert_course(
 
     // --- the castles ---
 
-    // A wiki castle is a boundary — `afterRow: 2` seals everything up to and
+    // A wiki castle is a boundary: `afterRow: 2` seals everything up to and
     // including the second row. A course castle owns the rows it seals. Rows
-    // that were dropped above must not shift the boundaries, so the grouping is
-    // done on each row's original position.
+    // dropped above must not shift the boundaries, so the grouping is done on
+    // each row's original position.
     let mut boundaries: Vec<i64> = layout
         .get("castles")
         .and_then(Value::as_array)
@@ -442,10 +431,10 @@ fn convert_skill(
 
         let definition = word_entry(&word_id, &word, glossary);
         if definition.glosses.is_empty() {
-            // Not fatal — `assemble` only insists on `forms` — but a word with
-            // no glosses cannot be found in the source-language side of its own
-            // sentences, so every question asking it that way is graded
-            // all-or-nothing instead of word by word.
+            // Not fatal, since `assemble` only insists on `forms`, but a word
+            // with no glosses cannot be found in the source-language side of
+            // its own sentences, so every question asking it that way is
+            // graded all-or-nothing instead of word by word.
             warnings.push(format!(
                 "{skill_title}: '{word}' is not in the glossary, so it has no glosses and \
                  cannot be graded word by word in the source language"
@@ -488,34 +477,30 @@ fn convert_skill(
 
 // Tag each sentence with the other words of its own skill that it uses.
 //
-// An author writes a sentence under one word, so that is the word the wiki says
-// it is *for* — but "Yo como pan" filed under `comer` exercises `pan` just as
-// much, and a skill is precisely a batch of words taught together, so its
-// sentences reuse each other's vocabulary constantly. Tagging only the filed-
-// under word means the learner is graded on `pan` and the scheduler never hears
-// about it: a review that happened and left no trace, which is exactly the input
-// FSRS needs and the one thing it cannot infer.
+// An author files a sentence under one word, but "Yo como pan" filed under
+// `comer` exercises `pan` just as much, and a skill is a batch of words taught
+// together, so its sentences reuse each other's vocabulary constantly. Tagging
+// only the filed-under word means the learner is graded on `pan` and the
+// scheduler never hears about it: a review that left no trace, which is the one
+// input FSRS cannot infer.
 //
-// **Only the skill's own words are looked for.** Everything else in the sentence
-// is scenery, `loader::assemble` rejects a sentence tagging a word from another
-// skill, and a word tagged before its skill is reached would be graded by a
-// learner who has never met it.
+// Only the skill's own words are looked for. Everything else is scenery,
+// `loader::assemble` rejects a sentence tagging a word from another skill, and
+// a word tagged before its skill is reached would be graded on a learner who
+// has never met it.
 //
-// The matcher is `sentence::locate`, the same one the loader will use to mark
-// the spans, rather than a plain form -> word map. That buys three things a map
-// would have to reinvent: word boundaries (`es` is not inside `estás`), forms
-// that are several words long (`buenos días`), and — because the search set here
-// is the whole skill — a form two of its words share is dropped rather than
-// guessed at, since crediting the wrong card is worse than crediting neither. A
-// tag it agrees with is also a tag the loader can actually mark, so the sentence
-// grades word by word instead of falling back to all-or-nothing.
+// The matcher is `sentence::locate`, the same one the loader uses to mark the
+// spans, rather than a form -> word map. That buys word boundaries (`es` is not
+// inside `estás`), multi-word forms (`buenos días`), and, since the search set
+// is the whole skill, a form two of its words share is dropped rather than
+// guessed at. A tag it agrees with is also a tag the loader can mark, so the
+// sentence grades word by word.
 //
-// **Nothing is held back to keep a sentence solo.** A word whose every sentence
-// uses another of the skill's words is introduced by one of them, several words
-// at a time (see `Course::introduction_for`); tagging one word and staying quiet
-// about the other would be the transform lying about what the learner is being
-// asked, which costs the scheduler exactly the evidence this function exists to
-// give it.
+// Nothing is held back to keep a sentence solo. A word whose every sentence
+// uses another of the skill's words is introduced by one of them, several at a
+// time (see `Course::introduction_for`); tagging one and staying quiet about
+// the other would cost the scheduler the evidence this function exists to give
+// it.
 fn tag_words_used(sentences: &mut [SentenceDef], taught: &[(String, Vec<String>)]) {
     let vocabulary: Vec<(&str, &[String])> = taught
         .iter()
@@ -601,8 +586,8 @@ fn sentences_of(
 //
 // `forms` is every target-language spelling and `glosses` the first `GLOSSES`
 // source-side ones; grading word by word works by finding them in a sentence.
-// Forms are not pruned for ambiguity on purpose — `sentence::locate` drops one
-// only where two words of the *same sentence* both claim it.
+// Forms are not pruned for ambiguity: `sentence::locate` drops one only where
+// two words of the same sentence both claim it.
 fn word_entry(word_id: &str, word: &str, glossary: &HashMap<String, &Value>) -> WordDef {
     let mut forms = vec![word.to_string()];
     let mut glosses: Vec<String> = Vec::new();
@@ -634,8 +619,8 @@ fn word_entry(word_id: &str, word: &str, glossary: &HashMap<String, &Value>) -> 
 
 // A skill's tips, as the material blocks its lessons show.
 //
-// Tips are the same page name in the `Tips:` namespace — that is the whole of
-// the link between a skill and them.
+// Tips are the same page name in the `Tips:` namespace, and that is the whole
+// of the link between a skill and them.
 fn material(
     snapshot: &Snapshot,
     skill_title: &str,
@@ -688,31 +673,28 @@ fn material(
 // How many meanings of a word the course takes from the glossary.
 //
 // A wiki glossary is written for a reader with time: `caballero` may carry a
-// dozen shades of gentleman, and an imported one usually does. A learner
-// tapping a word in a sentence wants to know what it means, not to read a
-// dictionary column, and a word bank distractor drawn from the twelfth shade
-// teaches nothing. So the first three are taken and the rest left on the wiki,
-// where they belong — the glossary is not pruned, only what the course carries
+// dozen shades of gentleman. A learner tapping a word wants to know what it
+// means, not to read a dictionary column, and a word bank distractor drawn from
+// the twelfth shade teaches nothing. So the first three are taken and the rest
+// left on the wiki; the glossary is not pruned, only what the course carries
 // away from it.
 //
 // The cost is that `sentence::locate` can no longer find a word in a source
-// wording that used the fourth meaning and only that one. The glossary lists
-// its meanings best first, so that is a rare sentence, and an author who hits
-// it can move the meaning up.
+// wording that used only the fourth meaning. The glossary lists meanings best
+// first, so that is rare, and an author who hits it can move the meaning up.
 pub const GLOSSES: usize = 3;
 
 // Every entry of a course's glossary, in the order the wiki files them.
 //
 // A glossary outgrows a page long before a language runs out of words, so the
-// wiki lets one spread over `Glossary:<course>/<letter>` subpages of the page it
-// is filed under. The whole glossary is that page *together with* its segments,
-// and this is the only place that knows it: read it once here and both the
-// vocabulary and the dictionary see one glossary, whether it is written on one
-// page or twenty-six.
+// wiki lets one spread over `Glossary:<course>/<letter>` subpages. The whole
+// glossary is that page together with its segments, and this is the only place
+// that knows it: both the vocabulary and the dictionary see one glossary,
+// whether it is written on one page or twenty-six.
 //
-// Pages are visited in title order so that the result is a function of the
-// snapshot alone — a `HashMap` would let two lemmas spelt the same win by turns
-// between rebuilds, which is exactly the kind of drift a pure transform is for.
+// Pages are visited in title order so the result is a function of the snapshot
+// alone; a `HashMap` would let two lemmas spelt the same win by turns between
+// rebuilds.
 fn glossary_entries<'a>(snapshot: &'a Snapshot, course_name: &str) -> Vec<&'a Value> {
     let root = format!("Glossary:{course_name}");
     let prefix = format!("{root}/");
@@ -745,17 +727,16 @@ fn glossary_index<'a>(snapshot: &'a Snapshot, course_name: &str) -> HashMap<Stri
 // The glossary flattened to `form -> what it means`: the dictionary a learner
 // taps a word of a sentence to see.
 //
-// **Every entry, not just the taught ones.** A sentence is mostly scenery the
-// course never teaches, and scenery is exactly what a learner needs looked up.
+// Every entry, not just the taught ones: a sentence is mostly scenery the
+// course never teaches, and scenery is what a learner needs looked up.
 //
 // Keys are lowercased to match `Dictionary::annotate`, which lowercases what it
 // looks up. A form carrying no translations of its own falls back to its
 // lemma's, so a spelling recorded without a meaning still resolves to the word
-// it belongs to rather than to nothing. If that spelling is also a lemma, its
-// lemma entry owns the gloss completely: definitions inherited from another
-// lemma's form would otherwise mix a word's dictionary meaning with an
-// unrelated inflectional reading. Each keeps its first `GLOSSES` meanings — a
-// tap is answered in a line, not in a column.
+// it belongs to. If that spelling is also a lemma, its lemma entry owns the
+// gloss completely, or a word's dictionary meaning would be mixed with an
+// unrelated inflectional reading. Each keeps its first `GLOSSES` meanings,
+// since a tap is answered in a line rather than a column.
 fn flatten_glossary(snapshot: &Snapshot, course_name: &str) -> Vec<(String, Vec<String>)> {
     let entries = glossary_entries(snapshot, course_name);
     // Resolve precedence from the complete glossary before flattening it, so
@@ -1335,7 +1316,7 @@ mod tests {
         ]);
         let conversion = convert_of(&wiki.build());
         // "soy" is claimed by both, so "Soy alto." tags only the word it was
-        // filed under — `estar` is not guessed onto it
+        // filed under; `estar` is not guessed onto it
         assert_eq!(tags(skill(only(&conversion), "a"), "Soy alto."), ["ser"]);
     }
 
@@ -1428,12 +1409,11 @@ mod tests {
         assert_eq!(at(&spanish.words[1]), "pan");
     }
 
-    // The whole path in one test, because every step of it is somebody's
-    // assumption about the next: a wiki page, converted, assembled, asked as a
-    // question, and serialized into the bytes a browser receives. The sentence
-    // is accented on purpose — the client indexes in UTF-16 code units and the
-    // matcher works in UTF-8 bytes, so "niña" is where an off-by-one would
-    // first show itself.
+    // The whole path in one test, because every step is somebody's assumption
+    // about the next: a wiki page, converted, assembled, asked as a question,
+    // and serialized into the bytes a browser receives. The sentence is
+    // accented on purpose: the client indexes in UTF-16 code units and the
+    // matcher works in UTF-8 bytes, so "niña" is where an off-by-one shows.
     //
     // It also pins the two grading regimes side by side: the two-word sentence
     // carries spans so its words can be scored apart, and the one-word one

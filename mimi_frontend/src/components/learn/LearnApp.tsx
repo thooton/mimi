@@ -10,7 +10,7 @@ import Sidebar from './Sidebar';
 import LessonPlayer from './LessonPlayer';
 import LanguageChooser from './LanguageChooser';
 
-/* How long a leaving lesson stays mounted while it fades — mirrors
+/* How long a leaving lesson stays mounted while it fades, mirrors
    lesson-shell-out's 180ms in styles/motion.css, so the player unmounts
    exactly as it reaches transparency. */
 const QUIT_MS = 180;
@@ -49,13 +49,13 @@ export default function LearnApp() {
 
   useEffect(() => () => clearTimeout(dismissTimer.current), []);
 
-  /* Nobody without an account is *asked* for one: arriving at the course
+  /* Nobody without an account is asked for one: arriving at the course
      opens a guest record and drops them straight into it. A first screen
      offering to begin is a decision about a thing they haven't seen yet, and
      the honest moment to ask is after the first lesson, when there is
      something worth keeping (see LessonPlayer's summary).
 
-     This is the only place a guest is ever created — the rest of the site
+     This is the only place a guest is ever created, the rest of the site
      reads whoever the cookie says, so a visitor reading the leaderboard
      doesn't quietly become a learner. */
   useEffect(() => {
@@ -134,13 +134,13 @@ export default function LearnApp() {
   }
 
   /* Nothing here means anything until we know what's being learnt, and the
-     prerendered HTML can't know it — so the three language states come
+     prerendered HTML can't know it, so the three language states come
      first, before any of the backend's.
 
      While anything is loading the page renders nothing at all: no spinner,
      no skeleton, no guessed data. The flex layout (body → .app-main) holds
      the page at full height regardless, so the content simply appears in
-     place once it's ready — the way web users expect things to. */
+     place once it's ready, the way web users expect things to. */
   if (!authReady || !ready) {
     return null;
   }
@@ -185,7 +185,7 @@ export default function LearnApp() {
     return <LanguageChooser courses={courses} onPick={selectCourse} />;
   }
 
-  /* the course, profile policy and quest fetches are one loading wait —
+  /* the course, profile policy and quest fetches are one loading wait,
      blank, like `!ready` above */
   if (!user || !course || !dailyQuests || !xpSchedule) {
     return null;
@@ -193,7 +193,7 @@ export default function LearnApp() {
 
   /* onExit doesn't unmount the player at once: the map goes back on the
      page immediately, but underneath the still-mounted player, which fades
-     to transparency over it (css: lesson-shell-out) — a crossfade home
+     to transparency over it (css: lesson-shell-out), a crossfade home
      instead of fade-to-beige, cut-to-map. The player's own quit() has
      already guarded against repeats, but a second path here (a double
      unmount) is just as possible, so guard this one too. */

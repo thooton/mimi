@@ -3,7 +3,7 @@ interface Props {
   className?: string;
 }
 
-/* Streak flame — a round-bodied glyph drawn for solid fill (the borrowed
+/* Streak flame, a round-bodied glyph drawn for solid fill (the borrowed
    outline glyph it replaced pinched and blobbed at navbar size).
    Colored entirely by the parent's `color`, via currentColor.
 

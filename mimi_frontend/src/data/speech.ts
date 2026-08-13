@@ -3,7 +3,7 @@
    The backend has no audio to serve: a `text_audio` block is text plus the
    name of the character who speaks it (see mimi_backend script.rs), and
    playing it is left to the client. The browser's speech synthesiser is what
-   we have, so that is what we use — it is not a voice actor, but a silent
+   we have, so that is what we use, it is not a voice actor, but a silent
    speaker button would be worse than an approximate one. */
 
 /** language codes as the course writes them → what a voice is tagged with */
@@ -27,7 +27,7 @@ function pitchFor(character: string): number {
 }
 
 /**
- * Speak one line, cancelling whatever was being said before it — a learner
+ * Speak one line, cancelling whatever was being said before it, a learner
  * who taps two lines in a row wants the second one, not both at once.
  */
 export function speak(text: string, lang: string, character = ''): void {

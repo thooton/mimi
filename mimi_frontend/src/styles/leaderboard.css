@@ -53,7 +53,7 @@
   color: var(--mimi-ink-muted);
 }
 
-/* podium — flat discs of colour, held together by a shared rim */
+/* podium: flat discs of colour, held together by a shared rim */
 .rank--1,
 .rank--2,
 .rank--3 {
@@ -148,7 +148,7 @@
 }
 
 /* the name is a link to the profile behind it, and wears no link decoration
-   until it is pointed at — eighteen underlined rows would read as a list of
+   until it is pointed at, eighteen underlined rows would read as a list of
    links rather than a ranking */
 .player-name {
   font-weight: 500;

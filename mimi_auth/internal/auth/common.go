@@ -12,8 +12,8 @@ import (
 
 // commonPasswordsGz is the 100,000 most used passwords, one per line.
 //
-// It is the same list MediaWiki screens against — SecLists'
-// 10_million_password_list_top_100000, by way of wikimedia/common-passwords —
+// It is the same list MediaWiki screens against (SecLists'
+// 10_million_password_list_top_100000, by way of wikimedia/common-passwords)
 // and it is here so that every consumer gets the same answer. The wiki checked
 // it and this service did not, which meant a password the sign-up form refused
 // was still accepted by calling /v1/register directly.
@@ -52,9 +52,9 @@ var commonPasswords = sync.OnceValue(func() map[string]struct{} {
 // IsCommonPassword reports whether a password is one of the most used ones.
 //
 // The comparison is exact, which is what MediaWiki does, and the list carries
-// its own capitalised variants — "password", "Password" and "PASSWORD" are all
-// in it — so folding case here would reject more than the wiki does rather than
-// the same set.
+// its own capitalised variants ("password", "Password" and "PASSWORD" are all
+// in it), so folding case here would reject more than the wiki does rather
+// than the same set.
 func IsCommonPassword(password string) bool {
 	_, found := commonPasswords()[password]
 	return found

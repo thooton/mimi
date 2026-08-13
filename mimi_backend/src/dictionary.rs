@@ -13,7 +13,7 @@ impl Dictionary {
     // by `convert::flatten_glossary`.
     //
     // This is the glossary's second reading. Grouped by lemma it is the
-    // vocabulary — the concepts a skill teaches; flattened like this it is what
+    // vocabulary, the concepts a skill teaches; flattened like this it is what
     // any word of a sentence means when a learner taps it, which is why it
     // covers scenery the course never teaches.
     //
@@ -23,7 +23,7 @@ impl Dictionary {
     // word, and the honest answer is that it could be either.
     //
     // Both, but not all of both. The glossary hands over `GLOSSES` meanings per
-    // entry, and merging is the one place that count can be exceeded — "niña"
+    // entry, and merging is the one place that count can be exceeded: "niña"
     // read off `niña` and again off `niño` is five, which is the column a tap
     // was never meant to open. The first `GLOSSES` of the merge stand, and
     // since entries arrive in the glossary's order, best first, they are the
@@ -31,7 +31,7 @@ impl Dictionary {
     //
     // A form with no meanings at all is dropped instead of stored empty. It
     // would otherwise match in `annotate` and win against a shorter phrase that
-    // does have something to say — a silent way to gloss less than we know.
+    // does have something to say, a silent way to gloss less than we know.
     pub fn from_entries(entries: Vec<(String, Vec<String>)>) -> Self {
         let mut map: HashMap<String, Vec<String>> = HashMap::new();
         for (form, meanings) in entries {
@@ -97,8 +97,8 @@ impl Dictionary {
             // its dotted gloss underline from `niño.` and makes the period
             // look interactive too.
             //
-            // Keep punctuation *between* the words of a multi-word entry — a
-            // span has to remain contiguous — and trim only the two outside
+            // Keep punctuation between the words of a multi-word entry, since
+            // a span has to stay contiguous, and trim only the two outside
             // edges. `split_whitespace` gives us slices of `s`, so the byte
             // arithmetic still points into the original UTF-8 string.
             let first_word = first.trim_start_matches(|c: char| !c.is_alphanumeric());
@@ -140,14 +140,14 @@ impl Dictionary {
 // A meaning written to sit beside the word it translates.
 //
 // The glossary files its words in lower case, because that is how a dictionary
-// lists them, but a gloss is not read in a dictionary — it is read against a
-// sentence. "El niño" glossed as "the" reads like a correction of the capital;
+// lists them, but a gloss is read against a sentence rather than in a
+// dictionary. "El niño" glossed as "the" reads like a correction of the capital;
 // glossed as "The" it reads like a translation, which is what it is.
 //
 // Only a capital is copied across, never a lower case: a meaning that begins
-// with a capital of its own — "I", "Marco", "Monday" — is spelt that way
+// with a capital of its own ("I", "Marco", "Monday") is spelt that way
 // wherever it appears, and taking it away would be a spelling mistake rather
-// than a matter of position. The first *letter* is what decides, so "¿Cómo" is
+// than a matter of position. The first letter is what decides, so "¿Cómo" is
 // read past its punctuation.
 fn matching_case(text: &str, meaning: String) -> String {
     let capitalised = text
@@ -227,7 +227,7 @@ mod tests {
     }
 
     // A gloss is read against the sentence, so it is capitalised as the word it
-    // translates is — but a meaning spelt with a capital of its own keeps it.
+    // translates is, but a meaning spelt with a capital of its own keeps it.
     #[test]
     fn a_gloss_is_capitalised_as_the_word_it_sits_under() {
         let dictionary = Dictionary::from_entries(vec![

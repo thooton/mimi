@@ -74,9 +74,9 @@ test("a re-queued exercise keeps coming back until it's right", () => {
   let queue = queueOf([exercise("E1"), material]);
   let responses: ApiResponse[] = [];
 
-  // first attempt: wrong — reported, and a retry joins the end of the run.
+  // first attempt: wrong, reported, and a retry joins the end of the run.
   // The lesson is still two tasks long; it is just not finished (the count
-  // holds at "0 / 2" — see the cleared tests below)
+  // holds at "0 / 2", see the cleared tests below)
   let step = advanceQueue(queue, 0, wrong, responses);
   responses = step.responses;
   queue = step.queue;
@@ -89,7 +89,7 @@ test("a re-queued exercise keeps coming back until it's right", () => {
   assert.equal(step.queue.length, 3);
   queue = step.queue;
 
-  // …then the retry: wrong again — another one goes on the end, with nothing
+  // …then the retry: wrong again, another one goes on the end, with nothing
   // further to report
   step = advanceQueue(queue, 2, wrong, responses);
   assert.equal(step.responses, responses); // untouched
@@ -97,7 +97,7 @@ test("a re-queued exercise keeps coming back until it's right", () => {
   assert.equal(step.done, false);
   queue = step.queue;
 
-  // the retry's retry: right at last — still nothing further to report,
+  // the retry's retry: right at last, still nothing further to report,
   // and the queue finally runs out
   step = advanceQueue(queue, 3, right, responses);
   assert.equal(step.responses.length, 1);
@@ -132,7 +132,7 @@ test("a miss holds the count instead of lengthening the lesson", () => {
   queue = advanceQueue(queue, 1, right, []).queue;
   assert.equal(clearedCount(queue, 2, total), 1);
 
-  // miss the retry as well — a second retry joins the end and the reading
+  // miss the retry as well, a second retry joins the end and the reading
   // still holds at one, rather than the total climbing to four
   queue = advanceQueue(queue, 2, wrong, []).queue;
   assert.equal(queue.length, 4);
@@ -145,7 +145,7 @@ test("a miss holds the count instead of lengthening the lesson", () => {
 });
 
 test("the count never reaches the total with questions still to come", () => {
-  // the failure the reading exists to prevent: miss the *last* task of a
+  // the failure the reading exists to prevent: miss the last task of a
   // lesson and the finish is still one question away, so it must not read
   // as finished
   let queue = queueOf([exercise("E1"), exercise("E2")]);

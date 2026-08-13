@@ -7,12 +7,12 @@ import { useAuth } from "../../data/auth";
 import { ago, clockTime, connect, withMessage } from "../../data/inbox";
 import type { Inbox, Message, Thread } from "../../data/inbox";
 
-/* /inbox — every conversation this learner is in, and one of them open.
+/* /inbox: every conversation this learner is in, and one of them open.
 
    Two columns: the threads on the left, the conversation on the right. Below
    the phone breakpoint they are the same column and only one of them is on
-   screen at a time (see inbox.css) — which is why "which thread is open" is
-   state here rather than a route: on a phone it is also *which page* you are
+   screen at a time (see inbox.css), which is why "which thread is open" is
+   state here rather than a route: on a phone it is also which page you are
    looking at, and going back to the list must not be a page load.
 
    Live changes arrive over one event feed (see data/inbox.ts). The page holds no
@@ -58,7 +58,7 @@ function ThreadRow({
                 aria-current={active ? "true" : undefined}
             >
                 {/* present only while there is something here they haven't
-                    read — once it disappears, the text takes its place */}
+                    read; once it disappears, the text takes its place */}
                 <span
                     className="thread-dot"
                     aria-label={thread.unread ? "Unread" : undefined}
@@ -84,7 +84,7 @@ function ThreadRow({
 
 export default function InboxApp() {
     const { user, ready } = useAuth();
-    /* A guest has no inbox — the event route turns them away, for the same
+    /* A guest has no inbox: the event route turns them away, for the same
        reason they are not on the leaderboard and cannot be followed. The
        offer below is the answer, not the refusal. */
     const guest = ready && user?.guest === true;
@@ -146,7 +146,7 @@ export default function InboxApp() {
     useEffect(() => {
         if (!signedIn) return;
         /* Where the page was asked to start. Read once, and used when the
-           thread list arrives — the feed is what establishes the inbox,
+           thread list arrives, since the feed is what establishes the inbox
            and it isn't connected yet. */
         let wanted = new URLSearchParams(window.location.search).get("with");
 
@@ -156,8 +156,8 @@ export default function InboxApp() {
                 setMe(who);
                 setThreads(rows);
                 /* The list also arrives after a reconnection, and then the
-                   conversation on screen is re-opened rather than dropped —
-                   whatever was said while the feed was away is in it. */
+                   conversation on screen is re-opened rather than dropped,
+                   since whatever was said while the feed was away is in it. */
                 const resume = wanted ?? openRef.current;
                 wanted = null;
                 if (resume) {
@@ -260,7 +260,7 @@ export default function InboxApp() {
     }
 
     function key(event: KeyboardEvent<HTMLTextAreaElement>) {
-        /* Enter sends, Shift+Enter is a new line — a message is usually one
+        /* Enter sends, Shift+Enter is a new line: a message is usually one
            line, and reaching for a button to send it is not. */
         if (event.key === "Enter" && !event.shiftKey) send(event);
     }
@@ -289,7 +289,7 @@ export default function InboxApp() {
                     <h1>Messages</h1>
                     <p>
                         Messages are between accounts, so there is somebody to
-                        write back. Create one — everything you have done so
+                        write back. Create one, and everything you have done so
                         far comes with you.
                     </p>
                     <div className="inbox-offer-actions">

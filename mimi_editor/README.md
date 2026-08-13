@@ -20,7 +20,7 @@ then add skills and a glossary beneath it.
 Use each page's **Edit** tab to open its Vue/Codex editor. Course skills can be
 dragged within a row or between rows, and a skill's words, a word's sentences
 and a glossary form's translations are reordered by dragging the grip at the
-left of each row — or by focusing it and pressing the up and down arrows.
+left of each row, or by focusing it and pressing the up and down arrows.
 
 The main page is replaced with Mimi's front page, laid out after Wikipedia's:
 a welcome banner over the wiki's totals, then boxes for the published courses,
@@ -37,13 +37,13 @@ effect once the database exists.
 
 Accounts belong to `mimi_auth`, the small service the other Mimi sites also
 verify against, so one username and password work on all of them. Signing in
-here does not sign anyone in on the learner site — each site keeps its own
-session — but there is only ever one account and one password to remember.
+here does not sign anyone in on the learner site, each site keeps its own
+session: but there is only ever one account and one password to remember.
 Both the sign-in and the create-account forms are MediaWiki's own; they just
 ask `mimi_auth` instead of the wiki's user table.
 
 `Admin` is the exception. It lives only in the wiki's own table, and the
-provider is arranged so local accounts still work — including while `mimi_auth`
+provider is arranged so local accounts still work, including while `mimi_auth`
 is down, which is exactly when somebody needs to sign in as `Admin`.
 
 Start `mimi_auth` so the wiki can reach it:
@@ -66,8 +66,8 @@ reason is in `docker compose logs mediawiki`, which is what
 
 Changing a password works here and changes it everywhere, because it is changed
 in `mimi_auth`. **Change password** asks for the current one as well as the new
-one — `mimi_auth` has no tokens, so retyping the old password is what authorises
-replacing it — and the new password works on every Mimi site immediately, while
+one: `mimi_auth` has no tokens, so retyping the old password is what authorises
+replacing it, and the new password works on every Mimi site immediately, while
 the old one stops working on all of them.
 
 It does not sign anyone out, though. Each site holds its own session and
@@ -79,7 +79,7 @@ Mimi one changed. `Admin` still uses it, having no Mimi account to change.
 
 `config/LocalSettings.php` is **not** checked in: its keys belong to one
 installation rather than to the project. `config/LocalSettings.example.php` is,
-and copying it is the first command above — everything except those keys is the
+and copying it is the first command above, everything except those keys is the
 shared configuration, so editing the example is how the wiki changes for
 everybody. Copy it before the first start: Compose mounts the file read-only,
 and Docker answers a missing mount source with a root-owned directory in its
@@ -98,7 +98,7 @@ development server.
 
 ## Windows
 
-Docker Desktop with the WSL 2 backend is all that is required — the commands
+Docker Desktop with the WSL 2 backend is all that is required, the commands
 above are unchanged.
 
 Two things are worth knowing:

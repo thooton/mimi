@@ -36,7 +36,7 @@ test("a word glossed twice gets a hint on each occurrence, in order", () => {
 
 /* The case this gives up on rather than guesses at: a gloss quoting something
    the sentence doesn't contain has nothing to underline. It comes back as an
-   orphan so the player can still show it — dropping a hint silently is the
+   orphan so the player can still show it, dropping a hint silently is the
    failure worth avoiding. */
 test("a gloss the sentence never quotes comes back as an orphan", () => {
   const { spans, orphans } = attachGlosses("Yo soy un hombre.", [

@@ -9,7 +9,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 /* Public profiles are one page serving every name.
  *
  * The site is prerendered to a directory of files (`//mimi_frontend:build`
- * zips `dist/`), and accounts are created long after that build — so there is
+ * zips `dist/`), and accounts are created long after that build, so there is
  * no way to emit a page per profile. Instead `src/pages/u/index.astro` is
  * emitted once and every `/u/<name>` is **rewritten** onto it with a 200;
  * `PublicProfile` reads the name back out of `location`.
@@ -18,7 +18,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
  * of it are written down.
  *
  * The dev server's half is the middleware below. The deployment half has to be
- * configured wherever `dist/` is served — for nginx:
+ * configured wherever `dist/` is served. For nginx:
  *
  *     location ^~ /u/ {
  *         try_files $uri $uri/ /u/index.html;

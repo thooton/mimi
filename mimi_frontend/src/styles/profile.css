@@ -4,11 +4,11 @@
    Read top to bottom rather than across: the person, then the languages
    they're learning as a row of cards with the shared graph they drive, then
    the practice behind the numbers, then the day-by-day record. Everything is
-   boxed in the same parchment panels as the rest of the app — no bare rail of
-   figures — so a stranger opening the page meets the human before the stats.
+   boxed in the same parchment panels as the rest of the app, no bare rail of
+   figures: so a stranger opening the page meets the human before the stats.
    ========================================================================== */
 
-/* This element *is* the .shell, so it sets only the vertical padding: the
+/* This element is the .shell, so it sets only the vertical padding: the
    `padding` shorthand would take the inline axis with it and drop the shell's
    gutter, leaving the page 40px wider than Learn and hanging out past the
    navbar. Learn gets away with `padding: 20px 0` because .learn-grid sits
@@ -22,7 +22,7 @@
 }
 
 /* The page before its profile arrives, and the page when one never will.
-   Both are one panel holding one thing, centred — a spinner or the reason —
+   Both are one panel holding one thing, centred, a spinner or the reason,
    so the layout doesn't lurch as the real page replaces it. */
 .profile-empty {
   display: flex;
@@ -183,8 +183,8 @@
   gap: 8px;
 }
 
-/* a follow or an edit that didn't land. The page is still the profile — only
-   the button failed — so this is a line under it rather than a replacement
+/* a follow or an edit that didn't land. The page is still the profile, only
+   the button failed, so this is a line under it rather than a replacement
    for anything. */
 .profile-action-error {
   margin: 0;
@@ -194,7 +194,7 @@
   text-align: right;
 }
 
-/* the totals used to sit in a bordered four-cell strip — a box inside the
+/* the totals used to sit in a bordered four-cell strip, a box inside the
    panel's box, each figure squeezed into a quarter of a fixed width. They read
    better as plain figures: no chrome, aligned on their baselines, spaced apart
    far enough that nothing needs a divider to be told apart */
@@ -282,7 +282,7 @@
 }
 
 /* the row of language tiles, which is also the graph's legend: each is a
-   button toggling its own line below. Compact on purpose — the trend lives
+   button toggling its own line below. Compact on purpose, the trend lives
    in the chart, so the tile only has to say which language and where it
    stands now. They size to their content and sit left, so two languages and
    four look equally deliberate rather than stretching to fill the row. */
@@ -402,7 +402,7 @@
   flex-wrap: wrap;
 }
 
-/* a segmented control of ranges — one recessed track, the active segment
+/* a segmented control of ranges, one recessed track, the active segment
    raised out of it */
 .chart-ranges {
   display: inline-flex;
@@ -558,7 +558,7 @@
 
 .act-day {
   display: grid;
-  /* a fixed date gutter on the left, the entries in the rest — so the days
+  /* a fixed date gutter on the left, the entries in the rest, so the days
      line up in a column and read as a timeline without needing a drawn spine */
   grid-template-columns: 128px minmax(0, 1fr);
   gap: 16px;
@@ -585,7 +585,7 @@
   color: var(--mimi-ink-muted);
 }
 
-/* the streak flag, shown only on days that are part of a real run — the
+/* the streak flag, shown only on days that are part of a real run, the
    flame ties it to the streak counter up top and the app's flame accent */
 .act-streak {
   display: inline-flex;
@@ -657,7 +657,7 @@
   padding: 2px 6px;
 }
 
-/* the words the day actually left behind — chips of the target language,
+/* the words the day actually left behind, chips of the target language,
    which is what a language learner's feed should show off */
 .act-learned {
   display: flex;
@@ -677,7 +677,7 @@
   padding: 3px 9px;
 }
 
-/* an entry about somebody else — it leads to them, and says so on hover
+/* an entry about somebody else, it leads to them, and says so on hover
    rather than shouting in blue down the whole feed */
 .act-link {
   color: inherit;

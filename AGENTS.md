@@ -1,12 +1,12 @@
-# AGENTS.md — mimi
+# AGENTS.md: mimi
 
-Notes for anyone — human or agent — picking up the whole of Mimi. This is the umbrella
+Notes for anyone, human or agent, picking up the whole of Mimi. This is the umbrella
 file: it describes how the four pieces fit together and what is true *between* them. Each
 piece has its own documentation, and where this file and those disagree, they are right.
 
 ## What Mimi is
 
-A language learning application that anyone can edit — Duolingo's learner experience over
+A language learning application that anyone can edit, Duolingo's learner experience over
 Wikipedia's authoring model. Courses are not shipped as code or data files; they are wiki
 pages that anybody can edit, and the learner site rebuilds itself from them. AGPLv3, in
 the `LICENSE` at this level, which covers all four components.
@@ -38,11 +38,11 @@ their declared invalidation inputs are the design.
 
 ## Where the real documentation is
 
-- `mimi_backend/AGENTS.md` — the long one. The spaced-repetition ladder, the lesson
+- `mimi_backend/AGENTS.md`, the long one. The spaced-repetition ladder, the lesson
   builder, the API, and the invariants that quietly break if you ignore them. Read it
   before touching anything in `mimi_backend/src`.
-- `mimi_editor/AGENTS.md` — namespaces, content models, schemas, the Vue editor.
-- `mimi_editor/README.md`, `mimi_auth/README.md` — how to run each, and why they are
+- `mimi_editor/AGENTS.md`, namespaces, content models, schemas, the Vue editor.
+- `mimi_editor/README.md`, `mimi_auth/README.md`, how to run each, and why they are
   arranged the way they are (`mimi_auth`'s is the design rationale for shared sign-in).
 - `mimi_frontend` has **no** AGENTS.md. It is documented in comments instead; start at
   [api.ts](mimi_frontend/src/data/api.ts), which is a commented mirror of the backend's
@@ -81,20 +81,20 @@ touching both, and the wiki should be the permissive one.
 **API (backend → frontend).** JSON over HTTP, no generated client: the types in
 `mimi_frontend/src/data/api.ts` are hand-written against `mimi_backend/src/server.rs`.
 Nothing checks that they agree, so if you change a response shape, change both. Note that
-grading happens on the client — lessons are served with their answers — so a scoring
+grading happens on the client, lessons are served with their answers, so a scoring
 change may be a frontend change even though it sounds like a backend one.
 
 **Credentials (both → auth).** `mimi_auth` is the only place passwords and addresses
 live. The backend and the wiki each verify against it and each keep their own session;
 neither knows about the other, and signing in on one does not sign you in on the other. It
 issues no tokens, which is why editing a credential requires the current password and why
-`mimi_auth` itself cannot log anybody out — ending sessions is each consumer's job, and
+`mimi_auth` itself cannot log anybody out, ending sessions is each consumer's job, and
 the backend does it (`Store::delete_other_sessions`) when a password changes. Browsers
 talk to a consumer's own `/auth/*`, never to `mimi_auth` directly.
 
 ## Bringing the stack up
 
-Dependency order — start the earlier services first. The backend waits for an offline
+Dependency order, start the earlier services first. The backend waits for an offline
 wiki, retrying once a second, while other missing dependencies may still fail:
 
 ```sh
@@ -125,7 +125,7 @@ free one. Choose an override explicitly with `MIMI_AUTH_ADDR`, the editor's pair
 at the same time.
 
 Databases are files and disposable: `mimi_auth/mimi-auth.db`, `mimi_backend/mimi.db`, and
-the wiki's Docker volumes. There are no migrations anywhere in the project — when a shape
+the wiki's Docker volumes. There are no migrations anywhere in the project, when a shape
 changes, delete and re-seed. The wiki seeds itself with the demo Spanish course, but
 **the backend seeds no accounts**: a wipe costs every account you made, and a fresh
 backend has no profile and no leaderboard entry to look at until somebody registers and
@@ -139,7 +139,7 @@ finishes a lesson. Nothing in the learner record is invented.
   backend serves it; it is done when a wiki page can express it, the backend validates it,
   and the frontend renders it. Say which of the four you actually exercised.
 - **Match the house comment style.** All three documented components explain *intent* at
-  length — why a constant has its value, why an approach was rejected. Terse code that
+  length: why a constant has its value, why an approach was rejected. Terse code that
   merely restates itself reads as foreign here. The same applies to these documents: when
   the code and an AGENTS.md diverge, fix the document rather than leaving it.
 - **Design references are in the tree.** `mimi_editor/Course_*.txt` and their `.webp`

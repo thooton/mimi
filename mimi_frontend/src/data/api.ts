@@ -14,7 +14,7 @@ export interface ApiPosition {
     then unaided es->en, then es->en and en->es both (and forever) */
 export type ApiStage = 'scaffolding' | 'recognition' | 'recognition_production';
 
-/** one FSRS card — a word's memory state *in a single mode*. Retrievability
+/** one FSRS card: a word's memory state in a single mode. Retrievability
     is the decayed probability of recall, computed when the request is served. */
 export interface ApiCard {
   retrievability: number;
@@ -24,7 +24,7 @@ export interface ApiCard {
 }
 
 /** one word's place on the ladder, plus a card per mode. A mode that has
-    never been attempted has no card yet and comes back `null` — the three are
+    never been attempted has no card yet and comes back `null`; the three are
     updated in isolation, so a word bank's verdict never touches the others. */
 export interface ApiWord {
   word: string;
@@ -55,7 +55,7 @@ export interface ApiFlashcard {
   /** target->source is recognition; source->target is production */
   direction: ApiFlashcardDirection;
   /** language codes, e.g. "es->en". Served, but the player deliberately does
-   *  not label a card with it — the front already says which language it is. */
+   *  not label a card with it, since the front already says which it is. */
   language_direction: string;
   front: string;
   back: string;
@@ -162,7 +162,7 @@ export type ApiAsk =
     stretch of it that proves that concept, which is what makes per-word
     grading possible.
 
-    Offsets are UTF-16 code units — ordinary JavaScript string indices, so
+    Offsets are UTF-16 code units, ordinary JavaScript string indices, so
     `slice` is exactly right and no decoding is needed. The backend converts
     from its own byte offsets before serving (see `sentence::Mark`). */
 export interface ApiMark {
@@ -174,11 +174,11 @@ export interface ApiMark {
 /** One accepted answer: the text as the learner should produce it, plus the
     spans of it that prove each concept.
 
-    **An empty `words` means grade the whole answer at once**, and give every
+    An empty `words` means grade the whole answer at once, and give every
     concept in the exercise's `words` that one verdict. That is how a
-    single-concept exercise always arrives — the sentence is that concept's
-    question, so there is no credit to divide — and it is also what happens to
-    a concept used in a form the backend could not locate. */
+    single-concept exercise always arrives, the sentence being that concept's
+    question with no credit to divide, and it is also what happens to a concept
+    used in a form the backend could not locate. */
 export interface ApiAnswer {
   text: string;
   words: ApiMark[];
@@ -204,7 +204,7 @@ export interface ApiExercise {
   answers: ApiAnswer[];
   /** word-bank exercises only: the tokens the answer is assembled from,
       distractors included. Each may be used at most once, so a word appearing
-      twice in the answer appears twice here. **Not in display order** — the
+      twice in the answer appears twice here. Not in display order: the
       canonical answer's own tokens come first, so the client has to scramble
       them (see wordBank.ts). Leading/trailing punctuation is stripped so it
       cannot reveal a token's position. Empty on other kinds. */
@@ -251,12 +251,12 @@ export interface ApiTips {
    Who a user says they are, plus everything the backend's activity record
    says they have done. The split is worth knowing about when reading these:
    `display`/`title`/`bio`/`cefr` are authored and stored verbatim, and every
-   number is derived from the day-by-day record on the way out — so no total
+   number is derived from the day-by-day record on the way out, so no total
    here can have drifted from the days that made it. */
 
 /** one sample of a language's score, at midnight UTC on the day it was taken */
 export interface ApiPoint {
-  /** unix **seconds** — the whole API dates things this way; the UI wants
+  /** unix seconds, as the whole API dates things; the UI wants
       milliseconds, so profile.ts multiplies once on the way in */
   t: number;
   v: number;
@@ -279,7 +279,7 @@ export interface ApiLanguage {
   words: number;
   skills: number;
   lessons: number;
-  /** when they joined — the graph's left edge */
+  /** when they joined: the graph's left edge */
   since: number;
   /** oldest first, one sample per active day, anchored at both ends so the
       line spans the axis */
@@ -290,14 +290,14 @@ export interface ApiLanguage {
 export interface ApiFollow {
   /** what /u/<name> is built from */
   username: string;
-  /** what they call themselves *now*, not when they were followed */
+  /** what they call themselves now, not when they were followed */
   display: string;
 }
 
 /** One day of the record: what they did, and where it left them.
  *
- *  **Not necessarily a day of study.** Following somebody is dated but is not
- *  studying — it earns nothing, breaks nothing and keeps no streak — so a day
+ *  Not necessarily a day of study. Following somebody is dated but is not
+ *  studying: it earns nothing, breaks nothing and keeps no streak, so a day
  *  whose only entry is a follow arrives with every number at zero and the
  *  score sitting where the last lesson left it. */
 export interface ApiActivityDay {
@@ -309,12 +309,12 @@ export interface ApiActivityDay {
   exercises: number;
   correct: number;
   xp: number;
-  /** what the day taught, in the target language — empty on a review day,
+  /** what the day taught, in the target language. Empty on a review day,
       which is most of them once a course has been finished */
   learned: string[];
   /** skills finished that day, by name */
   skills: string[];
-  /** who they started following that day. **Unfollowing does not remove
+  / who they started following that day. Unfollowing does not remove
       this**: the feed records what was done, not what is still true. */
   followed: ApiFollow[];
   score: number;
@@ -335,13 +335,13 @@ export interface ApiProfile {
   title: string | null;
   bio: string;
   cefr: string;
-  /** An absolute https URL to a picture on somebody else's server — Mimi
+  /** An absolute https URL to a picture on somebody else's server; Mimi
       hosts no images. The backend checks it hard before storing it (scheme,
       character set, and no credentials hiding in front of the host), and the
       client checks it again on the way in: see safeAvatar in profile.ts.
       Null for the great majority of people, who have linked none. */
   avatar: string | null;
-  /** the exact course they're learning — null until they pick one. */
+  /** the exact course they're learning, null until they pick one. */
   course_id: string | null;
   joined: number;
   /** Live, process-local presence: the server authenticated a request from
@@ -349,7 +349,7 @@ export interface ApiProfile {
   online: boolean;
   /** null if they have never done anything */
   last_active: number | null;
-  /** the **server's** idea of what day it is (midnight UTC). Dates are read
+  / the server's** idea of what day it is (midnight UTC). Dates are read
       against this rather than the browser's clock, so a reader in another
       timezone sees the same "yesterday" the record was written with. */
   today: number;
@@ -373,7 +373,7 @@ export interface ApiProfile {
     days: number;
   };
   languages: ApiLanguage[];
-  /** **newest first**, and capped by the backend at its most recent 60 days */
+  / newest first**, and capped by the backend at its most recent 60 days */
   days: ApiActivityDay[];
 }
 
@@ -387,7 +387,7 @@ export interface ApiResponse {
 
 export interface ApiSubmitResult {
   correct: number;
-  /** exercises only — material isn't answered, so it isn't scored */
+  /** exercises only: material isn't answered, so it isn't scored */
   total: number;
   /** present for castle tests, null for ordinary lessons */
   passed: boolean | null;
@@ -398,10 +398,10 @@ export interface ApiSubmitResult {
    One global board ranking the XP earned since Monday 00:00 UTC, and nothing
    else. The backend sums it out of the same activity rows the profile is
    derived from when the request is served, so there is no board to be stale:
-   see mimi_backend/src/leaderboard.rs. Guests are not ranked — a record with
-   no name behind it and a week to live shouldn't hold a public placing — but
-   registering claims the record, so the week carries onto the board with the
-   name they chose. */
+   see mimi_backend/src/leaderboard.rs. Guests are not ranked, since a record
+   with no name behind it and a week to live shouldn't hold a public placing,
+   but registering claims the record, so the week carries onto the board with
+   the name they chose. */
 
 /** one learner's week */
 export interface ApiStanding {
@@ -416,9 +416,9 @@ export interface ApiStanding {
 }
 
 export interface ApiLeaderboard {
-  /** midnight UTC on the Monday this week began, in unix **seconds** */
+  /** midnight UTC on the Monday this week began, in unix seconds */
   week_start: number;
-  /** and the Monday it empties on — the board's own clock, so the page never
+  /** and the Monday it empties on: the board's own clock, so the page never
       has to work out which week it is from the browser's timezone */
   resets_at: number;
   /** best first. Everyone who has earned XP this week is here; a learner who
@@ -426,8 +426,8 @@ export interface ApiLeaderboard {
   standings: ApiStanding[];
 }
 
-/** Who the backend thinks we are — the one shape every /auth endpoint answers
-    with. A **guest** is a real learning record with no credentials behind it
+/** Who the backend thinks we are: the one shape every /auth endpoint answers
+    with. A guest is a real learning record with no credentials behind it
     (see mimi_backend/AGENTS.md): everything works for them, but the record
     lives only as long as the cookie, so the UI offers to save it. */
 export interface ApiViewer {
@@ -522,7 +522,7 @@ export function submitFlashcards(
   });
 }
 
-/** anyone's public profile — no account needed to read one, so this takes
+/** anyone's public profile. No account is needed to read one, so this takes
     the username it is looking at rather than defaulting to ours */
 export function fetchProfile(username: string): Promise<ApiProfile> {
   return request<ApiProfile>(`/users/${encodeURIComponent(username)}/profile`);
@@ -543,7 +543,7 @@ export function fetchLeaderboard(): Promise<ApiLeaderboard> {
 /** Everything the owner of a profile may write. The editor is a form, so it
     is submitted whole: a field sent back unchanged means what it says, and
     the only way to clear one is to send it empty (null, for the avatar). The
-    backend checks all four and rejects the edit entire if any is wrong — so a
+    backend checks all four and rejects the edit entire if any is wrong, so a
     bad avatar URL never lands a half-applied profile. */
 export interface ApiProfileEdit {
   display: string;
@@ -563,7 +563,7 @@ export function updateProfile(edit: ApiProfileEdit): Promise<void> {
   });
 }
 
-/** Accounts whose username or display name starts with `q` — the inbox's
+/** Accounts whose username or display name starts with `q`, for the inbox's
     "start a new conversation" box (see inbox.ts for the messaging feed and
     commands).
 
@@ -583,8 +583,8 @@ export function followUser(username: string): Promise<void> {
   });
 }
 
-/** Stop following somebody (204). This ends the follow and nothing else —
-    the entry in your activity feed stays, because it is a record of what you
+/** Stop following somebody (204). This ends the follow and nothing else: the
+    entry in your activity feed stays, because it is a record of what you
     did rather than a claim about what is still true. */
 export function unfollowUser(username: string): Promise<void> {
   return request<void>(`/users/${encodeURIComponent(username)}/follow`, {
@@ -622,7 +622,7 @@ export function createCastle(): Promise<ApiLesson> {
 }
 
 /**
- * All the material a lesson would show, without starting it — the course
+ * All the material a lesson would show, without starting it: the course
  * map's "Tips" button. Any reached lesson may be read this way.
  */
 export function fetchTips(
@@ -664,7 +664,7 @@ export function loginUser(login: string, password: string): Promise<ApiViewer> {
 }
 
 /** Start the course without an account. Safe to call with a session already
-    in hand — the backend answers with whoever that is rather than minting a
+    in hand, since the backend answers with whoever that is rather than minting a
     second guest and stranding the first one's progress. */
 export function startGuestUser(): Promise<ApiViewer> {
   return request<ApiViewer>('/auth/guest', { method: 'POST' });
@@ -675,11 +675,11 @@ export function fetchViewer(): Promise<ApiViewer> {
 }
 
 /** Change the signed-in account's password (204 on success). The current one
-    authorises it — the backend proxies to the credential service, which owns
+    authorises it. The backend proxies to the credential service, which owns
     every rule about what a password may be, so the message a refusal carries
     is that service's and is worth showing verbatim.
 
-    Every *other* session on the account is closed by this, on the reasoning
+    Every other session on the account is closed by this, on the reasoning
     that a password is often changed because somebody else might know the old
     one. The browser that asked keeps its own, so nothing needs re-signing in
     here. */
@@ -697,7 +697,7 @@ export function changePassword(
 }
 
 /** Move the account's address, authorised by the password. Answers with the
-    viewer, whose `email` is the one now on file — the caller should hand it
+    viewer, whose `email` is the one now on file, so the caller should hand it
     back to the auth store rather than assume the string it sent. */
 export function changeEmail(
   password: string,

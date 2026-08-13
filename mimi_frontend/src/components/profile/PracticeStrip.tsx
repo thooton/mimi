@@ -2,7 +2,7 @@ import { Icon } from '@blueprintjs/core';
 import type { Practice } from '../../data/profile';
 import { formatXp } from '../../data/social';
 
-/* Practice that isn't tied to one course — words drilled, listening and
+/* Practice that isn't tied to one course, words drilled, listening and
    speaking reps, review sprints. These carry no score on purpose: the count
    is the honest measure, so it is what gets shown, big and plain. */
 

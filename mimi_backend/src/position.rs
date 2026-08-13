@@ -2,9 +2,9 @@ use std::fmt;
 
 /// Which lesson of which skill.
 ///
-/// This is an *address*, not a learner's identity. In a branching tree,
-/// progress is a set — which skills are finished, and how far into each — so
-/// no single coordinate says where somebody is (see `User::progress`). A
+/// This is an address, not a learner's identity. In a branching tree,
+/// progress is a set (which skills are finished, and how far into each) so no
+/// single coordinate says where somebody is (see `User::progress`). A
 /// position only ever names a lesson to build.
 ///
 /// Lessons are 1-based, and a skill has a fixed number of them.

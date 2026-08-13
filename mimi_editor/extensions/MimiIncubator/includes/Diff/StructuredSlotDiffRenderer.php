@@ -15,19 +15,19 @@ use Wikimedia\Diff\WordLevelDiff;
  * The diff view for all four structured models.
  *
  * Nobody edits the JSON, so nobody should have to read it: a revision is
- * summarised into the things an author works with — words, entries, tips, rows
- * of the tree — and only those that differ are drawn. Each one becomes a card
+ * summarised into the things an author works with, words, entries, tips, rows
+ * of the tree, and only those that differ are drawn. Each one becomes a card
  * headed by its own name and told plainly what became of it, and inside the
  * card every changed field is one line with its label written once and the two
  * versions beside it.
  *
  * Two decisions carry most of the legibility:
  *
- * - **Word-level highlighting comes from core.** `WordLevelDiff` is what
+ * - Word-level highlighting comes from core. `WordLevelDiff` is what
  *   MediaWiki's own wikitext diffs use, so a corrected sentence marks the words
  *   that actually moved, in the colours a reader already knows, and the
  *   `diff-addedline` / `diff-deletedline` classes keep the cells looking native.
- * - **Derived numbers are not diffed.** A word count changing says nothing the
+ * - Derived numbers are not diffed. A word count changing says nothing the
  *   added and removed words below it do not already say, so counts became the
  *   tally in the bar at the top instead of three rows of noise.
  *
@@ -112,7 +112,7 @@ final class StructuredSlotDiffRenderer extends SlotDiffRenderer {
 	 *
 	 * Both fall out of one alignment of the two key lists. Everything core's
 	 * differ calls a copy kept its place relative to the sections around it, so
-	 * anything it does not — while still existing on both sides — was dragged
+	 * anything it does not, while still existing on both sides, was dragged
 	 * somewhere. Asking instead whether a section's index changed would report
 	 * the whole glossary as moved every time a lemma is added near the top.
 	 *

@@ -1,5 +1,5 @@
 /**
- * linguisticGrade — language-agnostic fuzzy grader for short free-text answers.
+ * linguisticGrade, language-agnostic fuzzy grader for short free-text answers.
  *
  * Grades a user's response against a set of accepted answers, forgiving
  * missing accents, punctuation/casing differences, and single-character
@@ -19,13 +19,13 @@
 // --- grading tuning constants -----------------------------------------------
 
 // How long a word has to be before we forgive a single-character typo in it.
-// One edit turns plenty of short words into *other* short words ("no" -> "nos"),
+// One edit turns plenty of short words into other short words ("no" -> "nos"),
 // so short words have to be spelled correctly.
 const MIN_TYPO_LEN = 4;
 
 // Costs for aligning the user's tokens against an answer's tokens.
 // An exact token is free. One differing only by accents or a single typo is
-// forgiven, but not *quite* free, so a nailed answer always beats a close one.
+// forgiven, but not quite free, so a nailed answer always beats a close one.
 // Dropping, adding or substituting a whole token is a real mistake.
 //
 // Keep SUB_COST < 2 * GAP_COST, otherwise the aligner would rather delete a
@@ -55,7 +55,7 @@ export interface LinguisticGrade {
  * One accepted answer, exactly as the backend serves it (`ApiAnswer` in
  * api.ts; declared structurally here so this module keeps no dependencies).
  * `start`/`end` index `text` in UTF-16 code units, which is what `slice` and
- * `length` already speak — so nothing here converts anything.
+ * `length` already speak, so nothing here converts anything.
  */
 export interface Answer {
   text: string;
@@ -123,7 +123,7 @@ function sameChars(a: string[], b: string[]): boolean {
 }
 
 /**
- * Are these two words within a single character edit — one insertion,
+ * Are these two words within a single character edit, one insertion,
  * deletion, substitution, or swap of adjacent characters (the classic typo)?
  */
 function withinOneEdit(a: string[], b: string[]): boolean {
@@ -158,7 +158,7 @@ function tokenCost(answer: string, response: string): number {
   if (answer === response) return 0;
   const a = foldAccents(answer);
   const b = foldAccents(response);
-  // the user didn't (or couldn't) type the accents — that's fine
+  // the user didn't (or couldn't) type the accents, that's fine
   if (sameChars(a, b)) return NEAR_COST;
   // ...and so is one slip of the finger, in a word long enough that one slip
   // can't have turned it into a different word
@@ -217,7 +217,7 @@ interface Alignment {
  *
  * This is Needleman-Wunsch (Levenshtein with a traceback) over whole tokens
  * rather than characters: the user may have dropped a word, added one, or
- * used a different one, and we need to know *which* words survived so we can
+ * used a different one, and we need to know which words survived so we can
  * score the concepts attached to them. Word-level costs come from `tokenCost`,
  * which is where accents and typos are forgiven.
  */
@@ -267,7 +267,7 @@ function align(answerTokens: string[], response: string[]): Alignment {
 /**
  * Grade a user's response against the accepted answers.
  *
- * The response is graded against whichever answer it comes closest to —
+ * The response is graded against whichever answer it comes closest to,
  * users are judged against the phrasing they attempted, not whichever the
  * course author listed first. Ties go to the earlier (more canonical) answer.
  *

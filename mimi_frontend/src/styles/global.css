@@ -1,14 +1,14 @@
 /* ==========================================================================
-   mimi — a design layer over Blueprint.js 6.
+   mimi: a design layer over Blueprint.js 6.
 
    Blueprint ships a neutral grey/blue theme on a white page. We retheme it
    through its own custom properties into a warm "parchment" shell (borrowed
    from Lichess: a tinted page, white content boxes, hairline borders, dense
    text-first chrome) and then add the geometry Blueprint has no component
-   for — the winding lesson path.
+   for: the winding lesson path.
 
    This file is only the index: the rules live in the partials below, one
-   per concern. The import order is load-bearing in exactly one place —
+   per concern. The import order is load-bearing in exactly one place,
    chrome.css follows blueprint.css so the nav menu's square-corner
    override lands after Blueprint's popover defaults (both hit
    .bp6-popover-content at the same specificity, so source order decides).
@@ -25,7 +25,7 @@
 /* topbar, course bar, footer, and the language picker/chooser */
 @import './chrome.css';
 
-/* account registration and sign-in — and the field recipe the settings
+/* account registration and sign-in, and the field recipe the settings
    page's forms borrow */
 @import './auth.css';
 

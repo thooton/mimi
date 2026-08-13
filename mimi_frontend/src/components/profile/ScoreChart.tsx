@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Language, Point } from '../../data/profile';
 import { DAY_MS, formatDate, monthLabel, valueAt } from '../../data/profile';
 
-/* Every language on one set of axes — the whole reason for scoring them the
+/* Every language on one set of axes, the whole reason for scoring them the
    same way, since two years of Spanish and six weeks of French are otherwise
    not comparable at all. The y-axis is the score itself, not a letter band:
    the score is the thing that moves day to day, and watching it move is the

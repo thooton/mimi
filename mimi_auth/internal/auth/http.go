@@ -120,7 +120,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 // changePassword is the only way a stored hash is ever replaced. There are no
 // tokens or sessions here yet, so the current password is what authorises the
 // change: a consumer asks on behalf of somebody who has just retyped it. Note
-// that consumers hold their own sessions, and nothing here can end them — a
+// that consumers hold their own sessions and nothing here can end them: a
 // changed password does not sign the account out of any of the Mimi sites.
 func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 	var in changePasswordRequest
@@ -172,7 +172,7 @@ func (h *Handler) changePassword(w http.ResponseWriter, r *http.Request) {
 }
 
 // changeEmail moves an account's address. The password authorises it for the
-// same reason it authorises a password change — there are no tokens here — and
+// same reason it authorises a password change, there being no tokens here, and
 // it is required even though the new address is not itself a secret: an email
 // is also a login, and a session left open on a shared machine should not be
 // enough to point the account at somewhere else.
@@ -233,7 +233,7 @@ func (h *Handler) changeEmail(w http.ResponseWriter, r *http.Request) {
 // service. Length is otherwise the whole of the rule on purpose: composition
 // requirements push people towards predictable substitutions rather than longer
 // passwords. The same guidance pairs that floor with a check against the most
-// used passwords, which is what IsCommonPassword does — at eight characters the
+// used passwords, which is what IsCommonPassword does; at eight characters the
 // list is doing most of the work.
 const passwordLengthMessage = "password must be between 8 and 1024 characters"
 

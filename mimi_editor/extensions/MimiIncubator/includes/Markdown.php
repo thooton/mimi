@@ -10,13 +10,13 @@ use MediaWiki\Html\Html;
  * Tips are edited in a formatting canvas, not by typing syntax, so this subset
  * exists to give the canvas something plain to store: a revision has to diff as
  * text in page history, and JSON holding a blob of HTML would neither diff
- * legibly nor be safe to render back. Markdown keeps both — the stored body is
+ * legibly nor be safe to render back. Markdown keeps both, the stored body is
  * readable on its own, and nothing outside this grammar can survive a round
  * trip through the editor.
  *
  * The grammar is deliberately closed. Blocks are separated by blank lines and
  * are one of `## heading`, `- bullet`, `1. numbered`, or a paragraph. Inline
- * runs are `**bold**`, `*italic*`, `<u>underline</u>` and `[label](url)`, and a
+ * runs are `bold`, `italic`, `<u>underline</u>` and `[label](url)`, and a
  * backslash escapes the character after it. Underline is the one borrowing from
  * Markdown's inline HTML, because Markdown itself has no underline and the
  * editor offers one.
@@ -30,7 +30,7 @@ final class Markdown {
 
 	/**
 	 * Read-view and editor-canvas styling for the tags below. Tips render as
-	 * bare elements so that both surfaces can share one set of rules — the
+	 * bare elements so that both surfaces can share one set of rules, the
 	 * canvas builds its elements with execCommand and cannot be given classes.
 	 */
 	public const PROSE_CLASSES = '[&_h3]:mb-1 [&_h3]:mt-4 [&_h3]:border-0 [&_h3]:p-0 [&_h3]:font-sans ' .
@@ -115,7 +115,7 @@ final class Markdown {
 	 * @return array{0:string,1:int}|null
 	 */
 	private static function run( string $text ): ?array {
-		// The closing ** may not be followed by a third asterisk: "**a *b***"
+		// The closing  may not be followed by a third asterisk: "a *b***"
 		// ends with an italic run inside the bold one, and stopping at the first
 		// pair would close the bold early and strand the odd asterisk.
 		if ( preg_match( '/^\*\*((?:\\\\.|[^\\\\])+?)\*\*(?!\*)/s', $text, $match ) ) {

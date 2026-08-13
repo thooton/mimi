@@ -1,7 +1,7 @@
 // The weekly board: one global ranking of the XP earned since Monday.
 //
 // There is no leagues machinery and no stored board. A standing is a sum over
-// the activity rows of one week, computed when the request is served — the
+// the activity rows of one week, computed when the request is served: the
 // same principle as the profile's running totals and a card's retrievability,
 // and for the same reason: a stored board would be a second copy of the
 // activity table that could disagree with it. Rewriting the XP schedule
@@ -13,11 +13,11 @@
 // days, so a board that nobody asked for costs nothing and a server that was
 // switched off over the weekend has nothing to catch up on.
 //
-// **Guests are not ranked.** A guest is a real learning record (see store.rs),
+// Guests are not ranked. A guest is a real learning record (see store.rs),
 // but it is one nobody has put a name to and one that disappears with its
 // cookie, so a name on a public board is the one thing it should not get. The
 // exclusion is a join against `users.guest` rather than a filter on the
-// `guest~` prefix — and because claiming a guest is a *rename*, the week they
+// `guest~` prefix, and because claiming a guest is a rename, the week they
 // spent trying the course arrives on the board with them the moment they
 // register.
 
@@ -26,7 +26,7 @@ use std::collections::HashMap;
 use crate::profile::Activity;
 
 // Days are days since the unix epoch (see `profile::day_of`), and day 0 was a
-// Thursday — so a day's weekday is `(day + 3) % 7`, counting from Monday.
+// Thursday, so a day's weekday is `(day + 3) % 7`, counting from Monday.
 const EPOCH_WEEKDAY: u32 = 3;
 const WEEK: u32 = 7;
 
@@ -69,8 +69,8 @@ impl Leaderboard {
     // order and several per user, exactly as the store hands them over.
     //
     // A learner with no XP this week is not on the board at all. The board
-    // ranks what was earned since Monday, and a wall of zeroes ranks nothing —
-    // it is also the honest reading of "hasn't started this week yet", which
+    // ranks what was earned since Monday, and a wall of zeroes ranks nothing.
+    // It is also the honest reading of "hasn't started this week yet", which
     // an entry at position 4,000 would dress up as a placing.
     pub fn of(rows: Vec<(String, String, Activity)>, week_start: u32) -> Leaderboard {
         let mut weeks: HashMap<String, Standing> = HashMap::new();
@@ -137,7 +137,7 @@ mod tests {
     fn a_week_runs_from_monday_to_sunday() {
         assert_eq!(week_start(4), 4); // Monday is its own week's start
         assert_eq!(week_start(5), 4); // Tuesday
-        assert_eq!(week_start(10), 4); // the Sunday after — still that week
+        assert_eq!(week_start(10), 4); // the Sunday after, still that week
         assert_eq!(week_start(11), 11); // and the next Monday turns it over
         assert_eq!(week_end(4), 11);
     }
@@ -175,8 +175,8 @@ mod tests {
     }
 
     // Equal weeks are equal placings, and the position after a shared one
-    // skips — otherwise two learners tied for first would be followed by a
-    // "second" who was in fact beaten by both.
+    // skips, or two learners tied for first would be followed by a "second"
+    // who was in fact beaten by both.
     #[test]
     fn a_tie_shares_a_rank_and_the_next_one_skips_it() {
         let board = Leaderboard::of(vec![row("ren", 2), row("clover", 2), row("aiko", 1)], 4);
@@ -215,7 +215,7 @@ mod tests {
     }
 
     // The display name travels with the standing, because a board shows what
-    // people call themselves — but the username is what identifies the row.
+    // people call themselves, but the username is what identifies the row.
     #[test]
     fn a_standing_carries_both_names() {
         let board = Leaderboard::of(

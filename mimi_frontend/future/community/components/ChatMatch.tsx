@@ -8,7 +8,7 @@ import Flag from '../Flag';
 
 /* Chat match: pair up with someone to actually talk to.
 
-   Two dropdowns — what you speak, what you're learning — and a choice of
+   Two dropdowns, what you speak, what you're learning, and a choice of
    who to meet. A native speaker makes the obvious exchange (their B2 for
    your C1); a fellow learner is company on the same road. The roster behind
    it is example data until the backend grows one (see data/community.ts). */
@@ -65,7 +65,7 @@ export default function ChatMatch() {
   const [sameLang, setSameLang] = useState(false);
 
   /* prefill "I'm learning" with the site-wide language once the backend has
-     answered — never before, or the prerendered HTML and the first client
+     answered: never before, or the prerendered HTML and the first client
      render would disagree */
   useEffect(() => {
     if (ready && lang) setLearn(lang);
@@ -163,7 +163,7 @@ export default function ChatMatch() {
 
         {sameLang && (
           <p className="match-empty">
-            Those are the same language — pick two different ones and your
+            Those are the same language, pick two different ones and your
             exchange has something to trade.
           </p>
         )}

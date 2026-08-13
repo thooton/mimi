@@ -17,13 +17,13 @@ import { speak, speechAvailable } from '../../data/speech';
    first answer is reported, while an Again stays in the run until it is
    cleared.
 
-   A card's `direction` decides which memory the verdict lands on — target to
-   source is recognition, source to target production — but it is deliberately
-   not shown. A lesson labels its tasks because they vary in *kind*; here the
+   A card's `direction` decides which memory the verdict lands on, target to
+   source is recognition, source to target production, but it is deliberately
+   not shown. A lesson labels its tasks because they vary in kind; here the
    only variation is which language the front happens to be in, which the word
    on the card already says.
 
-   The run is endless — there is no deck to finish, only a batch at a time.
+   The run is endless, there is no deck to finish, only a batch at a time.
    Order matters at the seam: the server picks the most urgent cards from the
    learner's whole vocabulary, so asking for more before reporting the last
    batch would hand back the very cards just practiced. Report, then fetch.
@@ -40,7 +40,7 @@ export default function FlashcardApp() {
   const [targetLang, setTargetLang] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  /* the server had nothing left to send — only reachable with no vocabulary,
+  /* the server had nothing left to send, only reachable with no vocabulary,
      since a run cannot shrink the set of words the learner has encountered */
   const [exhausted, setExhausted] = useState(false);
   const [error, setError] = useState<string | null>(null);

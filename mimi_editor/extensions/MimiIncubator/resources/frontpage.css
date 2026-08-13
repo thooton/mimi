@@ -181,8 +181,8 @@
 
 /*
  * A flag is drawn at 30×20 and shown about the height of a capital letter.
- * The hairline keeps a white field — England's, or the blank that stands in
- * for a language with no flag — reading as a flag against the white card.
+ * The hairline keeps a white field, England's, or the blank that stands in
+ * for a language with no flag, reading as a flag against the white card.
  */
 .mimi-flag {
 	width: 1.5em;

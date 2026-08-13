@@ -33,7 +33,7 @@ test("the right tokens in the right order are right", () => {
 });
 
 // the whole point of joining before grading: the bank's bare words can't
-// reproduce "¡Hola, Juan!" — and don't have to
+// reproduce "¡Hola, Juan!", and don't have to
 test("the canonical answer's punctuation is not the user's problem", () => {
   const verdict = gradeWordBank(["Hola", "Juan"], answers("¡[C_hola=Hola], Juan!"));
   assert.equal(verdict.correct, true);
@@ -68,7 +68,7 @@ test("per-concept verdicts come through the join", () => {
 /* An exercise testing one concept arrives with no spans, because the sentence
    is that concept's whole question. Getting the word right inside a wrong
    sentence is not getting the exercise right, and the ladder must not be told
-   it was — this is the case the span format would otherwise be too clever
+   it was, this is the case the span format would otherwise be too clever
    about. */
 test("a single-concept exercise is graded all or nothing", () => {
   const accepted = answers("The girl."); // no spans: one concept under test

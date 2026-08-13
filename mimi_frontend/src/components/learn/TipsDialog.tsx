@@ -5,7 +5,7 @@ import { fetchTips } from '../../data/api';
 import { markdown } from './markdown';
 
 /* The skill card's "Tips" button: every material block the lesson carries,
-   fetched on open and read in a dialog — starting the lesson not required.
+   fetched on open and read in a dialog, starting the lesson not required.
    `position` doubles as the open state: null is closed. */
 export default function TipsDialog({ skillName, position, onClose }: {
   /** the skill's display name, for the title */

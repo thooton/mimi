@@ -28,7 +28,7 @@
     const mobileViewport = window.matchMedia("(max-width: 1023px)");
     // Vector gives both its page container and #bodyContent a z-index of 0. A
     // fixed editor left inside them can never cover the skin header, even with
-    // its own high z-index, so lift the mobile app to <body> — and put it back
+    // its own high z-index, so lift the mobile app to <body>, and put it back
     // where the skin left it when the viewport widens again.
     const placeEditor = () => {
         if (mobileViewport.matches) {
@@ -155,7 +155,7 @@
      * or null when the text does not open one.
      */
     function markdownRun(text) {
-        // The closing ** may not be followed by a third asterisk: "**a *b***"
+        // The closing  may not be followed by a third asterisk: "a *b***"
         // ends with an italic run inside the bold one, and stopping at the first
         // pair would close the bold early and strand the odd asterisk.
         const bold = /^\*\*((?:\\.|[^\\])+?)\*\*(?!\*)/s.exec(text);
@@ -429,8 +429,8 @@
     /**
      * Reordering for a vertical list of rows, dragged with the pointer.
      *
-     * Five lists are ordered by hand — a skill's words and sentences, and a
-     * glossary's entries, forms and translations — and all five behave the same
+     * Five lists are ordered by hand, a skill's words and sentences, and a
+     * glossary's entries, forms and translations, and all five behave the same
      * way: the row picked up follows the pointer as a ghost, the list holds a
      * gap open where it would land, and the array is only rewritten once the
      * ghost has flown into that gap. Rows move with the pointer rather than with
@@ -440,13 +440,13 @@
      * zone.
      *
      * `items()` is the array being ordered, or null while the list has no owner
-     * yet — no word selected, no form selected. `label()` is the text the ghost
+     * yet: no word selected, no form selected. `label()` is the text the ghost
      * carries. `onMove()` hears about a committed reorder, so a caller that
      * remembers a selection by index can keep it on the row it was pointing at.
      * `minIndex` keeps any structural rows at the head of a list fixed.
      *
-     * What comes back is deliberately flat — refs and functions, not an object
-     * of them — because a template only unwraps the refs setup() hands it by
+     * What comes back is deliberately flat, refs and functions, not an object
+     * of them, because a template only unwraps the refs setup() hands it by
      * name, so each list destructures these under names of its own.
      */
     function createRowDrag({ items, label, onMove, minIndex = 0 }) {
@@ -473,7 +473,7 @@
          * transition-group by, so that showing another word's sentences swaps
          * the entire group in one patch. Keyed rows would otherwise all leave as
          * their replacements entered, and a leaving row holds its place in the
-         * flow until its leave transition resolves — there is none here, but
+         * flow until its leave transition resolves, there is none here, but
          * that still takes a frame or two, long enough to read as both words'
          * sentences at once. Positioning leaving rows out of the flow instead is
          * the usual answer, and the wrong one: they would be laid over the list
@@ -495,7 +495,7 @@
          * The keys for the current list, renewed whenever the list it belongs to
          * is exchanged for another. A length that no longer matches means rows
          * were added or removed without telling this side band, so the safe
-         * answer is a fresh set — addKey and removeKey exist to avoid that.
+         * answer is a fresh set, addKey and removeKey exist to avoid that.
          */
         function rowKeys() {
             const rows = items();
@@ -507,7 +507,7 @@
             return keys;
         }
 
-        /** Both of these run *before* the array changes, while the keys still line up. */
+        /** Both of these run before the array changes, while the keys still line up. */
         function addKey() {
             rowKeys().push("row" + ++keySeed);
         }
@@ -1380,7 +1380,7 @@
             });
 
             // Only one row can be dragged at a time, so the ghost is
-            // drawn once for all of them — and drawn at the top of the app
+            // drawn once for all of them, and drawn at the top of the app
             // rather than beside its list. A screen carries will-change:
             // transform on a phone, which makes it the containing block for
             // anything fixed inside it, and a ghost placed within one would
@@ -2395,7 +2395,7 @@
                                         .filter((text) => text !== ""),
                                 }))
                                 // Half a form is still somebody's work in
-                                // progress and is kept — the page simply does
+                                // progress and is kept, the page simply does
                                 // not publish it until it has both a spelling
                                 // and a translation. Only a wholly blank row
                                 // goes.

@@ -1,10 +1,10 @@
 /* ==========================================================================
-   /inbox — private messages: the thread list, and the conversation open
+   /inbox: private messages. The thread list, and the conversation open
    beside it.
 
    One panel holding two columns, because they are one thing: a list you
    choose from and the thing you chose. The column rule is the only piece of
-   the page that changes on a phone — there the two are stacked in the same
+   the page that changes on a phone, there the two are stacked in the same
    grid cell and `.is-open` decides which of them is on screen, so going back
    to the list is a class rather than a page.
 
@@ -300,7 +300,7 @@
 }
 
 /* Ours on the right and theirs on the left, which is the whole of who said
-   what — a chat needs no labels if the sides are honest. */
+   what: a chat needs no labels if the sides are honest. */
 .bubble {
     align-self: flex-start;
     max-width: min(72%, 560px);

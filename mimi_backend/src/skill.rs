@@ -1,16 +1,16 @@
 // A skill: a themed batch of words that also carries a grammar focus.
 //
 // This is the unit of authoring, and the idea it exists to express is that
-// **vocabulary and grammar are carried by the same object**. A skill is not
+// vocabulary and grammar are carried by the same object. A skill is not
 // only "here are seven food words"; it is "here are seven food words, and the
 // sentences you will see them in are simple present-tense statements with
-// definite articles". The words say what the sentences are *about*, the focus
+// definite articles". The words say what the sentences are about, the focus
 // says what shape they take.
 //
 // Every word in the course belongs to exactly one skill, so the skills are a
-// partition of the vocabulary. Skills sit in **rows** — a few side by side,
-// unlocked together and doable in any order — and a run of rows is sealed by a
-// **castle**, a test drawn from just those rows (see lesson.rs).
+// partition of the vocabulary. Skills sit in rows, a few side by side, unlocked
+// together and doable in any order, and a run of rows is sealed by a castle, a
+// test drawn from just those rows (see lesson.rs).
 //
 // The `focus` is an authoring instruction and a blurb for the learner. It is
 // never tracked, scheduled or graded: making it a trackable thing of its own
@@ -38,7 +38,7 @@ pub struct Skill {
     // the words it teaches, in the order it teaches them
     pub words: Vec<String>,
     // tips, each attached to the lesson it belongs to. Material teaches
-    // *nothing* in the technical sense — it introduces no words and creates no
+    // nothing in the technical sense: it introduces no words and creates no
     // cards. A word enters a learner's memory only by being answered.
     pub material: Vec<MaterialBlock>,
     // where the skill sits, filled in from the layout: its row (0-based,
@@ -159,8 +159,8 @@ mod tests {
         assert!(counts[12..].iter().all(|&count| count == 0));
     }
 
-    // a lesson number past the end introduces nothing rather than panicking —
-    // it can only come from a request the caller should have rejected
+    // a lesson number past the end introduces nothing rather than panicking,
+    // since it can only come from a request the caller should have rejected
     #[test]
     fn a_lesson_out_of_range_introduces_nothing() {
         let skill = skill(7);

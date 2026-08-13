@@ -10,8 +10,8 @@ use MediaWiki\Html\Html;
  * A page of courses is read by its colours before it is read by its titles,
  * which is why every course-listing tool in this field puts flags on the cards.
  * Languages are not countries, though, so the rule here is narrow: a language
- * gets the flag of the place it is *named after* — Spanish for Spain, English
- * for England, Portuguese for Portugal — and a language named after no one
+ * gets the flag of the place it is named after, Spanish for Spain, English
+ * for England, Portuguese for Portugal, and a language named after no one
  * place gets no flag rather than a contentious one.
  *
  * The drawings are our own and deliberately plain: each is a 30×20 box shown at
@@ -200,7 +200,7 @@ final class Flag {
 	}
 
 	/**
-	 * The taegeuk, and the four trigrams as the bars they are made of — at this
+	 * The taegeuk, and the four trigrams as the bars they are made of, at this
 	 * size the broken and unbroken bars are one grey smudge either way, so they
 	 * are drawn unbroken.
 	 */

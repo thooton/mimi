@@ -1,50 +1,32 @@
-// Persistence. Everything the server needs to survive a restart lives in a
-// SQLite database: the users (their position and their FSRS memory state),
-// their profiles and the day-by-day record of what they have done.
+// Persistence: users (position and FSRS memory state), profiles, and the
+// day-by-day record of what they have done, in SQLite.
 //
-// A course's memory state is a map of word -> `WordState` (see word.rs), and
-// the way the server uses it is all-or-nothing: building a lesson walks
-// *every* card to find what is most due. Each account therefore stores a map
-// of course id -> `User`, and each `User` is the whole state of that course.
-// This outer partition is load-bearing: two courses may both contain a skill
-// named `basics` without either one inheriting the other's progress.
+// Memory state is a map of word -> `WordState` (see word.rs) and is used
+// all-or-nothing: building a lesson walks every card. So an account stores a
+// map of course id -> `User`, one whole state per course. Two courses may both
+// contain a skill named `basics` without inheriting each other's progress.
 //
-// The **activity** table follows the same principle one level up: one row per
-// user, course and day, holding everything they did there as a blob (see
-// profile.rs). Nothing ever asks about a single lesson after the fact, and
-// everything the profile asks — how long the streak is, how the score moved,
-// what was learnt in June — is a scan over days, so days are what is stored.
-// `(username, course_id, day)` is the primary key, which makes "add this
-// lesson to this course today" a single-row read-modify-write. Profiles fold
-// those rows together for overall totals and keep them apart for each
-// language's score.
+// The activity table is one row per user, course and day, holding that day as
+// a blob (see profile.rs). Nothing asks about a single lesson afterwards, and
+// everything the profile asks is a scan over days.
 //
-// Profiles are a separate table rather than more columns on `users` because
-// they are separate things: `users` is the account the learning algorithm
-// reads and writes, `profiles` is what a person typed about themselves, and
-// an account with no profile row is perfectly meaningful (it just hasn't been
-// filled in).
+// Profiles are a separate table because they are a separate thing: `users` is
+// what the learning algorithm reads and writes, `profiles` is what a person
+// typed about themselves, and an account with no profile row is meaningful.
 //
-// **Follows** are the one table that is two things at once, and the schema
-// below says why: it holds the live edge (who follows whom) *and* the log of
-// every follow that ever happened, because following somebody is dated
-// activity that belongs in the follower's feed, and unfollowing them later
-// does not unhappen it.
+// Follows hold both the live edge (who follows whom) and the log of every
+// follow that ever happened, since following somebody is dated activity for
+// the follower's feed and unfollowing does not unhappen it.
 //
-// A **guest** is an account with no credentials behind it, so that somebody
-// can start the course before deciding whether they want one. It is a row in
-// all three tables like anybody else's — that is the point, since a lesson is
-// generated from a learner's own FSRS state and there is nowhere else for
-// that state to live — and the only thing `users.guest` changes is what may
-// happen to it: it can be claimed by a registration (`claim_guest`), and it
-// is swept away once its session is gone (`create_guest`). Everything that
-// reads a learner reads a guest without knowing it is one.
+// A guest is an account with no credentials, so somebody can start the course
+// before deciding whether they want one. It is an ordinary row in all three
+// tables; `users.guest` only controls what may happen to it: claimed by a
+// registration (`claim_guest`), or swept once its session is gone
+// (`create_guest`).
 //
-// All access goes through a single connection behind a mutex. That serializes
-// the database the way the old in-memory maps were serialized by their
-// mutexes, and it lets a load-mutate-store (see `update_user`) hold the lock
-// for the whole read-modify-write, so a submission can't lose an update to a
-// concurrent one.
+// All access goes through a single connection behind a mutex, so a
+// load-mutate-store (see `update_user`) holds the lock for the whole
+// read-modify-write and can't lose an update to a concurrent one.
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -106,17 +88,13 @@ impl Store {
                  course_id   TEXT,
                  joined      INTEGER NOT NULL
              );
-             -- Who follows whom, and **every follow that has ever happened**:
-             -- a row is written when somebody is first followed and is never
-             -- deleted, `following` going to 0 on an unfollow instead. The
-             -- table is therefore two things at once, on purpose — the live
-             -- edge (`following = 1`, which is what the counts and the button
-             -- read) and the log (every row, which is what the follower's
-             -- activity feed reads). Unfollowing somebody is not a claim that
-             -- you never followed them, so the feed entry stays; and because
-             -- `day` is only set on the first insert, a follow/unfollow/
-             -- re-follow leaves the one entry it should, on the day it
-             -- actually happened.
+             -- Who follows whom, and every follow that has ever happened: a
+             -- row is written on the first follow and never deleted,
+             -- `following` going to 0 on an unfollow instead. `following = 1`
+             -- is the live edge the counts and the button read; every row is
+             -- the log the activity feed reads. `day` is only set on the
+             -- first insert, so follow/unfollow/re-follow leaves one entry on
+             -- the day it actually happened.
              CREATE TABLE IF NOT EXISTS follows (
                  follower  TEXT    NOT NULL,
                  followee  TEXT    NOT NULL,
@@ -146,15 +124,12 @@ impl Store {
                  expires_at INTEGER NOT NULL
              );
              -- Private messages, one row each. `thread` is the pair of
-             -- usernames sorted and joined (see `thread_key`), which is what
-             -- makes a conversation a thing that can be looked up: the two
-             -- people in it are the whole of its identity, so there is no
-             -- thread record to create before the first message and none to
-             -- clean up after the last.
+             -- usernames sorted and joined (see `thread_key`): the two people
+             -- are the whole of a conversation's identity, so there is no
+             -- thread record to create or clean up.
              --
-             -- `id` is the only ordering. A row's `sent_at` is for display,
-             -- and two messages in the same second still have an order —
-             -- which is also what 'how far have I read' is counted in.
+             -- `id` is the only ordering; `sent_at` is for display. It is also
+             -- what 'how far have I read' is counted in.
              CREATE TABLE IF NOT EXISTS messages (
                  id        INTEGER PRIMARY KEY AUTOINCREMENT,
                  thread    TEXT    NOT NULL,
@@ -169,11 +144,10 @@ impl Store {
              CREATE INDEX IF NOT EXISTS messages_by_thread ON messages (thread, id);
              CREATE INDEX IF NOT EXISTS messages_by_sender ON messages (sender, id);
              CREATE INDEX IF NOT EXISTS messages_by_recipient ON messages (recipient, id);
-             -- How far each person has read each of their threads: the id of
-             -- the newest message they have had on screen. One row per side
-             -- of a conversation, not one per message — 'unread' is a
-             -- comparison against the newest id, so a thread with a thousand
-             -- messages in it still costs one number per reader.
+             -- How far each person has read each thread: the id of the newest
+             -- message they have had on screen. One row per side of a
+             -- conversation, not one per message, since 'unread' is just a
+             -- comparison against the newest id.
              CREATE TABLE IF NOT EXISTS reads (
                  reader    TEXT    NOT NULL,
                  thread    TEXT    NOT NULL,
@@ -196,16 +170,15 @@ impl Store {
         Ok(Created::Ok)
     }
 
-    // Open an account for somebody who hasn't got one yet, and hand back the
-    // name it was given along with a session for it. The name is prefixed
-    // with `guest~`, and the `~` is load-bearing: mimi_auth's `validUsername`
-    // allows only letters, digits and `._-`, so no credentialed account can
-    // ever be given a name in this shape — which is what makes `claim_guest`
-    // below safe to write as a rename.
+    // Open an account for somebody who hasn't got one, returning its name and
+    // a session. The `guest~` prefix is load-bearing: mimi_auth's
+    // `validUsername` allows only letters, digits and `._-`, so no
+    // credentialed account can have a name in this shape, which is what makes
+    // `claim_guest` safe to write as a rename.
     //
-    // The sweep, the account and the session are one method because they are
-    // one step: purging between another request's create and its session
-    // insert would delete a guest that is about to be handed out.
+    // The sweep, the account and the session are one step: purging between
+    // another request's create and its session insert would delete a guest
+    // that is about to be handed out.
     pub fn create_guest(
         &self,
         expires_at: u64,
@@ -213,10 +186,9 @@ impl Store {
     ) -> rusqlite::Result<(String, String)> {
         let conn = self.conn.lock().unwrap();
         expire_sessions(&conn, timestamp)?;
-        // A guest is only ever reachable through the cookie they were handed,
-        // so once no session names one the record can never be read again.
-        // Sweeping here rather than on a timer keeps the cost on the path
-        // that creates the mess, and needs no background task.
+        // A guest is only reachable through the cookie they were handed, so
+        // once no session names one the record can never be read again.
+        // Sweeping here rather than on a timer needs no background task.
         let abandoned: Vec<String> = conn
             .prepare(
                 "SELECT username FROM users
@@ -246,13 +218,11 @@ impl Store {
 
     // Move a guest's whole record onto the name they have just registered.
     // Claiming is a rename rather than a copy because it is the same learner:
-    // their words, their place in the tree and every day of their record
-    // carry over, which is the whole promise of "save your progress".
+    // words, place in the tree and every day of the record carry over.
     //
     // Anything already under `username` is deleted first. mimi_auth has just
     // minted the name, so a learning record under it can only be a leftover
-    // from a credential database that has since been thrown away — and the
-    // live guest in front of us is certainly not that.
+    // from a discarded credential database.
     pub fn claim_guest(&self, guest: &str, username: &str, joined: u64) -> rusqlite::Result<()> {
         let mut conn = self.conn.lock().unwrap();
         let transaction = conn.transaction()?;
@@ -289,9 +259,8 @@ impl Store {
     }
 
     // Throw an account away: the learning record, the profile, the activity
-    // and any live session. Only guests are ever discarded this way — they
-    // are the accounts a learner can walk away from (see the callers in
-    // server.rs) — but nothing here depends on that.
+    // and any live session. In practice only guests are discarded this way
+    // (see the callers in server.rs), but nothing here depends on that.
     pub fn delete_account(&self, username: &str) -> rusqlite::Result<()> {
         let conn = self.conn.lock().unwrap();
         delete_account(&conn, username)
@@ -354,12 +323,11 @@ impl Store {
         Ok(())
     }
 
-    // An address lives in two places: mimi_auth's row, which is the record,
-    // and the session rows this server answers `/auth/me` from. When the
-    // first changes the second has to follow, or a signed-in browser goes on
-    // showing the old address until its cookie expires. Every live session
-    // for the account is rewritten, not just the one that asked — the same
-    // person's other devices never see the reply that carried the new one.
+    // An address lives in mimi_auth's row (the record) and in the session rows
+    // this server answers `/auth/me` from, so a change has to reach both or a
+    // signed-in browser shows the old address until its cookie expires. Every
+    // live session is rewritten, not just the one that asked: the same
+    // person's other devices never see the reply carrying the new address.
     pub fn update_session_email(&self, username: &str, email: &str) -> rusqlite::Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -369,14 +337,11 @@ impl Store {
         Ok(())
     }
 
-    // Everything signed in as this account except the caller's own session.
-    // A password is changed either to tidy up or because somebody else may
-    // know the old one, and the second reading is the one worth designing
-    // for: mimi_auth can retire a password but has no way to reach the
-    // cookies its consumers hold, so ending them is this server's job. The
-    // browser that made the change keeps its session, because signing
-    // somebody out of the page they are on to tell them it worked is a
-    // strange way to answer.
+    // End everything signed in as this account except the caller's own
+    // session. A password may be changed because somebody else knows the old
+    // one; mimi_auth can retire the password but cannot reach the cookies its
+    // consumers hold, so ending them is this server's job. The browser that
+    // made the change keeps its session.
     pub fn delete_other_sessions(&self, username: &str, keep: &str) -> rusqlite::Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -388,15 +353,13 @@ impl Store {
 
     // Load one course's user state, hand it to `f` to mutate, store the
     // result, and fold the activity `f` reports into that course's row for
-    // `day` — all under one
-    // lock, so the whole read-modify-write is atomic. Returns None (touching
-    // nothing) if there's no such user, otherwise whatever `f` returned.
+    // `day`, all under one lock so the read-modify-write is atomic. Returns
+    // None (touching nothing) if there's no such user, else `f`'s return.
     //
     // The activity travels with the mutation rather than being recorded
-    // afterwards for the same reason the load and the store are one step: a
-    // lesson that moved the user's memory but left no trace in the record
-    // would break their streak and flatten their graph. The delta has already
-    // been submitted by then, so there is no second chance to reconstruct it.
+    // afterwards: a lesson that moved the user's memory but left no trace in
+    // the record would break their streak and flatten their graph, and by then
+    // there is no second chance to reconstruct it.
     pub fn update_user<T>(
         &self,
         username: &str,
@@ -447,12 +410,11 @@ impl Store {
     }
 
     // Store what the owner has written about themselves. `edit` has already
-    // been checked (that is what having the type means — see
-    // `ProfileEdit::of`), so nothing is validated here.
+    // been checked (see `ProfileEdit::of`), so nothing is validated here.
     //
-    // The columns are named rather than the row replaced, because two of the
-    // profile's fields are not the editor's to write: `title` is granted, and
-    // `course_id` belongs to the writer below.
+    // The columns are named rather than the row replaced, because two fields
+    // are not the editor's to write: `title` is granted, and `course_id`
+    // belongs to the writer below.
     pub fn save_profile_edit(
         &self,
         username: &str,
@@ -475,11 +437,9 @@ impl Store {
         Ok(())
     }
 
-    // The active course gets a writer of its own rather than going through
-    // the edit above: the app can't function without the user setting it (it
-    // *is* the account's course choice, not a public claim like a bio), it is
-    // set from the course chooser rather than the profile editor, and the
-    // worst a vandal can do with it is change what that user sees next visit.
+    // The active course gets its own writer rather than going through the edit
+    // above: it is the account's course choice rather than a public claim like
+    // a bio, and it is set from the course chooser, not the profile editor.
     pub fn save_course(
         &self,
         username: &str,
@@ -503,10 +463,9 @@ impl Store {
 
     // --- following ---
 
-    // Whether this name belongs to an account, and whether that account is a
-    // guest. Both answers come from one row because the callers need both:
-    // following somebody requires them to exist *and* to be somebody, and a
-    // guest is a record with a week to live and no name behind it.
+    // Whether this name belongs to an account, and whether it is a guest.
+    // Callers need both: following somebody requires them to exist and to be
+    // somebody, and a guest is a record with a week to live.
     pub fn account_is_guest(&self, username: &str) -> rusqlite::Result<Option<bool>> {
         let conn = self.conn.lock().unwrap();
         conn.query_row(
@@ -517,11 +476,10 @@ impl Store {
         .optional()
     }
 
-    // Follow somebody, dated `day`. A first follow writes the row that the
+    // Follow somebody, dated `day`. A first follow writes the row the
     // follower's activity feed will quote forever; a re-follow only turns the
-    // live edge back on, deliberately leaving `day` where it was — the entry
-    // in the feed belongs to the day it happened, and toggling a button is
-    // not a new event to report.
+    // live edge back on and leaves `day` where it was, since the feed entry
+    // belongs to the day it happened.
     pub fn follow(&self, follower: &str, followee: &str, day: u32) -> rusqlite::Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -532,8 +490,8 @@ impl Store {
         Ok(())
     }
 
-    // Stop following somebody. The row stays: see the schema — this table is
-    // the log as well as the edge, and the feed reads the log.
+    // Stop following somebody. The row stays: see the schema, where this table
+    // is the log as well as the edge, and the feed reads the log.
     pub fn unfollow(&self, follower: &str, followee: &str) -> rusqlite::Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -553,9 +511,8 @@ impl Store {
         )
     }
 
-    // how many people follow this user, and how many they follow — the live
-    // edge only, which is the one thing about this table that an unfollow
-    // does change
+    // how many people follow this user, and how many they follow: the live
+    // edge only, which is the one thing an unfollow does change
     pub fn follow_counts(&self, username: &str) -> rusqlite::Result<(u32, u32)> {
         let conn = self.conn.lock().unwrap();
         conn.query_row(
@@ -566,15 +523,13 @@ impl Store {
         )
     }
 
-    // Every follow this user has ever made, for their activity feed —
-    // including the ones they have since undone, because the feed is a record
-    // of what they did.
+    // Every follow this user has ever made, for their activity feed, including
+    // the ones since undone, because the feed is a record of what they did.
     //
-    // The followee's display name is read *now* rather than remembered from
-    // the day of the follow, so a person who renames themselves is not quoted
-    // under a name they have stopped using. The join is a LEFT one for the
-    // same reason as the leaderboard's: an account with no profile row is
-    // still a person, and their username is the name they have.
+    // The followee's display name is read now rather than remembered from the
+    // day of the follow, so somebody who renames themselves is not quoted
+    // under a dropped name. The join is LEFT because an account with no
+    // profile row is still a person, and their username is the name they have.
     pub fn follow_log(&self, follower: &str) -> rusqlite::Result<Vec<Follow>> {
         let conn = self.conn.lock().unwrap();
         let mut statement = conn.prepare(
@@ -599,10 +554,9 @@ impl Store {
     // --- messages ---
 
     // Who this name belongs to, as far as a conversation is concerned:
-    // whether the account is a guest, and what they call themselves. Both
-    // answers come from one row because every message needs both — a guest
-    // cannot be written to, and the person who is written to has a name that
-    // goes at the top of the thread.
+    // whether the account is a guest, and what they call themselves. Every
+    // message needs both, since a guest cannot be written to and the recipient
+    // has a name that goes at the top of the thread.
     pub fn correspondent(&self, username: &str) -> rusqlite::Result<Option<(bool, String)>> {
         let conn = self.conn.lock().unwrap();
         conn.query_row(
@@ -616,17 +570,15 @@ impl Store {
     }
 
     // Everybody this user is in a conversation with, newest first: one entry
-    // per thread, carrying the last thing said in it and whether they have
-    // seen it. This is the inbox list, and it is the whole of it — the same
-    // reasoning as the leaderboard's, that a cut-off nobody has measured is a
-    // number invented rather than chosen.
+    // per thread with the last thing said and whether they have seen it. This
+    // is the whole inbox list; there is no cut-off, for the same reason as the
+    // leaderboard's.
     //
-    // The joins are what make a row readable on its own: `other` is whichever
-    // end of the message isn't the reader, the display name is read *now*
-    // rather than remembered (so somebody who renames themselves is not
-    // quoted under a name they have dropped), and `unread` compares the
-    // newest id against how far they have read. A message the reader sent is
-    // never unread to them, which is why the sender is checked as well.
+    // The joins make a row readable on its own: `other` is whichever end of
+    // the message isn't the reader, the display name is read now rather than
+    // remembered, and `unread` compares the newest id against how far they
+    // have read. The sender is checked too, since a message the reader sent is
+    // never unread to them.
     pub fn load_threads(&self, username: &str) -> rusqlite::Result<Vec<Thread>> {
         let conn = self.conn.lock().unwrap();
         let mut statement = conn.prepare(
@@ -664,10 +616,9 @@ impl Store {
     // messages. The cap is why the query reads backwards and the result is
     // turned round afterwards: what a thread is opened at is its end.
     //
-    // There is no way to ask for the messages before them. That is a real
-    // limit rather than an oversight — paging is a second protocol (a cursor,
-    // a request for it, a client that knows when it is at the top) and this
-    // one is worth having first.
+    // There is no way to ask for the messages before them. Paging is a second
+    // protocol (a cursor, a request for it, a client that knows when it is at
+    // the top) and this one is worth having first.
     pub fn load_thread(
         &self,
         username: &str,
@@ -692,11 +643,9 @@ impl Store {
         Ok(messages)
     }
 
-    // Say something, and hand back the stored row. The id it was given is the
-    // message's place in its thread and the thing 'read up to here' is
-    // counted in, so the caller gets the whole record rather than the pieces
-    // it passed in — what goes out over the event feeds is what went into the
-    // database.
+    // Say something, and hand back the stored row. The id is the message's
+    // place in its thread and what 'read up to here' is counted in, so the
+    // caller gets the whole record rather than the pieces it passed in.
     pub fn send_message(
         &self,
         from: &str,
@@ -736,9 +685,9 @@ impl Store {
     }
 
     // Accounts whose username or display name begins with `prefix`, for the
-    // inbox's 'start a new conversation' box. Guests are left out for the
-    // same reason they are left off the board and cannot be followed: there
-    // is nobody there to write to, and the record goes when its cookie does.
+    // inbox's 'start a new conversation' box. Guests are left out for the same
+    // reason they are left off the board: there is nobody there to write to,
+    // and the record goes when its cookie does.
     pub fn search_accounts(
         &self,
         prefix: &str,
@@ -762,10 +711,9 @@ impl Store {
     // --- activity ---
 
     // Everything the user has ever done, one entry per course-day, oldest
-    // first. The whole record, because the whole record is what a
-    // profile is: the streak, the totals and the score graph are each a scan
-    // over all of it, and a user who studies daily for five years still has
-    // fewer rows than a week of per-lesson logging would give.
+    // first. The whole record, because that is what a profile is: the streak,
+    // the totals and the score graph are each a scan over all of it, and five
+    // years of daily study is fewer rows than a week of per-lesson logging.
     pub fn load_activity(&self, username: &str) -> rusqlite::Result<Vec<(String, u32, Activity)>> {
         let conn = self.conn.lock().unwrap();
         let mut statement = conn.prepare(
@@ -784,10 +732,9 @@ impl Store {
         rows.collect()
     }
 
-    // One user's one course on one UTC day, for features whose window is today.
-    // Daily quests should not scan a five-year history to find the row that
-    // is already keyed exactly this way, and no row is the ordinary meaning
-    // of "nothing done yet", not an error.
+    // One user's one course on one UTC day, for features whose window is
+    // today. Daily quests should not scan a five-year history to find a row
+    // already keyed this way, and no row just means "nothing done yet".
     pub fn load_activity_on(
         &self,
         username: &str,
@@ -799,23 +746,19 @@ impl Store {
     }
 
     // Everyone's activity from `from_day` onwards, as `(username, display,
-    // activity)` — the raw material of the weekly board (see leaderboard.rs),
-    // which is a sum over one week of these rather than anything stored.
+    // activity)`: the raw material of the weekly board (see leaderboard.rs).
     //
-    // The rows arrive unaggregated, several per user, because the XP a day is
-    // worth lives inside the blob: `Activity::xp` knows that a perfect lesson
-    // pays double, and SQL cannot see into the JSON to apply that. Summing in
-    // Rust keeps one XP schedule in the codebase instead of two.
+    // The rows arrive unaggregated because the XP a day is worth lives inside
+    // the blob: `Activity::xp` knows a perfect lesson pays double, and SQL
+    // cannot see into the JSON. Summing in Rust keeps one XP schedule.
     //
-    // **The join against `users` is what keeps guests off the board.** It also
-    // drops activity belonging to no account at all, which is the right
-    // reading of an orphaned row: `delete_account` clears both, so anything
-    // left behind is wreckage rather than a learner.
+    // The join against `users` is what keeps guests off the board. It also
+    // drops activity belonging to no account: `delete_account` clears both, so
+    // anything left behind is wreckage rather than a learner.
     //
-    // The profile join is a LEFT one because a profile row is optional (an
-    // account seeded straight into `users` has none), and a learner with
-    // nothing written about them is still ranked — under their username,
-    // which is the only name they have.
+    // The profile join is LEFT because a profile row is optional, and a
+    // learner with nothing written about them is still ranked, under their
+    // username.
     pub fn load_activity_since(
         &self,
         from_day: u32,
@@ -846,9 +789,9 @@ impl Store {
 
 // Open a fresh account and the profile that goes with it, unless the name is
 // already taken; true if it was created. The unique primary key does the
-// checking, so a concurrent create can't slip through between a look-up and
-// an insert — and the profile only goes in if the account did, so losing the
-// race can't overwrite the winner's profile.
+// checking, so a concurrent create can't slip through between a look-up and an
+// insert, and the profile only goes in if the account did, so losing the race
+// can't overwrite the winner's profile.
 fn insert_account(
     conn: &Connection,
     username: &str,
@@ -874,20 +817,17 @@ fn delete_account(conn: &Connection, username: &str) -> rusqlite::Result<()> {
             [username],
         )?;
     }
-    // Follows name a user at both ends, so this one is not keyed by
-    // `username` like the rest. A record that is gone follows nobody and is
-    // followed by nobody — and leaving the log behind would have somebody
-    // else's feed quoting an account that no longer exists.
+    // Follows name a user at both ends, so this one is not keyed by `username`
+    // like the rest. Leaving the log behind would have somebody else's feed
+    // quoting an account that no longer exists.
     conn.execute(
         "DELETE FROM follows WHERE follower = ?1 OR followee = ?1",
         [username],
     )?;
-    // Messages name a user at both ends too, and the same reasoning applies:
-    // a conversation with an account that is gone is half a conversation.
-    // Only guests are ever deleted and a guest can neither send nor receive,
-    // so this is defensive rather than load-bearing — but it is the rule for
-    // the table, and a table that is cleaned up by accident is one that will
-    // stop being.
+    // Messages name a user at both ends too: a conversation with an account
+    // that is gone is half a conversation. Only guests are ever deleted and a
+    // guest can neither send nor receive, so this is defensive, but it is the
+    // rule for the table.
     conn.execute(
         "DELETE FROM messages WHERE sender = ?1 OR recipient = ?1",
         [username],
@@ -897,9 +837,9 @@ fn delete_account(conn: &Connection, username: &str) -> rusqlite::Result<()> {
 }
 
 // A conversation's identity is the pair of people in it, so its key is their
-// two names in a fixed order: whoever writes first, both of them address the
-// same thread. `\n` is the separator because no username can contain one —
-// mimi_auth allows letters, digits and `._-`, and a guest is `guest~<hex>`.
+// two names in a fixed order: whoever writes first, both address the same
+// thread. `\n` is the separator because no username can contain one (mimi_auth
+// allows letters, digits and `._-`, and a guest is `guest~<hex>`).
 fn thread_key(one: &str, other: &str) -> String {
     if one <= other {
         format!("{one}\n{other}")
@@ -965,13 +905,11 @@ fn load_user(conn: &Connection, username: &str, course_id: &str) -> rusqlite::Re
 
 // Write a user's whole row.
 //
-// Progress is a blob rather than columns because it *is* a map: in a
-// branching tree a learner is not at a coordinate, they are some way into
-// each of several skills, and there is no query that wants one of those on
-// its own. An upsert so this both updates an existing user and creates a
-// seeded one — and it names the columns it is updating rather than replacing
-// the row, because `guest` is not the learning state's to write: a lesson
-// submitted by a guest must not quietly turn them into somebody else.
+// Progress is a blob rather than columns because it is a map: in a branching
+// tree a learner is not at a coordinate, they are some way into each of
+// several skills, and no query wants one of those on its own. An upsert, so
+// this both updates an existing user and creates a seeded one, naming the
+// columns it updates because `guest` is not the learning state's to write.
 fn save_user(
     conn: &Connection,
     username: &str,
@@ -1248,7 +1186,7 @@ mod tests {
         );
 
         // following again is the same follow resumed, not a second event on a
-        // later day — the feed already says when it happened
+        // later day; the feed already says when it happened
         store.follow("sam", "ren", 40).unwrap();
         assert!(store.follows("sam", "ren").unwrap());
         assert_eq!(store.follow_log("sam").unwrap().len(), 1);
@@ -1477,9 +1415,9 @@ mod tests {
         assert!(!store.load_session(&fresh, 250).unwrap().unwrap().guest);
     }
 
-    // A guest is only ever reachable through their cookie, so once no session
-    // names one there is nothing left to protect — but a live guest and a
-    // real account both have to survive the sweep.
+    // A guest is only reachable through their cookie, so once no session names
+    // one there is nothing left to protect, but a live guest and a real
+    // account both have to survive the sweep.
     #[test]
     fn creating_a_guest_sweeps_up_the_guests_whose_sessions_have_gone() {
         let store = Store::memory().unwrap();
@@ -1518,7 +1456,7 @@ mod tests {
 
     // The board ranks people, and a guest is nobody yet: an unnamed record
     // that vanishes with its cookie has no business holding a public placing.
-    // Registering is what turns them into somebody — and because claiming is a
+    // Registering is what turns them into somebody, and because claiming is a
     // rename, the week they had already put in arrives with them.
     #[test]
     fn the_week_skips_guests_but_not_the_learners_they_turn_into() {
@@ -1567,9 +1505,9 @@ mod tests {
         assert_eq!(lessons, 3);
     }
 
-    // A board shows what people call themselves, and falls back to the name
-    // that identifies them when there is nothing else — an account seeded
-    // straight into `users` has no profile row to read a display name from.
+    // A board shows what people call themselves, falling back to the username
+    // when there is nothing else: an account seeded straight into `users` has
+    // no profile row to read a display name from.
     #[test]
     fn a_ranked_row_carries_a_display_name_or_the_username_behind_it() {
         let store = Store::memory().unwrap();

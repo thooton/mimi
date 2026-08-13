@@ -8,7 +8,7 @@ import Flag from './Flag';
 /* The club leaderboard panel, shared by the leaderboard tab and the clubs
    page, so the two can never drift apart: same head, same sort toggle, same
    table. Ranked by the average XP each member put in this week, or by sheer
-   headcount — the toggle picks. */
+   headcount: the toggle picks. */
 export default function ClubBoard() {
   const [sort, setSort] = useState<ClubSort>('avgXp');
   const clubs = clubBoard(sort);

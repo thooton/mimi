@@ -1,17 +1,15 @@
 // One learner: what they know, and how far through the tree they are.
 //
-// A user is a map of word -> `WordState`, a cumulative count of completed
-// completed lessons per skill, and the number of castles they have passed. The state of any single
-// word — its rung on the ladder, its three cards — belongs to word.rs and is
-// never reached into from here; this module's job is everything that spans
-// *several* words at once: applying a whole lesson's verdicts, estimating how
-// an exercise will go, and deciding what is most worth reviewing.
+// A user is a map of word -> `WordState`, a count of completed lessons per
+// skill, and the number of castles they have passed. A single word's state (its
+// rung on the ladder, its three cards) belongs to word.rs; this module handles
+// what spans several words at once: applying a lesson's verdicts, estimating
+// how an exercise will go, and deciding what is most worth reviewing.
 //
-// **Progress is a set, not a point.** Skills in a row may be done in any
-// order, so no single coordinate says where somebody is: two learners on the
-// same row may have finished entirely different skills behind it. Everything
-// about what is unlocked is derived from `progress` and `castles` against the
-// course's shape, and nothing about it is stored.
+// Progress is a set, not a point. Skills in a row may be done in any order, so
+// no single coordinate says where somebody is: two learners on the same row may
+// have finished entirely different skills behind it. What is unlocked is
+// derived from `progress` and `castles` against the course's shape.
 //
 // Building a lesson lives in lesson.rs, which reads a user through the three
 // questions below (`allows`, `probability`, `due`) rather than by rummaging
@@ -31,13 +29,11 @@ use crate::word::WordState;
 // shaky foundation, and somebody who has kept up passes it without noticing.
 pub const CASTLE_PASS: f64 = 0.8;
 
-// How many cards one request for flashcards hands out. Standalone practice
-// has no end — the client comes back for another batch for as long as the
-// learner keeps going — so this is not a session length; it is how far ahead
-// of the learner the server is willing to commit. Small on purpose: ratings
-// move the underlying cards, and the batch after this one is chosen from a
-// vocabulary these verdicts have already reordered, which is what keeps a
-// long sitting from being one stale ordering read out to the end.
+// How many cards one request for flashcards hands out. Standalone practice has
+// no end, so this is not a session length but how far ahead of the learner the
+// server is willing to commit. Small on purpose: ratings move the underlying
+// cards, and the next batch is chosen from a vocabulary these verdicts have
+// already reordered, so a long sitting is not one stale ordering read out.
 pub const FLASHCARD_BATCH_SIZE: usize = 20;
 
 // One question returned by the client. Unlike a served `Exercise`, this is a
@@ -200,7 +196,7 @@ impl User {
     // the learner passed every castle
     // standing in front of it passed?
     //
-    // The castle clause is the whole of what a castle *does*: a row belongs
+    // The castle clause is the whole of what a castle does: a row belongs
     // to some castle's stretch, and being allowed into that stretch means
     // having passed every castle before it.
     pub fn row_is_open(&self, course: &Course, row: usize) -> bool {
@@ -236,8 +232,8 @@ impl User {
     }
 
     // May this lesson be built for this learner? Its skill must be open, and
-    // the lesson must be one they have reached — the next one, or any they
-    // have already done and want to review.
+    // the lesson must be one they have reached: the next one, or any they have
+    // already done and want to review.
     pub fn may_take(&self, course: &Course, position: &Position) -> bool {
         course.has_lesson(position)
             && self.skill_state(course, &position.skill) != SkillState::Locked
@@ -281,16 +277,16 @@ impl User {
     // May a question grading these words in this mode fill a generated hole
     // for this user?
     //
-    // Every word must be one they have **met**, and must allow the mode at its
+    // Every word must be one they have met, and must allow the mode at its
     // current stage. Both halves are all-or-nothing, so "never production
     // first" can't leak through a sentence drill, and neither can a word from
     // a row-mate skill they haven't started.
     //
-    // The met half is load-bearing rather than decorative. The arithmetic
-    // would *mostly* handle it — an unmet word takes `probability` to zero and
-    // loses nearly every comparison — but "mostly" isn't a rule, and the whole
-    // point of a branching tree is that plenty of reachable material is
-    // material this particular learner has never seen.
+    // The met half is load-bearing. The arithmetic would mostly handle it, as
+    // an unmet word takes `probability` to zero and loses nearly every
+    // comparison, but "mostly" isn't a rule, and the point of a branching tree
+    // is that plenty of reachable material is material this learner has never
+    // seen.
     //
     // Words and a mode rather than an `Exercise`, because the builder weighs
     // thousands of candidates and builds none of them: a sentence and a way of
@@ -307,7 +303,7 @@ impl User {
     // exactly true, but because a lesson never grades the same word twice, it
     // is a good approximation.)
     //
-    // A word the user has never studied contributes 0 — it drags the whole
+    // A word the user has never studied contributes 0 and drags the whole
     // question to 0, which is what "you cannot answer this yet" should mean.
     pub fn probability(&self, words: &[String], mode: Mode, timestamp: u64) -> f64 {
         words
@@ -327,7 +323,7 @@ impl User {
     // which mode is due is as much of the answer as which word, since an
     // exercise is only evidence about its own mode. An attempted mode sorts
     // by its card's retrievability, a freshly unlocked one by its derived
-    // first-attempt probability — see `WordState::due`.
+    // first-attempt probability. See `WordState::due`.
     pub fn due(&self, timestamp: u64) -> Vec<(f64, &str, Mode)> {
         let mut due: Vec<(f64, &str, Mode)> = self
             .words
@@ -444,11 +440,11 @@ impl User {
 
     // The deep-forgetting sweep, run once a lesson's verdicts are in: every
     // word whose top-mode card has quietly decayed slides down a rung. This is
-    // what makes "back from vacation" work without anyone answering anything —
-    // see `WordState::demote_if_decayed`.
+    // what makes "back from vacation" work without anyone answering anything.
+    // See `WordState::demote_if_decayed`.
     //
-    // Note what this does *not* touch: a learner's `progress`. Skills do not
-    // rot. What decays is the memory the builder acts on, not the tree.
+    // Note what this does not touch: a learner's `progress`. Skills do not rot.
+    // What decays is the memory the builder acts on, not the tree.
     fn demote_decayed(&mut self, timestamp: u64) {
         for state in self.words.values_mut() {
             state.demote_if_decayed(timestamp);
@@ -458,11 +454,11 @@ impl User {
     // Apply a finished lesson to the user's memory, and move them along if it
     // moved them.
     //
-    // Every exercise takes its verdict — that is what reviewing *is* — and
-    // there are no exceptions any more. The old carve-out for scripted
-    // exercises in a re-taken lesson existed because such an exercise sat
-    // directly after the material that taught it, so getting it right proved
-    // nothing. Material teaches nothing now, so every question is a real one.
+    // Every exercise takes its verdict, with no exceptions. The old carve-out
+    // for scripted exercises in a re-taken lesson existed because such an
+    // exercise sat directly after the material that taught it, so getting it
+    // right proved nothing. Material teaches nothing now, so every question is
+    // a real one.
     //
     // The client returns every question directly. There is no server-side
     // pending lesson to compare it with: the submission is the memory delta,
@@ -475,9 +471,8 @@ impl User {
     ) -> Result<Outcome, SubmissionError> {
         self.validate_submission(course, submission)?;
 
-        // what the user knows *before* the lesson, so that "new" means new to
-        // them and not merely new to the course — a re-taken lesson introduces
-        // nothing, because they were here the first time
+        // what the user knows before the lesson, so "new" means new to them
+        // rather than new to the course: a re-taken lesson introduces nothing
         let known: HashSet<&str> = self.words.keys().map(String::as_str).collect();
         let mut learned: Vec<String> = submission
             .questions
@@ -499,7 +494,7 @@ impl User {
             self.record_question(question, timestamp, test);
         }
         // with the verdicts in, words whose cards have quietly decayed past
-        // the threshold slide down a rung — the deep-forgetting path
+        // the threshold slide down a rung: the deep-forgetting path
         self.demote_decayed(timestamp);
 
         let mut outcome = Outcome {
@@ -605,10 +600,10 @@ impl User {
         Ok(())
     }
 
-    // Finishing the lesson a learner is *on* moves them one further into the
+    // Finishing the lesson a learner is on moves them one further into the
     // skill; finishing one behind them changes nothing. They may re-take any
     // lesson they have reached, and going through it again must not move them
-    // — and certainly not backwards.
+    // in either direction.
     fn finish_lesson(&mut self, course: &Course, position: &Position, outcome: &mut Outcome) {
         let done = self.lessons_done(&position.skill);
         if position.lesson != done + 1 {
@@ -616,7 +611,7 @@ impl User {
         }
         self.progress
             .insert(position.skill.clone(), position.lesson);
-        // the last lesson of a skill clears it — a milestone the profile
+        // the last lesson of a skill clears it: a milestone the profile
         // records, and the thing that opens the next row
         if let Some(skill) = course.skill(&position.skill)
             && position.lesson >= SKILL_LESSONS
@@ -627,8 +622,8 @@ impl User {
 
     // A castle is passed on the score alone, and passing the one in front of
     // them is what lets a learner into the next stretch of the tree. Failing
-    // costs nothing but a retry with a fresh sample — the pressure to review
-    // comes from not passing, not from a penalty.
+    // costs nothing but a retry with a fresh sample; the pressure to review
+    // comes from not passing rather than from a penalty.
     fn finish_castle(&mut self, castle: usize, outcome: &mut Outcome) {
         let passed =
             outcome.total > 0 && outcome.correct as f64 / outcome.total as f64 >= CASTLE_PASS;
@@ -639,10 +634,10 @@ impl User {
     }
 }
 
-// What a submitted lesson came to. The first two are the score the client
-// gets back; the rest is what the day's record is made of (see profile.rs) —
-// worked out here because the answers depend on what the user knew and where
-// they stood a moment ago, which nothing outside this function can still see.
+// What a submitted lesson came to. The first two are the score the client gets
+// back; the rest is what the day's record is made of (see profile.rs), worked
+// out here because it depends on what the user knew and where they stood a
+// moment ago, which nothing outside this function can still see.
 pub struct Outcome {
     pub correct: usize,
     pub total: usize,
@@ -690,7 +685,7 @@ pub mod tests {
     // ladder (RecognitionProduction), so every typed question about it is
     // legal.
     //
-    // **All three cards, not just the top one.** A word cannot reach the top
+    // All three cards, not just the top one. A word cannot reach the top
     // of the ladder without having been recognized and tapped along the way,
     // and a word with only a production card is a state the system never
     // produces: its recognition mode would look unattempted and so maximally
@@ -768,7 +763,7 @@ pub mod tests {
 
     // The sweep runs over every word the user has, not just the ones a lesson
     // happened to touch. A word untouched for a year has lost both of its
-    // typed cards, so it slides all the way to the bottom — a rung per decayed
+    // typed cards, so it slides all the way to the bottom: a rung per decayed
     // card, as `WordState::demote_if_decayed` has it.
     #[test]
     fn the_decay_sweep_covers_every_word() {
@@ -793,10 +788,10 @@ pub mod tests {
         assert!(user.allows(&words(&["b"]), Mode::Scaffolding));
     }
 
-    // ...and a word the user has never met allows *nothing*, not even a word
+    // ...and a word the user has never met allows nothing, not even a word
     // bank. In a branching tree plenty of reachable material is material this
-    // learner has never seen — a row-mate skill they skipped, or a word from
-    // later in the very skill they are re-taking.
+    // learner has never seen: a row-mate skill they skipped, or a word from
+    // later in the skill they are re-taking.
     #[test]
     fn an_unmet_word_allows_nothing() {
         let user = user_with_reviews(&[("a", 3)]);
@@ -820,14 +815,14 @@ pub mod tests {
     }
 
     // the urgency list is sorted, and covers one entry per mode the ladder
-    // allows — cards by retrievability, unattempted modes by derivation
+    // allows: cards by retrievability, unattempted modes by derivation
     #[test]
     fn due_lists_the_most_urgent_card_first() {
         let user = user_with_reviews(&[("fresh", 1), ("stale", 60)]);
         let due = user.due(now());
         // the fixture's words sit at the top of the ladder with only a
         // production card, so each also yields a derived recognition entry
-        // (derived from a bank card it doesn't have: 0.0, front of list) —
+        // (derived from a bank card it doesn't have: 0.0, front of list), so
         // filter down to the real cards to compare them
         let production: Vec<&(f64, &str, Mode)> = due
             .iter()
@@ -879,8 +874,8 @@ pub mod tests {
         assert_eq!(user.lessons_done_in_level("skill"), 6);
     }
 
-    // a row opens when *every* skill in the row before it reaches level 2 — one
-    // of two side-by-side skills is not enough
+    // a row opens when every skill in the row before it reaches level 2; one of
+    // two side-by-side skills is not enough
     #[test]
     fn a_row_opens_only_once_all_of_the_previous_one_is_done() {
         let course = branching_course();
@@ -1042,8 +1037,8 @@ pub mod tests {
         assert!(outcome.cleared_skill.is_none()); // one of two lessons
     }
 
-    // re-taking a lesson reviews it — every question is a real question now —
-    // but must not move the learner, and introduces nothing they already know
+    // re-taking a lesson reviews it, since every question is a real question,
+    // but must not move the learner or introduce anything they already know
     #[test]
     fn retaking_a_lesson_reviews_without_moving_the_learner() {
         let course = one_sentence_course();

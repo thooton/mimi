@@ -3,7 +3,7 @@
 
    The front door: what Mimi does, what it is built out of, and how to start.
    An open-source course still being written has nothing to boast about, so
-   the page tries to be useful instead of loud — it explains the scheduling
+   the page tries to be useful instead of loud, it explains the scheduling
    honestly, hands the reader a real exercise rather than a screenshot of
    one, and says plainly which parts aren't finished. Everything is set in
    the same parchment and hairlines as the thing it introduces.
@@ -15,7 +15,7 @@
 
    Vertical padding is set one side at a time here and in the sections below.
    These elements are .shell as well, and the shorthand would take its
-   horizontal gutter down to zero with it — which on a narrow phone runs the
+   horizontal gutter down to zero with it, which on a narrow phone runs the
    headline into the edge of the glass. */
 .land-hero {
     display: flex;
@@ -191,7 +191,7 @@
     gap: 6px 14px;
 }
 
-/* quiet, and coloured by the strip it sits in — green when right, red when
+/* quiet, and coloured by the strip it sits in, green when right, red when
    wrong, which is exactly the colour the word being spoken deserves */
 .tryit-say {
     display: inline-flex;
@@ -512,7 +512,7 @@
         gap: 26px;
     }
 
-    /* stacked, the words come first every time — a picture with nothing said
+    /* stacked, the words come first every time, a picture with nothing said
      about it yet is just a picture */
     .concept-row--flip .concept-copy {
         order: 0;

@@ -2,13 +2,13 @@
 // choose them.
 //
 // There are two, and they are deliberately different. An ordinary lesson is
-// **introduction plus review**: the skill's word list is an introduction
+// introduction plus review: the skill's word list is an introduction
 // queue. Its first lesson front-loads every still-new word that fits; later
 // lessons retain the authored introduction schedule, and everything else is
-// filled by difficulty-targeting the user's own memory. A **castle** is a
+// filled by difficulty-targeting the user's own memory. A castle is a
 // test, and a test targeted at 85% is by construction a test everyone passes
-// at 85% — so it samples evenly across a whole stretch of the tree instead,
-// and ignores the ladder on the way in.
+// at 85%, so it samples evenly across a stretch of the tree instead and
+// ignores the ladder on the way in.
 //
 // Nothing here is authored. There is no pattern language and no scripted
 // slot: a lesson is `material -> introductions -> holes`, and the only thing
@@ -42,7 +42,7 @@ const MAX_NEEDED: f64 = 0.925;
 // always take at least this many urgent words, even if it makes the lesson hard
 const MIN_URGENT: usize = 2;
 // how many questions a castle asks. Fixed, and far smaller than the number of
-// words behind it — which is what makes it a test rather than a recital.
+// words behind it, which is what makes it a test rather than a recital.
 const CASTLE_SIZE: usize = 20;
 
 pub struct Lesson {
@@ -53,7 +53,7 @@ pub struct Lesson {
     pub tasks: Vec<Task>,
 }
 
-// What this lesson *is*. The two take different paths on the way in (they are
+// What this lesson is. The two take different paths on the way in (they are
 // built by different algorithms) and on the way out (a castle is passed or
 // failed; a lesson moves you along a skill).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -67,7 +67,7 @@ pub enum Target {
 
 // One task of a served lesson: a tip to read, or a question to answer.
 //
-// Only a short-lived pointer — into a skill's material, or at a sentence
+// Only a short-lived pointer into a skill's material, or at a sentence
 // together with the way it is to be asked. The task is resolved against the
 // same `Arc<Course>` immediately before the response is serialized, then
 // discarded. It never crosses a request or enters SQLite, so a later course
@@ -88,9 +88,8 @@ pub enum Task {
         // which of the four questions that sentence is being asked as
         ask: Ask,
         // the words the learner meets for the first time here. Answering is
-        // what creates their cards — there is no other way in, because
-        // material teaches nothing — so this is only so the client can mark
-        // them as new and show what they mean.
+        // what creates their cards, since material teaches nothing, so this
+        // is only so the client can mark them as new and show what they mean.
         introduces: Vec<String>,
     },
 }
@@ -104,8 +103,8 @@ impl Task {
         }
     }
 
-    // The question this task asks, if it's an exercise task — built here and
-    // now, because nothing stores one (see course.rs).
+    // The question this task asks, if it's an exercise task, built here and
+    // now because nothing stores one (see course.rs).
     pub fn exercise(&self, course: &Course) -> Option<Exercise> {
         match self {
             Task::Exercise { sentence, ask, .. } => course.exercise(*sentence, *ask),
@@ -151,8 +150,8 @@ impl Lesson {
     //
     // `position` is not necessarily the lesson the user is next due: they may
     // re-take any lesson they have reached. Everything is relative to the
-    // lesson's *skill*, not to the user — the holes draw only on rows at or
-    // before it, so re-doing an early skill has no business confronting the
+    // lesson's skill rather than to the user: the holes draw only on rows at
+    // or before it, so re-doing an early skill has no business confronting the
     // user with a later one's vocabulary, however well they now know it.
     // Anything they haven't reached is locked: None.
     pub fn build(
@@ -181,9 +180,9 @@ impl Lesson {
         // slice: new vocabulary owns every available exercise slot before
         // urgency or difficulty targeting gets a say.
         //
-        // **An introduction may bring in more than one word.** Where the course
+        // An introduction may bring in more than one word. Where the course
         // never uses a word by itself, its gentlest sentence grades its
-        // neighbours too and one answer meets all of them — so `introduces`
+        // neighbours too and one answer meets all of them, so `introduces`
         // names every one it is a first contact for, and the queue skips
         // whatever an earlier introduction has already covered. That skip is
         // load-bearing rather than tidy: without it the same word would be
@@ -255,19 +254,19 @@ impl Lesson {
     //
     // A different algorithm from the one above, on purpose:
     //
-    //   - **Even sampling, not urgency.** A castle asks about the stretch as a
+    //   - Even sampling, not urgency. A castle asks about the stretch as a
     //     whole, the way a teacher samples a term's material, rather than
     //     hunting for the learner's weak spots. A test aimed at what you are
     //     worst at is a better diagnostic and a worse test.
-    //   - **No 85% targeting.** The whole point is to find out.
-    //   - **Recognition and production only.** No word banks: a bank is
+    //   - No 85% targeting. The whole point is to find out.
+    //   - Recognition and production only. No word banks: a bank is
     //     guessable enough that passing one proves little.
-    //   - **The ladder is bypassed.** A castle asks for production whatever
+    //   - The ladder is bypassed. A castle asks for production whatever
     //     stage a word has reached, because a test restricted to what the
     //     ladder already permits would not be testing the thing worth testing.
     //     `WordState::record_test` is what keeps that fair on the way out.
     //
-    // Every word in the stretch has certainly been *met*: reaching the castle
+    // Every word in the stretch has certainly been met: reaching the castle
     // means completing every skill behind it, and completing a skill
     // introduces all of its words.
     pub fn castle(course: &Course, user: &User, username: &str, castle: usize) -> Option<Lesson> {
@@ -324,19 +323,19 @@ impl Lesson {
 // half-authored; all that changed is how a lesson says which exercises it may
 // draw on.
 //
-// A **candidate** is now a sentence together with one of the four ways of
+// A candidate is now a sentence together with one of the four ways of
 // asking it, and that pairing is where bidirectionality earns its keep: the
 // same sentence is a word bank for a word at the bottom of the ladder, a
 // recognition drill once it has climbed, and a production drill at the top,
 // and nothing has to be authored four times for that to be true. No exercise
-// is built here at all — a candidate's difficulty is a question about the
-// sentence's *words* and the ask's *mode*, and both are known without
-// assembling a single string.
+// is built here at all: a candidate's difficulty is a question about the
+// sentence's words and the ask's mode, and both are known without assembling a
+// single string.
 //
-// The state of one lesson's review section. Everything the algorithm needs to
-// remember as it goes — how many holes there are, which words are spoken for,
-// what it has picked and how hard those picks are — is a field here, so each
-// phase below is a method that reads and updates the lesson in progress.
+// The state of one lesson's review section. Everything the algorithm needs as
+// it goes (how many holes there are, which words are spoken for, what it has
+// picked and how hard those picks are) is a field here, so each phase below is
+// a method that reads and updates the lesson in progress.
 //
 // Our strategy is pretty simple. We want the user to review the words that
 // they most need to review. BUT we don't want to make it too hard for the
@@ -346,8 +345,8 @@ impl Lesson {
 // Two filters decide what a hole may hold at all, before any arithmetic: the
 // era rule (nothing past the lesson's own row) and the gate in `User::allows`
 // (every word the exercise grades must have been met, and must allow the
-// exercise's mode at its stage — the ladder decides *whether* a mode is
-// served, FSRS decides *when*).
+// exercise's mode at its stage: the ladder decides whether a mode is served,
+// FSRS decides when).
 struct Builder<'a> {
     course: &'a Course,
     user: &'a User,
@@ -403,14 +402,14 @@ impl<'a> Builder<'a> {
     //
     // For each mode that needs serving, starting with the most urgent
     // (lowest success probability), we try to pick an exercise for it that
-    // is as close to 85% success probability as possible — an exercise *of
-    // that mode*, since a word with a fresh recognition card and a decayed
+    // is as close to 85% success probability as possible, and an exercise of
+    // that mode, since a word with a fresh recognition card and a decayed
     // production card must be served a production exercise or its production
     // decay would never be addressed. Two sorts of urgency walk this list
     // together: a card that has decayed (sorted by retrievability) and a
     // freshly unlocked mode with no card yet (sorted by its derived
-    // first-attempt probability) — serving the latter is the only way its
-    // card is ever born.
+    // first-attempt probability); serving the latter is the only way its card
+    // is ever born.
     //
     // While we do this we keep track of a number: given the exercises chosen
     // so far, what average success probability will the REST of them need in
@@ -440,8 +439,8 @@ impl<'a> Builder<'a> {
             // Ties are common and meant to be: a word bank points both ways,
             // and both point at the same card, so nothing in the arithmetic
             // can separate them. Shuffling first and sorting stably is what
-            // stops that being settled by declaration order — otherwise every
-            // bank a learner ever saw would face the same way.
+            // stops that being settled by declaration order, which would have
+            // every bank a learner ever saw facing the same way.
             let mut candidates: Vec<(usize, Ask)> = self
                 .course
                 .sentences_with(word)
@@ -465,7 +464,7 @@ impl<'a> Builder<'a> {
     //
     // We take the average we need for the remaining exercises to make the
     // total closest to 85%, cap it at 92.5%, and take the exercise whose
-    // success probability is closest to that number — repeatedly, until the
+    // success probability is closest to that number, repeatedly, until the
     // lesson is full or we run out of exercises that don't repeat a word.
     fn top_up(&mut self) {
         // (probability, candidate), so each probability is computed once,
@@ -475,9 +474,9 @@ impl<'a> Builder<'a> {
         // spoken for by then.
         //
         // Shuffled before the sort, and the sort is stable, so the many exact
-        // ties — every sentence appears here up to four times, and the two
-        // banks always score identically — break at random rather than by
-        // declaration order.
+        // ties (every sentence appears up to four times, and the two banks
+        // always score identically) break at random rather than by declaration
+        // order.
         let mut candidates: Vec<(f64, (usize, Ask))> = self
             .course
             .sentences_up_to(self.row)
@@ -504,7 +503,7 @@ impl<'a> Builder<'a> {
             // exercise we may actually use.
             //
             // A candidate that repeats a word is out of the running for good,
-            // not just for this round — `used` only ever grows — so everything
+            // not just for this round, since `used` only grows, so everything
             // we walk past here can leave the vector with the pick.
             let mut lo = candidates.partition_point(|&(p, _)| p < needed);
             let mut hi = lo;
@@ -623,8 +622,8 @@ mod tests {
     use crate::word::{Stage, WordState};
 
     // every word a lesson's questions grade, in order. One solo sentence per
-    // word is all these fixtures need — the four ways of asking it are made
-    // by the builder, not by the pool.
+    // word is all these fixtures need: the four ways of asking it are made by
+    // the builder, not by the pool.
     fn asked_words(course: &Course, tasks: &[Task]) -> Vec<String> {
         tasks
             .iter()
@@ -708,9 +707,9 @@ mod tests {
         (course, user)
     }
 
-    // re-taking an early skill draws only on what *that row* had reached —
-    // otherwise the learner's later knowledge would leak a later skill's
-    // vocabulary into an early lesson
+    // re-taking an early skill draws only on what that row had reached, or the
+    // learner's later knowledge would leak a later skill's vocabulary into an
+    // early lesson
     #[test]
     fn a_retaken_lesson_never_reaches_past_its_own_row() {
         let (course, user) = two_row_course_and_user();
@@ -732,7 +731,7 @@ mod tests {
     }
 
     // a word from a row-mate skill the learner never started is not eligible,
-    // even though its row is reached — this is the half of the era rule the
+    // even though its row is reached: this is the half of the era rule the
     // prefix slice cannot see
     #[test]
     fn a_sibling_skill_the_learner_skipped_stays_out() {
@@ -778,7 +777,7 @@ mod tests {
         let introduced: Vec<&String> = lesson.tasks.iter().flat_map(Task::introduces).collect();
         assert_eq!(introduced, ["a", "b", "c", "d"]);
         // and where the course has a solo sentence for every word, as here,
-        // each introduction is one — asked the gentlest way there is: shown the
+        // each introduction is one, asked the gentlest way there is: shown the
         // target language, answered from tiles
         for task in &lesson.tasks {
             if task.introduces().is_empty() {
@@ -792,9 +791,9 @@ mod tests {
     }
 
     // A course that never uses `a` or `b` apart introduces them together, in
-    // one question, and says so. The alternative — the loader refusing the
-    // course, or the sentence claiming to grade one word while the learner is
-    // graded on two — is worse in both directions.
+    // one question, and says so. The alternatives are worse: the loader
+    // refusing the course, or the sentence claiming to grade one word while
+    // the learner is graded on two.
     #[test]
     fn a_word_never_used_alone_is_introduced_with_its_neighbour() {
         let course = course_of(
@@ -807,8 +806,8 @@ mod tests {
         // two questions for three words: `b` was met by `a`'s, so the queue
         // skipped it rather than asking it again
         assert_eq!(exercise_count(&lesson.tasks), 2);
-        // ...which is the rule that matters — a lesson never grades a word
-        // twice, and the 85% arithmetic assumes exactly that
+        // ...which is the rule that matters: a lesson never grades a word
+        // twice, and the 85% arithmetic assumes that
         let asked = asked_words(&course, &lesson.tasks);
         let distinct: HashSet<&String> = asked.iter().collect();
         assert_eq!(asked.len(), distinct.len(), "repeated a word: {asked:?}");

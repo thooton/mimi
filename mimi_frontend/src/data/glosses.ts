@@ -1,7 +1,7 @@
 /* Hanging a lesson's hints on the words they explain.
 
    The backend sends an exercise's prompt as one string ("Yo soy un hombre.")
-   and its hints beside it as glosses — {text: "hombre", meanings: [...]} —
+   and its hints beside it as glosses, {text: "hombre", meanings: [...]},
    quoting the lexical run of the prompt each one is about, in the order those
    runs occur. Sentence punctuation is deliberately outside that quote so it
    does not become interactive. Nothing but the quote joins the two, so the
@@ -24,7 +24,7 @@ export interface GlossSpan {
 }
 
 export interface GlossedText {
-  /** the whole sentence, in order — glossed runs and the plain text between */
+  /** the whole sentence, in order, glossed runs and the plain text between */
   spans: GlossSpan[];
   /** the glosses with no word to sit under (see above) */
   orphans: ApiGloss[];

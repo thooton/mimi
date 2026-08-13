@@ -6,7 +6,7 @@ import type { ApiCourseSummary } from '../../data/api';
    sense before this is answered, so it takes the whole page rather than
    sitting in a modal over a course map that isn't theirs yet.
 
-   It's shown exactly once — after this, the choice lives on the account
+   It's shown exactly once, after this, the choice lives on the account
    (see courseSelection.ts) and the navbar dropdown is where it gets changed. */
 
 interface Props {

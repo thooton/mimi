@@ -6,19 +6,19 @@ import { languageName } from './languages.ts';
 
    A language gets a score, the way Duolingo gives one per course: it is the
    only way to put "two years of Spanish" and "six weeks of French" on the
-   same axis, which is what the graph needs. Everything else the user does —
-   words reviewed, skills cleared — is reported as itself, because a raw count
+   same axis, which is what the graph needs. Everything else the user does
+   (words reviewed, skills cleared) is reported as itself, because a raw count
    is already the honest answer there and a score would only obscure it.
 
    All of it comes from the backend now (GET /users/:name/profile). The score
    and its history are computed there, from a table of what the user did on
    each day; this file's job is to put that in the shapes the components below
    it want, and to hold the handful of decorative things the backend has no
-   opinion about yet — see DECOR at the bottom. */
+   opinion about yet; see DECOR at the bottom. */
 
 export const DAY_MS = 86_400_000;
 
-/** what the user has got through in a language — the raw material of a score */
+/** what the user has got through in a language: the raw material of a score */
 export interface LanguageCounts {
   /** individual things known: words, endings, particles, sounds */
   words: number;
@@ -71,19 +71,19 @@ export interface Profile {
   /** the outside standard the scores are anchored against; self-reported,
       so it is blank until someone says otherwise */
   cefr: string;
-  /** their picture, if they have linked one that is safe to load — an
+  /** their picture, if they have linked one that is safe to load: an
       absolute https URL on somebody else's server (see safeAvatar). Undefined
       is the ordinary case, and the initial is drawn instead. */
   avatar?: string;
   /** how many accounts follow this one, and how many it follows */
   followers: number;
   following: number;
-  /** whether the reader follows this person — the state of the button */
+  /** whether the reader follows this person: the state of the button */
   viewerFollows: boolean;
   memberSince: number;
   /** live server presence, independent of whether they studied today */
   online: boolean;
-  /** "Today", "Yesterday", "12 days ago" — day resolution, because that is
+  /** "Today", "Yesterday", "12 days ago", at day resolution, because that is
       the resolution the record is kept at */
   lastActive: string;
   /** days they have been active at all */
@@ -96,7 +96,7 @@ export interface Profile {
     lessons: number;
     words: number;
   };
-  /** midnight UTC today, as the *server* reckons it: the graph's right-hand
+  /** midnight UTC today, as the server reckons it: the graph's right-hand
       edge, and what every relative date on the page is measured from. Taken
       from the response rather than the browser so that a reader in another
       timezone reads the same record the writer wrote. */
@@ -112,7 +112,7 @@ export interface Profile {
  * rewrites `/u/<name>` onto `/u/`, so by the time the page runs, the address
  * bar is the only place the name still exists (see astro.config.mjs). This is
  * the parser for it, kept here rather than in the component so it can be
- * tested as what it is — a pure function over a string.
+ * tested as what it is: a pure function over a string.
  */
 export function usernameFromPath(pathname: string): string | null {
   const match = /^\/u\/([^/]+)\/?$/.exec(pathname);
@@ -132,7 +132,7 @@ const MONTHS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
-/** "7 May 2024" — hand-rolled, because toLocaleDateString would render one
+/** "7 May 2024", hand-rolled because toLocaleDateString would render one
     string on the server and another on a browser in a different locale */
 export function formatDate(t: number): string {
   const d = new Date(t);
@@ -174,7 +174,7 @@ function agoLabel(then: number | null, today: number): string {
 const ms = (seconds: number) => seconds * 1000;
 
 /** A stroke per language, in the order they appear. Arbitrary, and the
-    backend has no business having an opinion about it — but it has to be
+    backend has no business having an opinion about it, but it has to be
     stable, or a language would change colour between the tile and the line
     beside it. */
 const STROKES = [
@@ -195,7 +195,7 @@ function glyphOf(code: string): string {
  * An avatar URL we are willing to put in an `<img src>`, or undefined.
  *
  * The backend already checks this hard on the way in (profile.rs), so this is
- * the second of two locks rather than the only one — and it is worth having
+ * the second of two locks rather than the only one, and it is worth having
  * because the check is one line and the thing being checked is a string from
  * one stranger that another stranger's browser is about to fetch. A profile
  * stored before the rule tightened, or served by some other deployment of the
@@ -213,7 +213,7 @@ export function safeAvatar(url: string | null): string | undefined {
 /* Somebody edited their own profile.
  *
  * The page they edited it on refetches by itself; this is for the copies of
- * it living elsewhere in the chrome — the navbar draws the same name and
+ * it living elsewhere in the chrome: the navbar draws the same name and
  * picture, from its own fetch made when the page loaded, and would otherwise
  * go on showing a picture its owner has just removed until the next
  * navigation. The auth store solves the same problem the same way for the
@@ -277,7 +277,7 @@ export function profileFrom(api: ApiProfile): Profile {
 }
 
 /** What the practice behind the score amounts to, counted four ways. These
-    are the totals the backend already keeps, reported as themselves — no
+    are the totals the backend already keeps, reported as themselves. No
     score, because a count is the honest measure of "how much have you done"
     and any number derived from it would only obscure that. */
 function practiceFrom(api: ApiProfile): Practice[] {
@@ -300,7 +300,7 @@ export interface ActivityEntry {
   score?: number;
   delta?: number;
   xp?: number;
-  /** what was picked up — the actual point of the day */
+  /** what was picked up: the point of the day */
   learned?: string[];
 }
 
@@ -326,7 +326,7 @@ export interface ActivityDay {
  *
  * Not every day here is a day of study. Following somebody is dated and shows
  * up in the feed, but it earns nothing and keeps no streak, so a day with a
- * follow and no lesson has no lesson entry at all — writing "Completed 0
+ * follow and no lesson has no lesson entry at all, since writing "Completed 0
  * lessons" would be a report of something that didn't happen.
  */
 export function activityFrom(api: ApiProfile): ActivityDay[] {

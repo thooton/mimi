@@ -89,8 +89,8 @@ final class GlossaryContentHandler extends StructuredContentHandler
                             mb_strtolower(trim((string) ($entry->lemma ?? "")));
                     // Two blank forms are one complaint, not two, so only the
                     // written ones are compared with each other. A form missing
-                    // its spelling or its translations is saved as it stands —
-                    // half a paradigm is worth keeping — and simply left
+                    // its spelling or its translations is saved as it stands,
+                    // since half a paradigm is worth keeping, and simply left
                     // unpublished by renderStructuredView() until somebody
                     // finishes it.
                     $spellings[] = $spelling;
@@ -135,7 +135,7 @@ final class GlossaryContentHandler extends StructuredContentHandler
      * megabytes of JSON, and MediaWiki refuses an article past
      * `$wgMaxArticleSize`. So a large glossary is written to
      * `Glossary:<course>/<letter>` subpages, and the whole glossary is the page
-     * the course is named after *together with* those segments — which is how
+     * the course is named after together with those segments, which is how
      * the read views below, `CourseCatalogue` and the learner backend all read
      * it.
      *
@@ -349,7 +349,7 @@ final class GlossaryContentHandler extends StructuredContentHandler
                 );
             }
             // An entry is one row group, because a lemma without its forms and a
-            // form without its lemma are both half an answer — which is also
+            // form without its lemma are both half an answer, which is also
             // why filtering, in `view.js`, keeps or drops a whole entry.
             $rows .= Html::rawElement(
                 "tbody",
@@ -539,8 +539,8 @@ final class GlossaryContentHandler extends StructuredContentHandler
     /**
      * Every entry the page publishes, for the client to render rows from.
      *
-     * The rows themselves are the expensive part — an entry is a row group of
-     * up to eighty rows, and a segment runs to five hundred entries — so what
+     * The rows themselves are the expensive part, an entry is a row group of
+     * up to eighty rows, and a segment runs to five hundred entries, so what
      * goes over the wire is the glossary rather than a rendering of it, and
      * `view.js` builds the handful of rows that are actually on screen. The
      * shape is positional (`[lemma, [[form, [translation…]]…]]`) because the

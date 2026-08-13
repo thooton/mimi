@@ -9,7 +9,7 @@ type Mode = "login" | "signup";
 
 export default function AuthForm({ mode }: { mode: Mode }) {
     const { user, ready, signIn, signUp } = useAuth();
-    /* Where to go afterwards — a guest is sent here from wherever they were
+    /* Where to go afterwards, a guest is sent here from wherever they were
      and should land back there. The page is prerendered, so the first client
      render has to agree with HTML that knows nothing about the query string:
      the search starts empty and an effect fills it in, the same way the auth
@@ -25,8 +25,8 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    /* Somebody who is already signed in has no business on either page — but a
-     *guest* very much does: signing up is the whole reason they were sent
+    /* Somebody who is already signed in has no business on either page, but a
+     guest very much does: signing up is the whole reason they were sent
      here, and bouncing them back to the course would make the offer
      unanswerable. */
     const settled = ready && user !== null && !user.guest;
@@ -74,7 +74,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     /* A guest arriving here has already done some of the course, and saying so
      is the difference between an errand and finishing something: registering
      claims the record they have been building, rather than opening a new one
-     (see mimi_backend/AGENTS.md). Signing *in* discards it, so that page says
+     (see mimi_backend/AGENTS.md). Signing in discards it, so that page says
      so plainly rather than letting them find out afterwards. */
     const saving = user?.guest ?? false;
     return (

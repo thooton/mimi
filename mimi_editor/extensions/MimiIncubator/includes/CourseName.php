@@ -7,7 +7,7 @@ use MediaWiki\Page\PageReference;
 use MediaWiki\Title\Title;
 
 /**
- * A course is named after its language pair — "Spanish for English speakers" —
+ * A course is named after its language pair ("Spanish for English speakers")
  * so the pair is never stored in the content. Course, glossary, and skill pages
  * all take their course from the page they sit on.
  */
@@ -26,8 +26,8 @@ final class CourseName {
 
 	/**
 	 * The page of the same name in another Mimi namespace. A skill and its tips
-	 * are one page name in two namespaces — `Skill:<course>/<skill>` and
-	 * `Tips:<course>/<skill>` — so neither has to store a pointer to the other.
+	 * are one page name in two namespaces, `Skill:<course>/<skill>` and
+	 * `Tips:<course>/<skill>`, so neither has to store a pointer to the other.
 	 */
 	public static function sibling( int $namespace, ?PageReference $page ): ?Title {
 		return $page ? Title::makeTitleSafe( $namespace, $page->getDBkey() ) : null;

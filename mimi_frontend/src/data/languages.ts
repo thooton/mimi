@@ -7,7 +7,7 @@ export interface LanguageOption {
   code: string;
   /** what an English-speaking user calls it */
   name: string;
-  /** what it calls itself — the picker shows both, the way every language
+  /** what it calls itself, the picker shows both, the way every language
       selector worth using does */
   endonym: string;
   /**
@@ -61,7 +61,7 @@ export function languageByCode(code: string | null | undefined): LanguageOption 
   return code ? BY_CODE.get(code) : undefined;
 }
 
-/** the display name for a language code, falling back to the code itself —
+/** the display name for a language code, falling back to the code itself,
     the backend is free to name a language we haven't listed */
 export function languageName(code: string): string {
   return BY_CODE.get(code)?.name ?? code.toUpperCase();

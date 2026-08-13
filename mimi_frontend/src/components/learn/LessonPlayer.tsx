@@ -16,27 +16,27 @@ import { markdown } from './markdown';
    client doesn't care which is which: a task is either material to read (and
    hear) or an exercise to answer.
 
-   Grading is local (the lesson arrives with its answers — see grading.ts);
+   Grading is local (the lesson arrives with its answers; see grading.ts);
    the verdicts go back to the backend at the end, which is what advances the
-   user's position on the map (unless the lesson was a re-take — reviewing
+   user's position on the map (unless the lesson was a re-take, since reviewing
    moves nothing). Material carries no verdict and changes no memory state.
 
    A wrongly-answered exercise isn't done, though: a retry of it joins the end
    of the queue and keeps reappearing until it's answered right (see
    lessonQueue.ts), and the returning question wears a "previous mistake" tag
    so it isn't mistaken for the lesson repeating itself. Only the first
-   attempt is reported — the backend still hears the answer was wrong; the
+   attempt is reported: the backend still hears the answer was wrong; the
    retries are just the user practicing.
 
    The lesson's length is what the backend served and nothing the user does
    changes it, so the count and the strip are read off `cleared` and
    `total` rather than off the queue, which does grow. A miss holds both
-   where they are — the finish line stays put, the user is just not at it
-   yet — and the strip fills exactly as the last retry is answered. */
+   where they are, the finish line staying put while the user is not yet at
+   it, and the strip fills exactly as the last retry is answered. */
 
 /* Between tasks the old one shifts out to the left and the next shifts in
    from the right (both keyframes live in styles/motion.css).
-   EXIT_MS is how long the old task is held on screen before the swap — it
+   EXIT_MS is how long the old task is held on screen before the swap; it
    must match the stylesheet's lesson-task-out duration, so the exit
    finishes exactly as the new task lands. (The whole-lesson exit works the
    same way, but LearnApp owns that timer: it holds the unmount while this
@@ -56,7 +56,7 @@ interface Props {
   guest: boolean;
   /** hand the collected verdicts to the backend; resolves with the score */
   onFinish: (responses: ApiResponse[]) => Promise<ApiSubmitResult>;
-  /** leave the lesson. Called the moment the exit fade starts — LearnApp
+  /** leave the lesson. Called the moment the exit fade starts; LearnApp
       mounts the map beneath us and
       holds the unmount until the fade is done (see quit()) */
   onExit: () => void;
@@ -66,7 +66,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
   const [queue, setQueue] = useState(() => queueOf(lesson.tasks));
   const [index, setIndex] = useState(0);
   /* counts every task swap. A wrong answer keeps `index` put (the queue
-     rotates underneath it), so this — not the index — keys the body's
+     rotates underneath it), so this rather than the index keys the body's
      remount, the input's focus and the bank's reshuffle */
   const [swap, setSwap] = useState(0);
   const [input, setInput] = useState('');
@@ -90,7 +90,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
 
   /* The lesson as served: the denominator of everything on the progress
      line, fixed for the life of the player. `queue.length` is a different
-     number the moment anything is missed — it is the run, not the lesson. */
+     number the moment anything is missed: it is the run, not the lesson. */
   const total = lesson.tasks.length;
   const cleared = clearedCount(queue, index, total);
   const entry = queue[index];
@@ -106,7 +106,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
       : null;
   /* The tiles, scrambled once and then held still. The backend hands the bank
      over answer-first on purpose and leaves the shuffling to us (wordBank.ts),
-     and `chosen` holds indices into whatever order we settle on — so this must
+     and `chosen` holds indices into whatever order we settle on, so this must
      not move again while the user is picking. Keyed on the swap as well as
      the bank itself, so a retry of the same exercise gets a fresh order. */
   const bank = useMemo(() => (served ? shuffledBank(served) : null), [swap, served]);
@@ -116,7 +116,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
   }, [swap]);
 
   /* Enter settles the task on screen: it advances after a verdict (or on
-     material, which has nothing to check), and on a word bank it checks —
+     material, which has nothing to check), and on a word bank it checks:
      the text input's Enter comes from its form's own submit, but a word bank
      has no form. (The input is disabled once answered, so the "continue"
      half has to live here regardless.) A focused button handles its own
@@ -151,7 +151,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
     playVerdict(v.correct);
   }
 
-  /** finish the task on screen and move on — submitting once the queue runs out */
+  /** finish the task on screen and move on, submitting once the queue runs out */
   async function advance() {
     // mid-shift or mid-exit (a double-press of Continue, Enter, or the X)
     if (leaving || quitting || submitting) return;
@@ -200,7 +200,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
   }
 
   /** leave the lesson: start the exit fade (css: lesson-shell-out) and tell
-      LearnApp right away, so it can mount the map underneath us — the shell
+      LearnApp right away, so it can mount the map underneath us. The shell
       then fades to transparency over the page it's returning to, and
       LearnApp unmounts us as the fade completes. The X and the summary's
       Continue share this path, so a finished lesson leaves as gently as an
@@ -242,7 +242,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
   }
 
   /* a wrong answer re-queues this exercise, so the apparent last task isn't
-     the end after all — don't promise a finish that isn't coming. The run is
+     the end after all, so don't promise a finish that isn't coming. The run is
      what has to be at its end here, not the lesson: with a retry outstanding
      there is still something to answer after this. */
   const last = index + 1 === queue.length && (!answered || verdict.correct);
@@ -250,7 +250,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
   /* A correct answer counts as soon as it's checked rather than when Continue
      is pressed, so the strip and the count move with the green feedback
      instead of a beat after it. Both read this one number, so they cannot
-     disagree — and neither can pass `total`, since the only thing that
+     disagree, and neither can pass `total`, since the only thing that
      advances it is a task being cleared for good. */
   const scored = cleared + (verdict?.correct ? 1 : 0);
   return (
@@ -271,7 +271,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
       </div>
 
       {/* remounted per task (key) so the shift-in replays on every swap;
-          the very first task skips it — the shell's own entrance animation
+          the very first task skips it, since the shell's own entrance animation
           already covers that arrival */}
       <div
         key={swap}
@@ -339,7 +339,7 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
                 </div>
                 {/* The answer, right or wrong. A correct answer used to be
                     followed by every word of it and everything each word can
-                    mean — a dictionary column under a sentence the user had
+                    mean: a dictionary column under a sentence the user had
                     just proved they could write. The sentence is the thing
                     worth seeing; the hints belong on the prompt, where they
                     are still asked for a word at a time. */}
@@ -393,13 +393,13 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
 /**
  * The offer at the end of every lesson a guest finishes.
  *
- * A guest's work is already on the backend and already theirs — registering
- * *claims* that record rather than starting a fresh one (see
+ * A guest's work is already on the backend and already theirs: registering
+ * claims that record rather than starting a fresh one (see
  * mimi_backend/AGENTS.md), so nothing here is lost by carrying on without an
  * account. What is at stake is only how long it lasts: a guest lives in one
  * cookie, on one browser, for a week. The copy says that rather than
  * pretending the lesson evaporates if they don't sign up now, and "Not now"
- * is a real answer — the prompt comes back after the next lesson.
+ * is a real answer, and the prompt comes back after the next lesson.
  */
 function SaveProgress() {
   return (
@@ -424,7 +424,7 @@ function SaveProgress() {
  * A word-bank exercise's answer control, in place of the text input: an
  * assembly line the picked tokens sit on (tap one to send it back) above the
  * bank of tokens still on offer (tap one to pick it). Tokens are tracked by
- * index, not text, so a bank holding the same word twice works — each copy
+ * index, not text, so a bank holding the same word twice works: each copy
  * is spent separately. Once the answer is checked (`disabled`) the tokens
  * stay put so the user can compare their assembly with the feedback.
  */
@@ -505,7 +505,7 @@ function Material({ material }: { material: ApiMaterial; targetLang: string }) {
  * its meanings drop out of it on hover, tap or keyboard focus.
  *
  * The hints used to sit in a row of chips below the prompt, which said what
- * every word meant without saying which word it was about — the reader had to
+ * every word meant without saying which word it was about, so the reader had to
  * match them up themselves, which is the work the exercise is asking for.
  * Under the word, a hint is a hint. (Glosses that can't be placed in the
  * sentence still fall back to that row: see glosses.ts.)
@@ -575,7 +575,7 @@ function Prompt({
                 }
               >
                 {/* a button, so the hint opens on tap and on keyboard focus
-                    too — a word is no use to a reader who can't reach it */}
+                    too: a word is no use to a reader who can't reach it */}
                 <button
                   className={isNew ? 'lesson-hint-word is-new' : 'lesson-hint-word'}
                   type="button"

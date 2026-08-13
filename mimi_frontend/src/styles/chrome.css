@@ -1,5 +1,5 @@
 /* ==========================================================================
-   chrome — the furniture around every page: the topbar with its brand, nav
+   chrome: the furniture around every page: the topbar with its brand, nav
    and counters, the footer, and the language picker in the navbar and
    first-run chooser.
 
@@ -63,7 +63,7 @@
 
 /* Sentence case, like every other piece of type at this size: the wordmark,
    the buttons, the account name, the footer links. Uppercase belongs to
-   .eyebrow's 10px/700 micro-labels — spending it on a 14px/500 nav made the
+   .eyebrow's 10px/700 micro-labels, spending it on a 14px/500 nav made the
    bar the loudest thing on the page and cost ~15% more width per label,
    which is what crowded the tabs into the auth buttons.
 
@@ -90,7 +90,7 @@
 }
 
 /* While its menu is open, the practice tab stays lit exactly as it does on
-   hover — it and the panel hanging off the bar read as one piece. Both sit
+   hover: it and the panel hanging off the bar read as one piece. Both sit
    above .is-active in the cascade at equal specificity, so the tab you're
    actually on keeps its tint when you hover or open it. */
 .topnav-link:hover,
@@ -100,7 +100,7 @@
 }
 
 /* The page you're on. The underline this replaces was tied to the
-   full-height tab — it drew on the bar's bottom edge, which a pill has no
+   full-height tab, it drew on the bar's bottom edge, which a pill has no
    claim to. The tint is the one the mobile panel's active row already
    wears, so the two navs now say "here" the same way. */
 .topnav-link.is-active {
@@ -113,7 +113,7 @@
     color: currentColor;
 }
 
-/* Practice's tab is a button — it opens a menu of subsections rather than
+/* Practice's tab is a button, it opens a menu of subsections rather than
    navigating, so it wears the link look wholesale and drops the button
    chrome */
 button.topnav-link {
@@ -130,7 +130,7 @@ button.topnav-link {
    moment the pointer set out for it, and Flashcards couldn't be reached.
 
    This invisible strip spans it. It's part of the tab's box, so crossing
-   the gap still counts as hovering the tab and the menu stays open — the
+   the gap still counts as hovering the tab and the menu stays open, the
    pointer passes from tab to menu without ever being on neither. It's the
    width of the pill and sits inside the bar, so the only thing it covers
    is the tab's own column. */
@@ -159,7 +159,7 @@ button.topnav-link::after {
     border-radius: 0;
 }
 
-/* Blueprint holds menus at 180px minimum — narrower than this and the menu
+/* Blueprint holds menus at 180px minimum, narrower than this and the menu
    would outgrow the tab it must stay flush with */
 .nav-menu .bp6-menu {
     min-width: 0;
@@ -176,7 +176,7 @@ button.topnav-link::after {
 
 /* Hidden while the horizontal nav has room; the 720px block at the bottom
    of this section swaps the two over. It borrows the account button's
-   shape, just square — one more quiet icon on the right edge. */
+   shape, just square, one more quiet icon on the right edge. */
 .menu-btn {
     display: none;
     align-items: center;
@@ -206,12 +206,12 @@ button.topnav-link::after {
     gap: 4px;
 }
 
-/* streak — the lone counter up top: flame glyph with the count right
+/* streak: the lone counter up top, a flame glyph with the count right
    beside it, in the manner of Duolingo, in ember.
 
    It survives every breakpoint. Days in a row is the one number a learner
    checks without being asked, and a phone is where most of that checking
-   happens — hiding it there (which the 720px block used to do) took the
+   happens: hiding it there (which the 720px block used to do) took the
    counter away from exactly the screen it is for. It is cheap to keep: a
    glyph and one or two digits, ~55px, and the breakpoints below trim its
    padding rather than dropping it. */
@@ -232,21 +232,21 @@ button.topnav-link::after {
     font-weight: 900;
     line-height: 1;
     /* The row centres two boxes, and the digits' box is taller than the digits
-     — the descender space the count never uses pushed the number up and left
+    , the descender space the count never uses pushed the number up and left
      the flame looking like it had slipped a pixel. Trimmed to the cap and the
      baseline, the box is the number, so what the row centres is the ink. */
     text-box: trim-both cap alphabetic;
 }
 
-/* discord — a square target beside the streak, sized and lit like the
+/* discord: a square target beside the streak, sized and lit like the
    hamburger so the bar's two icon buttons behave alike. The mark is wider
    than it is tall, so the box is what's square, not the glyph.
 
-   This one *does* leave the bar on a phone, but it doesn't leave the page:
+   This one does leave the bar on a phone, but it doesn't leave the page:
    the 720px block hands it to the hamburger panel as a labelled row. It is
    the only thing on the right that is a link to somewhere else rather than
    a fact about the learner, so it is the one that belongs with the nav when
-   space runs out — and a row saying "Discord" is a better target on a touch
+   space runs out, and a row saying "Discord" is a better target on a touch
    screen than a 34px glyph squeezed between the streak and the flag. */
 .discord-link {
     display: flex;
@@ -313,7 +313,7 @@ button.topnav-link::after {
 }
 
 /* Signed out, the right side carries the same pair of Blueprint buttons the
-   learn page's signed-out panel uses — the bar owns only their spacing. */
+   learn page's signed-out panel uses, the bar owns only their spacing. */
 .topbar-auth {
     display: flex;
     align-items: center;
@@ -323,7 +323,7 @@ button.topnav-link::after {
 
 /* …and below this the labels crowd each other: the inline nav folds into
    the hamburger's panel, and the sign-in/create-account pair goes with it,
-   as does the Discord link (the streak, flag and avatar stay — they are
+   as does the Discord link (the streak, flag and avatar stay, they are
    compact, and they answer "how am I doing", "what am I learning" and "who
    am I", which the panel can't). The panel hangs off the bottom
    of the sticky bar, over the page rather than pushing it down (the bar's
@@ -335,7 +335,7 @@ button.topnav-link::after {
 }
 
 /* the panel's copy of the Discord link, hidden while the bar carries its
-   own — the two are the same destination and only one is ever on screen */
+   own: the two are the same destination and only one is ever on screen */
 .mobilenav-discord {
     display: none;
 }
@@ -355,7 +355,7 @@ button.topnav-link::after {
     }
 
     /* the counters lose their desktop breathing room rather than their
-     place — see .streak above */
+     place: see .streak above */
     .streak {
         padding: 0 4px;
         margin-right: 2px;
@@ -380,7 +380,7 @@ button.topnav-link::after {
         box-shadow: 0 8px 16px rgba(29, 27, 22, 0.12);
     }
 
-    /* the same labels as the bar — same case, same weight — scaled up to
+    /* the same labels as the bar, same case, same weight, scaled up to
      fingertip size */
     .mobilenav-link {
         display: flex;
@@ -459,7 +459,7 @@ button.topnav-link::after {
     }
 }
 
-/* small phones: the account button shrinks to its avatar — the menu it
+/* small phones: the account button shrinks to its avatar, the menu it
    opens still names who's signed in, and the space buys room for the
    hamburger beside it */
 @media (max-width: 520px) {
@@ -476,7 +476,7 @@ button.topnav-link::after {
 /* The narrowest phones still in circulation are 320px wide, and the bar has
    five things to seat in them: wordmark, streak, flag, avatar, hamburger.
    Measured at 320 the row came to five pixels over, so the two items with
-   slack give it up — here the wordmark drops a size (the photo mark beside
+   slack give it up, here the wordmark drops a size (the photo mark beside
    it is what identifies the site anyway), and down in the picker's own
    section the flag takes the smaller of its two cuts. Nothing is dropped:
    every one of the five answers a question the panel behind the hamburger
@@ -484,7 +484,7 @@ button.topnav-link::after {
 
    The picker's half of this has to live beside .flag-btn rather than here,
    because a media query adds no specificity and .flag-btn is declared
-   further down the file — written here it would lose to it on source order
+   further down the file, written here it would lose to it on source order
    and silently do nothing, which is exactly what it did first time. */
 @media (max-width: 360px) {
     .brand {
@@ -549,7 +549,7 @@ button.topnav-link::after {
 .flag {
     border-radius: 50%;
     object-fit: cover;
-    /* the ring does the work for the flags that end in white — Japan and
+    /* the ring does the work for the flags that end in white, Japan and
      Poland would otherwise dissolve into the menu behind them */
     box-shadow: inset 0 0 0 1px rgba(12, 30, 60, 0.22);
     flex: none;
@@ -575,7 +575,7 @@ button.topnav-link::after {
 }
 
 /* The picker gets a compact 4:3 flag rather than the round language badges
-   used elsewhere, drawn from the 4x3 artwork — the square cut cropped to
+   used elsewhere, drawn from the 4x3 artwork, the square cut cropped to
    this shape would leave a three-bar flag's middle stripe taller than the
    other two. */
 .flag-btn {
@@ -584,7 +584,7 @@ button.topnav-link::after {
     border-radius: 4px;
 }
 
-/* nothing picked yet — a hollow slot with the same footprint as the flag */
+/* nothing picked yet, a hollow slot with the same footprint as the flag */
 .lang-empty {
     width: 30px;
     height: 22px;
@@ -607,7 +607,7 @@ button.topnav-link::after {
     font-size: 12px;
 }
 
-/* the picker's half of the 360px squeeze — see the matching block up in the
+/* the picker's half of the 360px squeeze, see the matching block up in the
    topbar section, which explains why the two are apart */
 @media (max-width: 360px) {
     .lang-btn {

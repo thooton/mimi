@@ -4,22 +4,22 @@
 //
 // One `Course` is immutable after assembly. The server may atomically replace
 // its `Arc<Course>` after a wiki edit, but every request sees one finished
-// generation. Everything expensive about a *sentence* — expanding brackets,
-// locating each word in each wording, marking the spans — has already happened
+// generation. Everything expensive about a sentence (expanding brackets,
+// locating each word in each wording, marking the spans) has already happened
 // by the time this exists (see loader.rs).
 //
-// **Exercises are not stored, they are made.** A sentence can be asked four
-// ways (see `Ask`), and which of them a given learner may meet depends on
-// where each of its words sits on the ladder — a question with an answer per
-// learner cannot be a thing on a shelf. So the pool holds sentences, a lesson's
-// tasks point at a sentence and name a way of asking it, and `Course::exercise`
-// builds the question the moment somebody is actually going to see it.
+// Exercises are not stored, they are made. A sentence can be asked four ways
+// (see `Ask`), and which of them a learner may meet depends on where each of
+// its words sits on the ladder, so a question with an answer per learner cannot
+// be a thing on a shelf. The pool holds sentences, a lesson's tasks point at a
+// sentence and name a way of asking it, and `Course::exercise` builds the
+// question the moment somebody is going to see it.
 //
-// **Row is the course's only ordinal.** Skills in a row are unlocked together
-// and may be done in any order, so there is no total order over skills; but
-// rows are strictly ordered, and that is enough. The pool is sorted by row, so
-// "every sentence at or before row n" is a prefix — which is what stops a
-// learner re-taking an early skill from being shown later material.
+// Row is the course's only ordinal. Skills in a row are unlocked together and
+// may be done in any order, so there is no total order over skills; rows are
+// strictly ordered, and that is enough. The pool is sorted by row, so "every
+// sentence at or before row n" is a prefix, which stops a learner re-taking an
+// early skill from being shown later material.
 
 use std::collections::HashMap;
 
@@ -40,14 +40,14 @@ pub struct Course {
     // every word the course teaches, in frequency order
     pub vocab: Vocab,
     // the review pool: every sentence the lesson builder may draw a question
-    // from, **sorted by row**, so `sentences_up_to` is a prefix slice
+    // from, sorted by row, so `sentences_up_to` is a prefix slice
     pub sentences: Vec<Sentence>,
     // word id -> the index of every sentence that grades that word. A
     // sentence grading several words appears in several lists.
     by_word: HashMap<String, Vec<usize>>,
     // the word's first contact: the gentlest sentence that uses it, asked
-    // with tiles. This is how a word enters a learner's memory at all —
-    // there is no other path, because material teaches nothing.
+    // with tiles. This is the only way a word enters a learner's memory,
+    // because material teaches nothing.
     introductions: HashMap<String, usize>,
     // the skills, in layout order (castle, then row, then across the row)
     skills: Vec<Skill>,
@@ -77,10 +77,10 @@ impl Course {
         // the order within a row stays the order the skills were read in.
         sentences.sort_by_key(|s| s.row);
         let mut by_word: HashMap<String, Vec<usize>> = HashMap::new();
-        // A word's first contact is the **gentlest** sentence that uses it:
+        // A word's first contact is the gentlest sentence that uses it:
         // fewest words to meet at once, and among equals the earliest in
         // course order. A sentence that uses nothing else is therefore always
-        // preferred, but it is not required — an author who only ever wrote
+        // preferred, but it is not required: an author who only ever wrote
         // `pan` alongside `comer` has written a course where the two are met
         // together, and refusing to teach `pan` at all would be a worse answer
         // than teaching both in one question (see `Lesson::build`).
@@ -135,9 +135,9 @@ impl Course {
     // Every sentence at or before `row`, which is a prefix of the pool
     // because the pool is sorted by row.
     //
-    // This is half of what a lesson may draw on. The other half — that the
-    // learner has actually met every word a sentence grades — is `User`'s to
-    // answer, and covers what this can't see: a row-mate skill they haven't
+    // This is half of what a lesson may draw on. The other half, that the
+    // learner has met every word a sentence grades, is `User`'s to answer and
+    // covers what this can't see: a row-mate skill they haven't
     // touched, or a word from later in the very skill they are re-taking.
     pub fn sentences_up_to(&self, row: usize) -> &[Sentence] {
         let end = self.sentences.partition_point(|s| s.row <= row);
@@ -160,10 +160,10 @@ impl Course {
     // The sentence that introduces a word: the one using the fewest words of
     // its skill, which is a sentence using nothing else wherever the course
     // has one. None means the course data uses the word in no sentence at
-    // all, which the loader rejects — a word with no sentence can never be
+    // all, which the loader rejects: a word with no sentence can never be
     // learnt.
     //
-    // **It may introduce more than one word**, and then all of them are met at
+    // It may introduce more than one word, and then all of them are met at
     // once (`Lesson::build`). That is not a compromise so much as the honest
     // reading of the content: a skill teaches its words together, and a course
     // that never says `pan` without `comer` is a course where knowing one is
@@ -171,9 +171,9 @@ impl Course {
     //
     // It is always asked as `INTRODUCTION`: shown the target language, tiles
     // in the source. Recognizing beats producing for a first contact, and
-    // tiles beat typing — which is also what makes meeting two words in one
-    // question survivable, since a bank constrains the answer to the point of
-    // being solvable by somebody who has met neither.
+    // tiles beat typing, which is also what makes meeting two words in one
+    // question survivable: a bank constrains the answer to the point of being
+    // solvable by somebody who has met neither.
     pub fn introduction_for(&self, word: &str) -> Option<usize> {
         self.introductions.get(word).copied()
     }
@@ -184,9 +184,9 @@ impl Course {
     //
     // This is the only place a full `Exercise` comes from, and it is called
     // once per question a learner actually sees, while the lesson response is
-    // materialized — never again for grading and never over the pool at large. The builder
-    // compares candidates by their sentence's words and their `Ask`'s mode,
-    // which is everything the arithmetic needs and none of the strings.
+    // materialized, never again for grading and never over the pool at large.
+    // The builder compares candidates by their sentence's words and their
+    // `Ask`'s mode, which is everything the arithmetic needs.
     pub fn exercise(&self, sentence: usize, ask: Ask) -> Option<Exercise> {
         let sentence = self.sentences.get(sentence)?;
         let mut exercise = sentence.ask(ask);
@@ -199,8 +199,8 @@ impl Course {
     // A word bank's wrong tiles.
     //
     // They are sampled from the tokens of other sentences in the same
-    // language, from the same row or an earlier one — **never a later one**,
-    // which would show a learner vocabulary they haven't reached. Sampling is
+    // language, from the same row or an earlier one, never a later one, which
+    // would show a learner vocabulary they haven't reached. Sampling is
     // seeded by the exercise's id, so a bank looks the same every time it is
     // served: a re-taken lesson is genuinely the same lesson, and the tiles a
     // client grades against are the tiles it showed.
@@ -240,10 +240,10 @@ impl Course {
     // and answered in English, and the reverse for the other. The client shows
     // it as "Translate to English", which is the only reason the codes exist.
     //
-    // **This is the one place in the server that names a language.** Nothing
-    // else has needed to since a sentence stopped being authored pointing one
-    // way — inside, a question knows which *side* it shows, and what those
-    // sides are called is a property of the course, not of the question.
+    // This is the one place in the server that names a language. Nothing else
+    // has needed to since a sentence stopped being authored pointing one way:
+    // inside, a question knows which side it shows, and what those sides are
+    // called is a property of the course rather than of the question.
     pub fn direction_of(&self, ask: Ask) -> String {
         self.direction(ask.shows(), ask.produces())
     }
@@ -310,12 +310,13 @@ impl Course {
 // said in and sorted by it, so "everything up to row n" is a prefix.
 //
 // Only preferred wordings contribute. An alternative is something the course
-// will *accept*, not something it teaches, and a bank tile is shown — putting
-// a merely-tolerated phrasing on the board would teach it by the back door.
+// will accept rather than something it teaches, and a bank tile is shown, so
+// putting a merely-tolerated phrasing on the board would teach it by the back
+// door.
 //
 // Tokens go through `tile`, the same cleanup the correct tiles get (see
 // exercise.rs): a distractor carrying its punctuation would give away where
-// it *doesn't* go, which is the same hint by other means.
+// it doesn't go, which is the same hint by other means.
 fn tile_pool(sentences: &[Sentence], side: Side) -> Vec<(usize, String)> {
     let mut pool: Vec<(usize, String)> = sentences
         .iter()
@@ -334,7 +335,7 @@ fn tile_pool(sentences: &[Sentence], side: Side) -> Vec<(usize, String)> {
 
 // A tiny deterministic PRNG (splitmix64), seeded from a string. A word bank
 // that shuffled between requests would make a re-taken lesson a different
-// lesson — and would hand the client a set of tiles it had never shown.
+// lesson, and would hand the client a set of tiles it had never shown.
 struct Rng(u64);
 
 impl Rng {
@@ -540,8 +541,8 @@ pub mod tests {
         }
     }
 
-    // A word is introduced by the gentlest sentence using it — fewest words to
-    // meet at once — so a solo sentence always wins where the course has one.
+    // A word is introduced by the gentlest sentence using it, fewest words to
+    // meet at once, so a solo sentence always wins where the course has one.
     #[test]
     fn the_fewest_words_at_once_introduces_a_word() {
         let course = course_of(
@@ -658,7 +659,7 @@ pub mod tests {
 
     // Distractors go through the same cleanup as the correct tiles: one
     // carrying its punctuation ("todo!") would tell the learner where it
-    // *doesn't* go, which is the same hint by other means. And the answer's
+    // doesn't go, which is the same hint by other means. And the answer's
     // own tokens are compared stripped on both sides, or "es_z" would slip
     // onto the board next to the correct "es_z" because the pool's copy came
     // from "es_z.".

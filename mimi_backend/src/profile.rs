@@ -1,21 +1,21 @@
 // The public profile: who a user says they are, and the record of what they
 // have actually done.
 //
-// The two halves are kept apart on purpose. `Profile` is *authored* — a
-// display name, a bio, a self-reported CEFR level, a link to a picture — and
-// the server stores it and hands it back. Nothing in it is checked against
-// reality, because none of it can be; what *is* checked, in `ProfileEdit`, is
+// The two halves are kept apart on purpose. `Profile` is authored (a display
+// name, a bio, a self-reported CEFR level, a link to a picture) and the server
+// stores it and hands it back. Nothing in it is checked against reality,
+// because none of it can be; what is checked, in `ProfileEdit`, is
 // that each field is the kind of thing it claims to be, which is a different
 // question and the only one with an answer. Everything else on the profile
-// page is *derived*, and the thing it is derived from is one table: activity.
+// page is derived, and the thing it is derived from is one table: activity.
 //
-// **One row per user, course and day.** Not one row per lesson: a profile
+// One row per user, course and day. Not one row per lesson: a profile
 // never asks "which lesson was that", it asks how many, on which days, in
 // which course, and what came out of it. Overall streaks fold course rows on
 // the same day together; language scores keep them apart. `Activity` is the
 // whole of one such course-day row.
 //
-// What a row stores is *deltas* — what happened that day and nothing more.
+// What a row stores is deltas: what happened that day and nothing more.
 // Running totals (how many concepts you know, how many units you've cleared,
 // what your score is) are cumulative sums over the rows before it, computed
 // on the way out in `History`. That way a change to how a score is calculated
@@ -34,9 +34,9 @@ pub const DAY: u64 = 86_400;
 // where a language's score starts, before any of it has been learnt
 const FLOOR: u32 = 400;
 
-// What a finished lesson is worth. XP is a reward, not a measurement — it
-// exists to make completing a lesson feel like it counted — so the activity
-// record stores the facts (lessons and perfect lessons) and derives XP from
+// What a finished lesson is worth. XP is a reward rather than a measurement,
+// so the activity record stores the facts (lessons and perfect lessons) and
+// derives XP from
 // this schedule. These are public because the API publishes the same values
 // for clients that want to preview the award from a lesson result.
 pub const XP_PER_LESSON: u32 = 20;
@@ -54,8 +54,8 @@ pub fn day_of(timestamp: u64) -> u32 {
     (timestamp / DAY) as u32
 }
 
-// midnight UTC at the start of a day, as unix seconds — the inverse of
-// `day_of`, and what the client dates a feed entry by
+// midnight UTC at the start of a day, as unix seconds: the inverse of `day_of`,
+// and what the client dates a feed entry by
 pub fn day_start(day: u32) -> u64 {
     day as u64 * DAY
 }
@@ -63,7 +63,7 @@ pub fn day_start(day: u32) -> u64 {
 // --- what a user says about themselves ---
 
 // The authored half of a profile. None of it is checked against anything:
-// a bio is a claim, and so is "B2 Spanish". The numbers that *can* be checked
+// a bio is a claim, and so is "B2 Spanish". The numbers that can be checked
 // are all derived from activity instead, and live in `History`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
@@ -74,15 +74,14 @@ pub struct Profile {
     pub title: Option<String>,
     pub bio: String,
     // self-reported, and the outside standard the derived score is read
-    // against — the score is ours, CEFR is everyone's
+    // against; the score is ours, CEFR is everyone's
     pub cefr: String,
-    // Where the user's picture lives — an absolute https URL to somebody
-    // else's server, never a file of ours. Mimi hosts no images: taking
-    // uploads means storage, moderation and a bill, and none of that is what
-    // this app is for. What it costs instead is that the string is a claim
-    // like the bio (the picture can change or vanish under us), and that it
-    // has to be checked hard before it is ever handed to a browser as an
-    // `<img src>` — see `avatar_url`.
+    // Where the user's picture lives: an absolute https URL to somebody else's
+    // server, never a file of ours. Mimi hosts no images, since uploads mean
+    // storage, moderation and a bill. The cost is that the string is a claim
+    // like the bio (the picture can change or vanish under us) and has to be
+    // checked hard before it is handed to a browser as an `<img src>`. See
+    // `avatar_url`.
     pub avatar: Option<String>,
     // The exact course the user is learning. A target-language code is not
     // enough: Spanish for English speakers and Spanish for French speakers
@@ -94,8 +93,8 @@ pub struct Profile {
 
 impl Profile {
     // the profile a new account gets: their name and nothing else. A blank
-    // profile is a choice, not a chore — nothing prompts them to fill it in
-    // and nothing scores them for having done so.
+    // profile is a choice rather than a chore: nothing prompts them to fill it
+    // in and nothing scores them for having done so.
     pub fn new(username: &str, joined: u64) -> Profile {
         Profile {
             display: username.to_string(),
@@ -119,11 +118,11 @@ impl Profile {
 
 // --- editing it ---
 
-// What the owner of a profile may write, **already checked**: the only way to
+// What the owner of a profile may write, already checked: the only way to
 // build one is `ProfileEdit::of`, so a value of this type is a promise that
-// the limits below have been applied. `course_id` is not here — it has a
-// writer of its own, because it is the account's course choice rather than
-// anything a reader is shown — and neither is `title`, which is granted.
+// the limits below have been applied. `course_id` is not here, since it has a
+// writer of its own as the account's course choice rather than anything a
+// reader is shown, and neither is `title`, which is granted.
 
 // A name has to fit beside a face on a card and in a leaderboard row, and
 // nothing is gained by letting it run past that.
@@ -136,7 +135,7 @@ const MAX_BIO: usize = 300;
 const MAX_AVATAR: usize = 300;
 
 // The whole of the scale, and the only values the field is allowed to take.
-// This does not check the *claim* — nobody can — it checks that the claim is
+// This does not check the claim, which nobody can. It checks that the claim is
 // a CEFR level at all, so the page can render it as a badge next to a score
 // instead of printing whatever somebody typed.
 const CEFR_LEVELS: [&str; 6] = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -207,25 +206,24 @@ impl ProfileEdit {
 // reader's browser as a URL to fetch. `Ok(None)` is a blank field, which is
 // how a picture is removed.
 //
-// The rules are deliberately narrower than what a URL may legally be — this
-// is an image address, not the web:
+// The rules are narrower than what a URL may legally be, because this is an
+// image address rather than the web:
 //
-// - **https only.** Not because http would break anything we serve, but
+// - https only. Not because http would break anything we serve, but
 //   because a `javascript:`, `data:` or `blob:` string in this field is an
 //   injection waiting for a client that forgets to check, and enumerating the
 //   dangerous schemes is a losing game next to naming the one safe one. It
 //   also keeps a page served over TLS from being downgraded to mixed content
 //   the browser blocks anyway.
-// - **Printable ASCII, minus the characters that get reinterpreted.** No
+// - Printable ASCII, minus the characters that get reinterpreted. No
 //   spaces, no control characters, no newline that could smuggle a second
 //   line into a header, and none of `<>"'` or a backtick, which are what a
 //   naive client rendering this into markup would be broken by. A non-ASCII
 //   host is rejected rather than punycoded: doing that properly is a library,
 //   and percent-encoding is always available to whoever needs it.
-// - **A real host, with nobody hiding in front of it.** `@` is banned
-//   outright, so `https://images.example.com@evil.invalid/x.png` — which
-//   fetches from `evil.invalid` while reading as the opposite — cannot be
-//   stored at all.
+// - A real host, with nobody hiding in front of it. `@` is banned outright, so
+//   `https://images.example.com@evil.invalid/x.png`, which fetches from
+//   `evil.invalid` while reading as the opposite, cannot be stored at all.
 pub fn avatar_url(raw: &str) -> Result<Option<String>, String> {
     let url = raw.trim();
     if url.is_empty() {
@@ -274,13 +272,13 @@ pub fn avatar_url(raw: &str) -> Result<Option<String>, String> {
 // One follow, as a profile reads it: who was followed, and on which day.
 //
 // The record is kept whether or not the follow is still live (see store.rs),
-// because this is a *log*: following somebody is something the user did on a
-// day, and unfollowing them later does not mean it never happened — no more
+// because this is a log: following somebody is something the user did on a
+// day, and unfollowing them later does not mean it never happened, no more
 // than un-learning a word could remove the lesson from the record above.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Follow {
     pub day: u32,
-    // who was followed — what a link to their profile is built from
+    // who was followed: what a link to their profile is built from
     pub username: String,
     // and what they call themselves, read at serving time rather than copied
     // when the follow happened, so a renamed person is not remembered under a
@@ -296,7 +294,7 @@ pub struct Follow {
 // read back whole.
 //
 // Only deltas live here. "How many concepts does this user know" is not a
-// field — it is the sum of `learned` over every row up to that day, which
+// field; it is the sum of `learned` over every row up to that day, which
 // `History` computes.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Activity {
@@ -310,7 +308,7 @@ pub struct Activity {
     pub exercises: u32,
     pub correct: u32,
     // the concepts the user met for the first time that day, in the order
-    // they met them — the actual point of the day, and what the feed quotes
+    // they met them: the point of the day, and what the feed quotes
     #[serde(default)]
     pub learned: Vec<String>,
     // units finished that day, by name (from the course outline)
@@ -322,7 +320,7 @@ impl Activity {
     // What one finished lesson comes to. The server records this against the
     // day the lesson was actually finished; the seeded example account (see
     // seed.rs) records the same thing against the day it is pretending to
-    // have been — which is the whole reason this is one function.
+    // have been, which is the whole reason this is one function.
     pub fn of_lesson(outcome: &Outcome, skill: Option<String>) -> Activity {
         Activity {
             lessons: 1,
@@ -365,7 +363,7 @@ impl Activity {
     }
 }
 
-// What the user had got through as of some day — the raw material of a score,
+// What the user had got through as of some day: the raw material of a score,
 // and a running total rather than anything stored.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Counts {
@@ -381,16 +379,16 @@ impl Counts {
     //
     // A language gets a score the way a Duolingo course does, because it is
     // the only way to put "two years of Spanish" and "six weeks of French" on
-    // one axis — which is what a graph of several of them needs. The weights
-    // say what the app thinks learning *is*: concepts dominate, because they
+    // one axis, which is what a graph of several of them needs. The weights
+    // say what the app thinks learning is: concepts dominate, because they
     // are what you actually know; a unit is a milestone worth a visible jump;
     // a lesson is the grind that moves it slowly.
     //
     // Deliberately not a function of the FSRS state, even though that is the
-    // richer signal: a score that fell while you slept — because
-    // retrievability decayed — would be read as a punishment for not
-    // studying, and this number is shown to other people. What decays belongs
-    // in the lesson builder, which is where forgetting is *acted* on.
+    // richer signal: a score that fell while you slept, because retrievability
+    // decayed, would read as a punishment for not studying, and this number is
+    // shown to other people. What decays belongs in the lesson builder, where
+    // forgetting is acted on.
     pub fn score(&self) -> u32 {
         let raw = FLOOR as f64
             + self.words as f64 * 1.6
@@ -406,7 +404,7 @@ impl Counts {
 pub struct Day {
     pub day: u32,
     pub activity: Activity,
-    // the running totals at the *end* of this day, so a score is a plain read
+    // the running totals at the end of this day, so a score is a plain read
     pub counts: Counts,
     // how many days in a row had been kept up to and including this one
     pub streak: u32,
@@ -427,9 +425,8 @@ impl History {
     // user sitting on the last lesson of the course re-reports finishing its
     // unit every time they re-take it (see `User::submit_lesson`). A unit is
     // cleared once, on the day it was first cleared, so the later mentions
-    // are dropped here rather than being kept out of the log — the rows are a
-    // record of what was reported, and deciding what it *means* belongs on
-    // the way out.
+    // are dropped here rather than being kept out of the log: the rows record
+    // what was reported, and deciding what it means belongs on the way out.
     pub fn of(mut rows: Vec<(u32, Activity)>) -> History {
         rows.sort_by_key(|(day, _)| *day);
         let mut counts = Counts::default();
@@ -442,7 +439,7 @@ impl History {
             counts.words += activity.learned.len() as u32;
             counts.skills += activity.skills.len() as u32;
             counts.lessons += activity.lessons;
-            // a run continues only across *consecutive* days; any gap at all
+            // a run continues only across consecutive days; any gap at all
             // starts the count again at one
             let streak = match days.last() {
                 Some(prev) if prev.day + 1 == day => prev.streak + 1,
@@ -463,9 +460,9 @@ impl History {
         self.days.last().map_or(Counts::default(), |d| d.counts)
     }
 
-    // The streak the user is *on*, which is not the same as the last day's
+    // The streak the user is on, which is not the same as the last day's
     // run: a streak is a live thing that a missed day breaks. Today not being
-    // over yet is why yesterday still counts — someone who studied yesterday
+    // over yet is why yesterday still counts: someone who studied yesterday
     // and hasn't opened the app this morning has not lost anything.
     pub fn streak(&self, today: u32) -> u32 {
         match self.days.last() {
@@ -490,7 +487,7 @@ impl History {
         })
     }
 
-    // Where the score stood at the end of `day` — the last recorded day at or
+    // Where the score stood at the end of `day`: the last recorded day at or
     // before it, since a day with no activity leaves the score exactly where
     // the day before it did. `None` if the record doesn't reach back that far,
     // which is how "this predates the account" is spelled.
@@ -503,8 +500,8 @@ impl History {
     }
 
     // Movement over the last week, in points: what the profile shows beside
-    // the current score. A week the user was away is a flat 0, not a fall —
-    // the score doesn't decay (see `Counts::score`).
+    // the current score. A week the user was away is a flat 0 rather than a
+    // fall, since the score doesn't decay (see `Counts::score`).
     pub fn week_delta(&self, today: u32) -> i32 {
         let now = self.counts().score() as i32;
         now - self.score_at(today.saturating_sub(7)).unwrap_or(FLOOR) as i32
@@ -519,14 +516,13 @@ impl History {
     // score)` oldest first: an anchor on the day the user joined (nothing
     // learnt yet, so the floor), a sample for every day they were active, and
     // a last one holding the current score out to the right-hand edge. Idle
-    // days in between need no sample — the score doesn't move on its own, so a
-    // straight segment across them is exactly right.
+    // days in between need no sample, since the score doesn't move on its own.
     //
-    // One point per date, at day resolution like everything else in the
-    // record. Several of the three sources can land on the same day — someone
-    // who joined and studied the same morning, or a today they have already
-    // studied — and a graph wants the day's *final* score, so a repeat
-    // overwrites rather than stacking a vertical step onto one date.
+    // One point per date, at day resolution like everything else in the record.
+    // Several of the three sources can land on the same day (someone who joined
+    // and studied the same morning, or a today they have already studied) and a
+    // graph wants the day's final score, so a repeat overwrites rather than
+    // stacking a vertical step onto one date.
     pub fn score_points(&self, since: u64, today: u32) -> Vec<(u64, u32)> {
         let mut points: Vec<(u64, u32)> = Vec::with_capacity(self.days.len() + 2);
         let mut push = |t: u64, v: u32| match points.last_mut() {
@@ -637,7 +633,7 @@ mod tests {
     }
 
     // the streak the user is on: today's run, or yesterday's if today hasn't
-    // happened yet — and nothing at all once a day has been missed
+    // happened yet, and nothing at all once a day has been missed
     #[test]
     fn the_current_streak_survives_today_but_not_a_missed_day() {
         let history = History::of(vec![active(10, 1, &[]), active(11, 1, &[])]);
@@ -729,7 +725,7 @@ mod tests {
         assert_eq!(ProfileEdit::of("Sam", "", "", None).unwrap().cefr, "");
     }
 
-    // Nobody can check the *claim* "B2 Spanish"; what can be checked is that
+    // Nobody can check the claim "B2 Spanish"; what can be checked is that
     // it is a level at all, so the page can render it as a badge rather than
     // printing whatever was typed.
     #[test]

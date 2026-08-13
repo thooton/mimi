@@ -7,21 +7,21 @@ import { useAuth } from "../../data/auth";
    itself, and the one they may not.
 
    Everything here is a credential, and credentials live in mimi_auth rather
-   than in this app's database (see mimi_backend/AGENTS.md) — so both forms
+   than in this app's database (see mimi_backend/AGENTS.md), so both forms
    ask for the current password. That is not belt-and-braces over the session
    cookie: the credential service has no sessions of its own, and a password
    typed just now is the only evidence it accepts that the person at the
    keyboard is the account's owner rather than whoever found it logged in.
 
-   The **username is deliberately not editable**. It addresses a profile
+   The username is deliberately not editable. It addresses a profile
    (/u/<name>), it is the name on every leaderboard row, and anything anyone
    has linked to points at it; changing one is a migration with a redirect at
-   the end of it, not a setting. Saying so in the panel is part of the design
-   — a field that is merely disabled invites the question. */
+   the end of it, not a setting. Saying so in the panel is part of the design:
+   a field that is merely disabled invites the question. */
 
 /** A failed request reads "PUT /me/email: that email is already registered".
     The verb and path are for the console; what the learner needs is the half
-    after the colon, which is the credential service's own wording — it owns
+    after the colon, which is the credential service's own wording. It owns
     every rule about passwords and addresses, so its refusals are the honest
     thing to show rather than a message re-guessed here. */
 function reason(value: unknown): string {
@@ -138,8 +138,8 @@ function PasswordSection() {
         event.preventDefault();
         setError(null);
         setDone(null);
-        /* The only rule this form judges for itself. Everything else — the
-           length floor, the common-password list, "it must be different" —
+        /* The only rule this form judges for itself. Everything else (the
+           length floor, the common-password list, "it must be different")
            belongs to mimi_auth, which enforces it for the wiki too; but
            whether the two boxes agree is a question about this form, and the
            server has no way to be asked it. */
@@ -219,7 +219,7 @@ function PasswordSection() {
 
 /** What a visitor with no account of their own gets. A guest is one of these:
     their record is real, but mimi_auth has never heard of it, so there is
-    nothing here for them to change — and the useful thing to offer is the
+    nothing here for them to change, and the useful thing to offer is the
     same page the navbar offers, which turns the record they have been
     building into an account rather than starting a new one. */
 function NoAccount({ guest }: { guest: boolean }) {
@@ -231,7 +231,7 @@ function NoAccount({ guest }: { guest: boolean }) {
                     <h2>{guest ? "Save your progress first" : "Sign in"}</h2>
                     <p className="settings-intro">
                         {guest
-                            ? "You are learning as a guest, so there are no account settings yet. Creating an account keeps everything you have done so far — your words, your place in the course and your streak."
+                            ? "You are learning as a guest, so there are no account settings yet. Creating an account keeps everything you have done so far: your words, your place in the course and your streak."
                             : "These settings belong to an account. Sign in to change your email or your password."}
                     </p>
                     <div className="settings-actions">
@@ -264,7 +264,7 @@ export default function SettingsApp() {
     const { user, ready } = useAuth();
 
     /* The page is prerendered and the viewer arrives afterwards, so the first
-       paint knows nothing about who is looking — the same wait the navbar and
+       paint knows nothing about who is looking, the same wait the navbar and
        the profile page make. An empty frame holds the layout rather than
        flashing a signed-out page at somebody who is signed in. */
     if (!ready) return <main className="settings-page" />;
@@ -288,7 +288,7 @@ export default function SettingsApp() {
                         </div>
                     </dl>
                     <p className="settings-note">
-                        Your username can't be changed — it is the address of
+                        Your username can't be changed: it is the address of
                         your profile and the name on the leaderboard, so
                         anything anyone has linked to points at it.
                     </p>

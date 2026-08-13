@@ -14,7 +14,7 @@ import type { ApiFlashcard, ApiFlashcardResponse } from './api';
 export interface ReviewState {
   /** every card handed to this run, in the order the server sent it */
   deck: ApiFlashcard[];
-  /** deck indices still to see, in order — grows when a card lapses */
+  /** deck indices still to see, in order, grows when a card lapses */
   queue: number[];
   /** where in the queue the current card sits */
   pos: number;
@@ -29,7 +29,7 @@ export interface ReviewState {
 }
 
 /** A finished batch, ready to send. `through` is the watermark to record once
- * the server has accepted it — carried alongside the cards because more may
+ * the server has accepted it, carried alongside the cards because more may
  * arrive while the request is in flight. */
 export interface PendingReport {
   cards: ApiFlashcardResponse[];
@@ -48,7 +48,7 @@ export function startReview(): ReviewState {
   };
 }
 
-/** Append a freshly fetched batch. It queues *behind* anything still waiting,
+/** Append a freshly fetched batch. It queues behind anything still waiting,
  * so lapsed cards from the previous batch keep their place at the front and
  * are cleared before the new material starts. */
 export function addBatch(state: ReviewState, cards: ApiFlashcard[]): ReviewState {
@@ -79,7 +79,7 @@ export function rateCard(state: ReviewState, correct: boolean): ReviewState {
   };
 }
 
-/** Nothing left to show — the learner has to wait for the next batch. */
+/** Nothing left to show, the learner has to wait for the next batch. */
 export function outOfCards(state: ReviewState): boolean {
   return state.pos >= state.queue.length;
 }
@@ -87,7 +87,7 @@ export function outOfCards(state: ReviewState): boolean {
 /** The batch to send, or null while any card the server has handed us is
  * still undecided. Because a card is decided the first time it is seen and
  * the queue serves unseen cards in deck order, the decided entries are always
- * a prefix — so "every entry above the watermark has a verdict" is the same
+ * a prefix, so "every entry above the watermark has a verdict" is the same
  * question as "is the outstanding batch finished".
  *
  * This goes true while the learner is still clearing that batch's lapses,

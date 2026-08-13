@@ -5,7 +5,7 @@ import type { ApiProfile } from './api.ts';
 import { activityFrom, profileFrom, safeAvatar, usernameFromPath } from './profile.ts';
 
 /* Public profiles are one page serving every name, so this parser is the
-   whole of "which profile am I looking at" — the host rewrote /u/<name> onto
+   whole of "which profile am I looking at", the host rewrote /u/<name> onto
    /u/ and threw the name away everywhere except the address bar. */
 
 test('a profile path yields the name in it', () => {
@@ -26,7 +26,7 @@ test('an escaped name is decoded once', () => {
 });
 
 // A rewrite rule that is too eager, or somebody typing the bare prefix, must
-// not be read as a request for a profile called "" — that would send the
+// not be read as a request for a profile called "", that would send the
 // profile endpoint a nonsense username.
 test('a path naming nobody yields null', () => {
   assert.equal(usernameFromPath('/u/'), null);
@@ -36,7 +36,7 @@ test('a path naming nobody yields null', () => {
 });
 
 // There is nothing underneath a profile to ask for, so a deeper path is not
-// a profile — better to say "no profile here" than to show the wrong one.
+// a profile, better to say "no profile here" than to show the wrong one.
 test('a deeper path is not a profile', () => {
   assert.equal(usernameFromPath('/u/marisol/settings'), null);
 });
@@ -133,7 +133,7 @@ test('a follow is an entry in the feed, linking to whoever was followed', () => 
   assert.equal(entry.score, undefined);
 });
 
-// A day can be in the feed without being a day of study — following somebody
+// A day can be in the feed without being a day of study, following somebody
 // is dated but is not a lesson, and "Completed 0 lessons" reports something
 // that didn't happen.
 test('a day with a follow and no lesson has no lesson entry', () => {

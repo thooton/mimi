@@ -1,6 +1,6 @@
-/* The chimes an answer gets on a verdict — correct.mp3 when it's right,
-   wrong.mp3 when it isn't — and the fanfare a finished lesson gets,
-   triumph.mp3. Static files served as-is from public/sounds — no audio API
+/* The chimes an answer gets on a verdict, correct.mp3 when it's right,
+   wrong.mp3 when it isn't, and the fanfare a finished lesson gets,
+   triumph.mp3. Static files served as-is from public/sounds, no audio API
    fancier than an <audio> element is needed for three short clips, and each
    play builds a fresh one so a quick retry can overlap the tail of the last
    chime instead of cutting it off. */

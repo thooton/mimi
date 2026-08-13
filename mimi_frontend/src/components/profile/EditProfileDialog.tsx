@@ -7,19 +7,19 @@ import type { Profile } from "../../data/profile";
 import { safeAvatar } from "../../data/profile";
 
 /* The profile editor: the things a person may say about themselves, in one
-   form submitted whole (see ApiProfileEdit). It is deliberately small —
+   form submitted whole (see ApiProfileEdit). It is deliberately small,
    everything else on the profile page is derived from what the user actually
    did, and none of that is editable by anybody.
 
-   The picture is a **link**, not an upload. Mimi hosts no images: that would
+   The picture is a link, not an upload. Mimi hosts no images: that would
    mean storage, moderation and a bill, none of which is what this app is for.
    What the user gets instead is a URL field with a live preview beside it, so
    a link that doesn't resolve to a picture is obvious here rather than on
    their public page. */
 
 /** The same limits the backend enforces (profile.rs). Spelling them out here
-    buys the ordinary typing experience — a field that stops rather than a
-    submission that fails — and the backend still has the last word, because a
+    buys the ordinary typing experience, a field that stops rather than a
+    submission that fails, and the backend still has the last word, because a
     maxLength is a courtesy and not a check. */
 const MAX_DISPLAY = 32;
 const MAX_BIO = 300;
@@ -31,7 +31,7 @@ export default function EditProfileDialog({
     onClose,
     onSaved,
 }: {
-    /** the profile as it stands — the form's starting values */
+    /** the profile as it stands, the form's starting values */
     profile: Profile;
     isOpen: boolean;
     onClose: () => void;
@@ -50,7 +50,7 @@ export default function EditProfileDialog({
      Keyed on `isOpen` alone, deliberately: `profile` is rebuilt from the API
      response on every render of the page behind this, so depending on it
      would throw away what somebody had typed the moment anything up there
-     re-rendered. The values it reads are still the current ones — the effect
+     re-rendered. The values it reads are still the current ones, the effect
      runs with the props of the render that opened the dialog. */
     useEffect(() => {
         if (!isOpen) return;
@@ -96,7 +96,7 @@ export default function EditProfileDialog({
     }
 
     /* The preview shows only what the page itself would be willing to load, so
-     a rejected URL previews as the initial — which is exactly what other
+     a rejected URL previews as the initial, which is exactly what other
      people would see. */
     const preview = safeAvatar(avatar.trim() === "" ? null : avatar.trim());
 

@@ -2,7 +2,7 @@ import type { Language } from '../../data/profile';
 import { formatXp } from '../../data/social';
 import Delta from './Delta';
 
-/* One tile per language the person is learning — the score first, the way a
+/* One tile per language the person is learning, the score first, the way a
    Duolingo course leads with its number. The row sits directly above the
    graph and is its legend: clicking a tile drops that language's line out,
    so the trend lives in the chart and the tiles stay a compact summary of
@@ -36,7 +36,7 @@ export default function LanguageCards({ languages, hidden, onToggle }: Props) {
             <span className="lang-body">
               <span className="lang-name">{lang.name}</span>
               {/* what the score is made of, which is the honest thing to put
-                  under it — there is no leaderboard to quote a rank from */}
+                  under it, there is no leaderboard to quote a rank from */}
               <span className="lang-foot">
                 {formatXp(lang.counts.lessons)} lessons · {formatXp(lang.counts.words)} words
               </span>

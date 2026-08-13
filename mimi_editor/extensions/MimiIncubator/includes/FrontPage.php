@@ -19,8 +19,8 @@ use Wikimedia\Rdbms\SelectQueryBuilder;
  *
  * Each one fills a box the wikitext lays out, the way a MediaWiki main page has
  * always been assembled. The wording around them stays editable wikitext; only
- * the parts that have to keep up with the wiki — what is published, what it
- * teaches, who edited it — are read at parse time. Styling comes from
+ * the parts that have to keep up with the wiki, what is published, what it
+ * teaches, who edited it, are read at parse time. Styling comes from
  * `resources/frontpage.css`, not Tailwind, because wikitext shares it.
  */
 final class FrontPage implements ParserFirstCallInitHook {
@@ -223,7 +223,7 @@ final class FrontPage implements ParserFirstCallInitHook {
 		return max( 1, min( 20, (int)( $args['limit'] ?? $default ) ) );
 	}
 
-	/** "1 course", "9 skills" — counted the way the wiki's language counts. */
+	/** "1 course", "9 skills", counted the way the wiki's language counts. */
 	private static function quantity( int $count, string $singular, string $plural ): string {
 		$language = MediaWikiServices::getInstance()->getContentLanguage();
 		return $language->formatNum( $count ) . ' ' . ( $count === 1 ? $singular : $plural );
@@ -239,7 +239,7 @@ final class FrontPage implements ParserFirstCallInitHook {
 		return MediaWikiServices::getInstance()->getLinkRenderer()->makeLink( $title, $label );
 	}
 
-	/** A link whose label is markup of our own making — the flagged course name. */
+	/** A link whose label is markup of our own making, the flagged course name. */
 	private static function rawLink( Title $title, string $html ): string {
 		return MediaWikiServices::getInstance()->getLinkRenderer()
 			->makeLink( $title, new HtmlArmor( $html ) );

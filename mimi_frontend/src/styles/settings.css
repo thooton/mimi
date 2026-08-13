@@ -1,5 +1,5 @@
 /* ==========================================================================
-   settings — the account page: what the learner may change about the
+   settings: the account page: what the learner may change about the
    account itself, one panel per thing.
 
    The fields themselves are auth.css's: a settings form asks for a password
@@ -41,7 +41,7 @@
 
 /* Each card is a head (the title, and a caption when it has one) and then a
    body. The heading owns no space of its own, and the gap belongs to
-   whatever follows the head — so a card with a caption and a card without
+   whatever follows the head, so a card with a caption and a card without
    one open at the same distance, and removing a caption can't leave a
    heading sitting on top of a field label. */
 .settings-card h2 {
@@ -73,7 +73,7 @@
     display: flex;
     flex-wrap: wrap;
     /* the row gap is the one that shows on a narrow screen, where the pairs
-       stack — it wants to be a band apart, not the label-to-value step */
+       stack: it wants to be a band apart, not the label-to-value step */
     gap: 16px 44px;
 }
 

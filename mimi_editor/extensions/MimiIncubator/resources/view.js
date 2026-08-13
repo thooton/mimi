@@ -35,7 +35,7 @@
 	// thousand rows: laying those out costs a browser far more than fetching
 	// them did, and a reader is looking at twenty. So rows are built a block at
 	// a time as the block comes into view, and taken down again once it is well
-	// out of view — the table holds little more than the screenful being read.
+	// out of view, the table holds little more than the screenful being read.
 	//
 	// A block's height is measured before it is taken down, so scrolling back
 	// through it does not move the ground under the reader; only the first
@@ -68,7 +68,7 @@
 			return;
 		}
 		// A page with nothing on it has already said so, in words that suit why
-		// it is empty — a glossary nobody has written yet, or the page a split
+		// it is empty, a glossary nobody has written yet, or the page a split
 		// one is filed under. Taking that over would replace it with a report
 		// about a filter that has not been typed into.
 		if ( !entries.length ) {
@@ -199,13 +199,13 @@
 		// block is far taller than any margin one could watch it through: an
 		// entry alone can run to forty forms, and an IntersectionObserver
 		// watching a block's first row calls a block gone the moment that row
-		// leaves — with the rest of it still filling the screen. So the whole
+		// leaves: with the rest of it still filling the screen. So the whole
 		// span of a block, from the top of its first row group to the bottom of
 		// its last, is what decides.
 		//
 		// Building a block that begins above the viewport lengthens the page
-		// above the reader. Browsers undo that themselves — scroll anchoring is
-		// on by default — and there is nothing here to switch it off.
+		// above the reader. Browsers undo that themselves, scroll anchoring is
+		// on by default, and there is nothing here to switch it off.
 		function update() {
 			const min = -MARGIN;
 			const max = window.innerHeight + MARGIN;

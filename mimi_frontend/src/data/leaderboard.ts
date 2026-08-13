@@ -3,12 +3,12 @@
    The board is global and resets every Monday: the only thing it ranks is the
    XP earned between then and now. All of it comes from the backend
    (GET /leaderboard), which sums it out of the same day-by-day activity rows
-   a profile is derived from — so a standing here and the XP on someone's
+   a profile is derived from, so a standing here and the XP on someone's
    profile can never disagree, and neither is stored.
 
    This file's job is the same as profile.ts's: put the response in the shape
    the table wants, and hold the couple of presentational decisions the
-   backend has no opinion about — which row is "you", and how a week is
+   backend has no opinion about, which row is "you", and how a week is
    spelled out for a human. */
 
 import type { ApiLeaderboard, ApiStanding } from './api';
@@ -18,10 +18,10 @@ const ms = (seconds: number) => seconds * 1000;
 
 export interface WeeklyEntry {
   /** competition rank from the backend: a tie shares a place, so this is
-      *not* the row's index and two rows may carry the same number */
+      not the row's index and two rows may carry the same number */
   rank: number;
   username: string;
-  /** what to print — their display name, or the username behind it */
+  /** what to print, their display name, or the username behind it */
   name: string;
   /** XP earned since Monday 00:00 UTC */
   xp: number;
@@ -34,7 +34,7 @@ export interface Weekly {
   weekStart: number;
   resetsAt: number;
   entries: WeeklyEntry[];
-  /** whether the reader is signed in but hasn't earned anything this week —
+  /** whether the reader is signed in but hasn't earned anything this week,
       the board can't show them a row, so the page says so instead of leaving
       them wondering where they are */
   missing: boolean;

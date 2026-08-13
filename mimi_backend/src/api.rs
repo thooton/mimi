@@ -47,8 +47,8 @@ impl CourseSummaryView {
 // The two settings a learner may edit about their account. Neither body names
 // an account: the session says who is asking, and the current password says
 // they are still the person who signed in. There is deliberately no request
-// for a username — it is the name a profile, a leaderboard row and every
-// link to either are written against, so it is fixed at registration.
+// for a username: it is the name a profile, a leaderboard row and every link
+// to either are written against, so it is fixed at registration.
 #[derive(Debug, Deserialize)]
 pub struct SetPasswordRequest {
     pub current_password: String,
@@ -64,8 +64,8 @@ pub struct SetEmailRequest {
 /// Everything the owner of a profile may write, in one body: the editor is a
 /// form, and a form is submitted whole. Sending a field back unchanged is
 /// therefore normal and means what it says, while an absent one is a bad
-/// request rather than "leave it alone" — a partial edit would make it
-/// impossible to *clear* a field, which is the whole of removing a picture.
+/// request rather than "leave it alone", since a partial edit would make it
+/// impossible to clear a field, which is the whole of removing a picture.
 ///
 /// `avatar` is the exception, and null there does mean cleared: it is the one
 /// field whose empty value is the absence of a thing rather than an empty
@@ -244,9 +244,9 @@ impl CardView {
 
 // One batch of standalone practice, not a deck the learner is expected to
 // finish: the client asks again whenever it runs low. Because the cards are
-// the most urgent ones the learner has, a client that asks for more *before*
-// reporting the batch it holds is handed the same cards back — the verdicts
-// are what reorder the vocabulary and make the next batch different. An empty
+// the most urgent ones the learner has, a client that asks for more before
+// reporting the batch it holds is handed the same cards back: the verdicts are
+// what reorder the vocabulary and make the next batch different. An empty
 // `cards` therefore means the learner has met no vocabulary at all, and is
 // the only thing that ever ends a run.
 #[derive(Debug, Serialize)]
@@ -276,7 +276,7 @@ impl FlashcardDeckView {
                 // single question with a single answer: "hello, hi, hey" on
                 // the back invites the learner to grade themselves against
                 // whichever of the three they happened to think of, and on the
-                // *front* it is worse still, because a source→target prompt
+                // front it is worse still, because a source→target prompt
                 // listing three synonyms does not say which one to produce.
                 // `glosses` is ordered, so the first is the dictionary sense.
                 // A word the glossary never defined has none, and a card whose
@@ -397,9 +397,9 @@ impl TaskView {
             direction: course.direction_of(ask),
             // An answer's spans give the client precise per-word verdicts
             // where credit can be divided. This explicit list covers the
-            // deliberately supported fallback — a word with no span takes the
-            // exercise's overall verdict — which is an unlocatable form, or
-            // *any* word of a one-word question (see loader::wording).
+            // supported fallback, where a word with no span takes the
+            // exercise's overall verdict: an unlocatable form, or any word of
+            // a one-word question (see loader::wording).
             words: exercise.words,
             prompt_glosses: spanish(ask.shows(), &exercise.prompt),
             answer_glosses: spanish(ask.produces(), &answer),
@@ -446,11 +446,11 @@ pub struct ExerciseView {
     pub direction: String,
     pub words: Vec<String>,
     pub prompt: String,
-    // Every accepted answer, preferred first, as `{"text", "words"}` — the
-    // text exactly as the learner should produce it, and the spans of it that
-    // prove each word: `{"word": "hola", "start": 1, "end": 5}`. **Offsets are
-    // UTF-16 code units**, so `text.slice(start, end)` in the browser is the
-    // stretch that word owns (see `sentence::Mark`).
+    // Every accepted answer, preferred first, as `{"text", "words"}`: the text
+    // exactly as the learner should produce it, and the spans of it that prove
+    // each word, `{"word": "hola", "start": 1, "end": 5}`. Offsets are UTF-16
+    // code units, so `text.slice(start, end)` in the browser is the stretch
+    // that word owns (see `sentence::Mark`).
     //
     // An empty `words` means grade the whole thing at once and give every word
     // in `words` above that verdict. A one-word question always looks like
@@ -463,9 +463,9 @@ pub struct ExerciseView {
     // explain), and present even for the one-word introductions whose answers
     // intentionally carry no grading marks.
     pub new_words: Vec<crate::sentence::Mark>,
-    // Dictionary annotations for whichever side is the target language —
-    // exactly one of the two, since a question shows one side and asks for the
-    // other. Prompt glosses are available while answering; answer glosses
+    // Dictionary annotations for whichever side is the target language: one of
+    // the two, since a question shows one side and asks for the other. Prompt
+    // glosses are available while answering; answer glosses
     // support the feedback afterwards. They cover untracked filler words as
     // well as the words the exercise grades.
     pub prompt_glosses: Vec<GlossView>,
@@ -582,7 +582,7 @@ impl CourseView {
 /// The weekly board (see leaderboard.rs): everyone who has earned XP since
 /// Monday, best first. The two timestamps are the week's own edges, so a
 /// client can say which week it is looking at and when it turns over without
-/// deriving Mondays from the browser's clock — the record is kept in UTC days,
+/// deriving Mondays from the browser's clock: the record is kept in UTC days,
 /// and a reader east of UTC would otherwise label the board a day out.
 #[derive(Debug, Serialize)]
 pub struct LeaderboardView {
@@ -595,7 +595,7 @@ pub struct LeaderboardView {
 pub struct StandingView {
     /// competition rank: equal XP shares a place, and the next one skips
     pub rank: u32,
-    /// who this is — what a link to their profile is built from
+    /// who this is: what a link to their profile is built from
     pub username: String,
     /// what they call themselves, or the username where they haven't said
     pub display: String,
@@ -639,7 +639,7 @@ pub struct UserSearchView {
 
 #[derive(Debug, Serialize)]
 pub struct FoundUserView {
-    /// who this is — what a thread and a profile link are both built from
+    /// who this is: what a thread and a profile link are both built from
     pub username: String,
     /// what they call themselves, or the username where they haven't said
     pub display: String,
@@ -703,7 +703,7 @@ pub struct Social {
     /// whether the account making this request follows the one it is reading.
     /// False for a signed-out reader, who is nobody in particular.
     pub viewer_follows: bool,
-    /// every follow this user has ever made, live or since undone — the feed
+    /// every follow this user has ever made, live or since undone: the feed
     /// quotes it, so it is a log rather than the current edge
     pub log: Vec<Follow>,
 }
@@ -716,18 +716,19 @@ pub struct ProfileView {
     pub bio: String,
     pub cefr: String,
     /// An absolute https URL to a picture on somebody else's server, checked
-    /// on the way in (see `profile::avatar_url`) — Mimi hosts no images. Null
+    /// on the way in (see `profile::avatar_url`); Mimi hosts no images. Null
     /// where they haven't linked one, which is most people.
     pub avatar: Option<String>,
-    // the course they're learning, or null while they haven't picked — the
-    // one authored field with a writer of its own (PUT /me/course)
+    // the course they're learning, or null while they haven't picked: the one
+    // authored field with a writer of its own (PUT /me/course)
     pub course_id: Option<String>,
     pub joined: u64,
     /// how many accounts follow this one, and how many it follows
     pub followers: u32,
     pub following: u32,
     /// whether the reader of this response follows it. False when nobody is
-    /// signed in, and false on your own profile — you do not follow yourself.
+    /// signed in, and false on your own profile, since you do not follow
+    /// yourself.
     pub viewer_follows: bool,
     /// Whether this process authenticated a request from the account during
     /// the rolling presence window. Unlike `last_active`, this is live,
@@ -775,9 +776,9 @@ pub struct PointView {
     pub t: u64,
     pub v: u32,
 }
-/// One day of the feed. **A day here is not necessarily a day of study**: a
-/// day whose only entry is a follow has no activity row behind it, and reads
-/// as zeroes with a `followed` list — which is exactly what happened.
+/// One day of the feed. A day here is not necessarily a day of study: a day
+/// whose only entry is a follow has no activity row behind it, and reads as
+/// zeroes with a `followed` list, which is what happened.
 #[derive(Debug, Serialize)]
 pub struct DayView {
     pub t: u64,
@@ -789,8 +790,8 @@ pub struct DayView {
     pub learned: Vec<String>,
     pub skills: Vec<String>,
     /// who this user started following that day. Undoing a follow does not
-    /// remove it from here — the feed records what was done, not what is
-    /// still true.
+    /// remove it from here: the feed records what was done, not what is still
+    /// true.
     pub followed: Vec<FollowView>,
     pub score: u32,
     pub delta: i32,
@@ -800,7 +801,7 @@ pub struct DayView {
 pub struct FollowView {
     /// what a link to their profile is built from
     pub username: String,
-    /// and what they call themselves *now*, not when they were followed
+    /// and what they call themselves now, not when they were followed
     pub display: String,
 }
 
@@ -846,11 +847,10 @@ impl ProfileView {
             .collect();
         // The feed is the activity record and the follow log read together,
         // so a day either of them mentions is a day of the feed. Following
-        // somebody is deliberately *not* folded into the activity table: a
-        // row there is a day the learner studied, and it is what the streak
-        // and "days studied" are counted from — a follow must not forge a
-        // link in a streak any more than an empty lesson may (see
-        // `Activity::is_empty`).
+        // somebody is not folded into the activity table: a row there is a day
+        // the learner studied, and it is what the streak and "days studied"
+        // are counted from, so a follow must not forge a link in a streak any
+        // more than an empty lesson may (see `Activity::is_empty`).
         let mut followed: HashMap<u32, Vec<FollowView>> = HashMap::new();
         for follow in social.log {
             followed.entry(follow.day).or_default().push(FollowView {
@@ -871,9 +871,9 @@ impl ProfileView {
             .map(|date| {
                 let day = studied.get(&date);
                 // Where a day has no activity of its own, the score is
-                // wherever the last active day left it — the same reading
-                // `score_at` gives the graph, and the reason a follow-only
-                // day shows a flat score rather than a fall to the floor.
+                // wherever the last active day left it: the same reading
+                // `score_at` gives the graph, and the reason a follow-only day
+                // shows a flat score rather than a fall to the floor.
                 let score = day.map_or_else(
                     || history.score_at(date).unwrap_or(floor),
                     |day| day.counts.score(),
@@ -1030,7 +1030,7 @@ mod tests {
     }
 
     // Following somebody is something the user did on a day, so it belongs in
-    // the feed — but it is not studying, so it must not arrive as a day of
+    // the feed, but it is not studying, so it must not arrive as a day of
     // activity. A follow-only day is therefore a real entry made of zeroes,
     // with the score sitting exactly where the last lesson left it.
     #[test]

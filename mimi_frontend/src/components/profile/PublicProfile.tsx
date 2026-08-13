@@ -6,7 +6,7 @@ import ProfileApp from "./ProfileApp";
 
    The name is read from the address bar rather than baked into the page,
    because the site is prerendered and there is no build at which the set of
-   accounts is known — people sign up after it. One page is emitted, at
+   accounts is known, people sign up after it. One page is emitted, at
    /u/, and the host rewrites every /u/<name> onto it (see astro.config.mjs,
    which spells out both the dev-server rule and the nginx one). So this
    component is the other half of that rewrite: the server has thrown the
@@ -14,7 +14,7 @@ import ProfileApp from "./ProfileApp";
    survives.
 
    That also means the name cannot be known while the page is being
-   prerendered — `location` doesn't exist then — so it is resolved in an
+   prerendered: `location` doesn't exist then, so it is resolved in an
    effect and nothing is rendered until it is. Passing `undefined` to
    ProfileApp in the meantime would be read as "show me my own profile",
    which would flash the wrong person's record on the way past. */

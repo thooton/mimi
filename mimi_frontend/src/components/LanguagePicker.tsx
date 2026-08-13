@@ -8,7 +8,7 @@ import { useCourseSelection } from '../data/courseSelection';
 
    It sits in the navbar rather than on the learn page because the answer is
    global: the profile, the leaderboard and the practice drills all mean
-   something different depending on it. Being always visible is the point —
+   something different depending on it. Being always visible is the point,
    a setting you have to go looking for is one people forget they set. */
 
 export default function LanguagePicker({ visible = true }: { visible?: boolean }) {
@@ -16,13 +16,13 @@ export default function LanguagePicker({ visible = true }: { visible?: boolean }
 
   /* Until the backend has answered there is no button at all: rendering
      the globe here would be a flicker at best and the wrong flag's stand-in
-     at worst. The picker simply appears once the choice is known — blank
+     at worst. The picker simply appears once the choice is known, blank
      first, flag (or the genuinely unpicked globe) after.
 
      `visible` is the navbar's half of the same idea: the bar holds the
      picker back until the profile request settles, so the flag, the streak
      and the account button reveal together in one paint instead of popping
-     in one after another. The component stays mounted the whole time —
+     in one after another. The component stays mounted the whole time,
      `loaded` has long flipped by then, so the flag is ready the moment
      it's allowed to show. */
   if (!visible || !loaded) return null;
@@ -55,7 +55,7 @@ export default function LanguagePicker({ visible = true }: { visible?: boolean }
       content={
         /* a listbox, not a menu: the items are `listoption`s, since this
            picks one of a set of values rather than firing one of a set of
-           commands — and Blueprint only draws the selected tick for those.
+           commands, and Blueprint only draws the selected tick for those.
            Left as Menu's default `menu` role, the options would be sitting
            in a list that doesn't allow them. */
         <Menu className="lang-menu" role="listbox" aria-label="Language">
@@ -68,10 +68,10 @@ export default function LanguagePicker({ visible = true }: { visible?: boolean }
         className="lang-btn"
         type="button"
         aria-label={current
-          ? `Learning ${languageName(current.target_lang)} from ${languageName(current.source_lang)} — change course`
+          ? `Learning ${languageName(current.target_lang)} from ${languageName(current.source_lang)}, change course`
           : 'Choose a course'}
       >
-        {/* nothing picked yet — a hollow slot with the same footprint as the
+        {/* nothing picked yet, a hollow slot with the same footprint as the
             flag, and the only state left once `!loaded` returns early above */}
         {current && languageByCode(current.target_lang) ? (
           <Flag region={languageByCode(current.target_lang)!.region} size={22} className="flag-btn" aspect="4x3" />

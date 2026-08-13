@@ -37,8 +37,8 @@
 
 /*
  * A phone cannot show any of these editors' columns side by side. Each Vue view
- * turns its columns into a sequence of screens — words -> sentences -> sentence,
- * entries -> entry, tips -> tip — and this shell lets that sequence behave like
+ * turns its columns into a sequence of screens, words -> sentences -> sentence,
+ * entries -> entry, tips -> tip, and this shell lets that sequence behave like
  * an app and use the dynamic viewport. The course tree has only one screen, but
  * it takes the same shell so that every editor gets the same compact toolbar and
  * the same edge-to-edge room. Above the breakpoint every rule here is inert and

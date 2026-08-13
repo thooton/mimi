@@ -13,8 +13,8 @@ require_once dirname( __DIR__, 3 ) . '/maintenance/Maintenance.php';
  * Replace the installer's placeholder main page with Mimi's front page.
  *
  * The wording is ordinary wikitext so it can be rewritten on-wiki; the parts
- * that have to stay true to the content — the course cards, the totals, the
- * list of recent edits — come from the extension's parser tags.
+ * that have to stay true to the content, the course cards, the totals, the
+ * list of recent edits, come from the extension's parser tags.
  */
 class SeedMainPage extends Maintenance {
 	/** The text MediaWiki's installer leaves behind, and nobody wants to keep. */

@@ -30,8 +30,8 @@ pub struct LoginRequest {
 // The two credential edits. Both carry a `login` and the current password
 // because mimi_auth has no sessions of its own: the password is what stands
 // in for one, and the caller is expected to have just asked for it. The
-// `login` is never the one the browser typed — it is the username the
-// backend session names — so a request can only ever edit its own account.
+// `login` is never the one the browser typed but the username the backend
+// session names, so a request can only ever edit its own account.
 #[derive(Deserialize, Serialize)]
 pub struct ChangePasswordRequest {
     pub login: String,

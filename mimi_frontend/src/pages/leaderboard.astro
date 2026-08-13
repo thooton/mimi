@@ -2,11 +2,11 @@
 import AppLayout from "../layouts/AppLayout.astro";
 import LeaderboardApp from "../components/leaderboard/LeaderboardApp";
 
-/* One board for everyone, reset every week — no leagues, no brackets: the
+/* One board for everyone, reset every week, no leagues, no brackets: the
    only thing ranked is the XP earned since Monday, summed out of the same
    activity record a profile is derived from (mimi_backend/src/leaderboard.rs).
    Guests are left off it: a record with no name behind it, which expires with
-   its cookie, has no business holding a public placing — but registering
+   its cookie, has no business holding a public placing, but registering
    claims that record, so the week comes with them. */
 ---
 

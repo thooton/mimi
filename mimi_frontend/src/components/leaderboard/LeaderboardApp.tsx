@@ -8,7 +8,7 @@ import { formatXp } from "../../data/social";
 
 /* The leaderboard tab's one React root: a single global board, read top to
    bottom, ranking individual learners by the XP they have earned since
-   Monday. Nothing here is sorted or scored client-side — the backend serves
+   Monday. Nothing here is sorted or scored client-side, the backend serves
    the standings already ranked, because a tie shares a place and there should
    only be one opinion about what that means.
 
@@ -28,7 +28,7 @@ function WeeklyPanel({ weekly }: { weekly: Weekly }) {
             <div className="board-body">
                 {weekly.entries.length === 0 ? (
                     /* a brand-new week, before anybody has finished a lesson
-                       in it — an empty board is the honest answer, and it
+                       in it, an empty board is the honest answer, and it
                        fills itself in within the hour */
                     <p className="board-note">
                         Nobody has earned XP yet this week
@@ -86,7 +86,7 @@ function WeeklyPanel({ weekly }: { weekly: Weekly }) {
                 )}
 
                 {/* Only for a signed-in learner who really has earned nothing
-                    this week — a guest is told nothing at all, because being
+                    this week, a guest is told nothing at all, because being
                     lectured about not counting is not what somebody trying
                     the course out came here for. */}
                 {weekly.missing && (
@@ -106,7 +106,7 @@ export default function LeaderboardApp() {
 
     /* The board is public, but which row is "you" depends on the viewer, so
        the fetch waits for the session to settle rather than rendering the
-       table twice — once anonymous, once with a row highlighted.
+       table twice, once anonymous, once with a row highlighted.
 
        A guest reads the board as an anonymous visitor: they are never on it,
        so passing their name would only ever produce "you aren't here". */
@@ -138,7 +138,7 @@ export default function LeaderboardApp() {
         );
     }
 
-    /* while the board is in flight the panel is simply absent — no spinner,
+    /* while the board is in flight the panel is simply absent, no spinner,
        no skeleton, matching the profile page */
     if (!weekly) return null;
 

@@ -1,16 +1,16 @@
 // The wiki state the server keeps between polls, and how it is refreshed.
 //
-// The thing worth understanding here is **why a timestamp is not enough state**.
+// The thing worth understanding here is why a timestamp is not enough state.
 // An incremental refresh learns which pages went stale, but it cannot turn
 // those pages alone into a course: the vocabulary is assembled from the
-// glossary *and* every skill in the course, so rebuilding it needs the pages
+// glossary and every skill in the course, so rebuilding it needs the pages
 // that did not change just as much as the ones that did.
 //
 // So the whole page set is cached. The snapshot is the whole of the wiki the
 // server cares about, as of one instant, and the course is a pure function of
 // it (see convert.rs). An incremental refresh is then a small idea: patch the
 // stale entries, move the instant forward, and rebuild exactly as a first run
-// would. That is the property that makes polling trustworthy — patching three
+// would. That is the property that makes polling trustworthy: patching three
 // pages yields exactly what a full refetch would. If the rebuild ever comes to
 // depend on anything outside the snapshot, that guarantee is gone.
 
@@ -28,8 +28,8 @@ pub struct Snapshot {
 // The course a page belongs to: its name, minus any skill subpage.
 //
 // The same rule as the wiki's own `CourseName::fromPage`. Names carry the data
-// here — a skill is `Skill:<course>/<skill>`, a glossary is `Glossary:<course>`
-// — and no page stores a pointer to another.
+// here (a skill is `Skill:<course>/<skill>`, a glossary is
+// `Glossary:<course>`) and no page stores a pointer to another.
 pub fn course_of(title: &str) -> String {
     let without_namespace = title.split_once(':').map_or(title, |(_, rest)| rest);
     without_namespace
@@ -72,8 +72,8 @@ pub fn references(page: &Revision) -> Vec<String> {
 
 // Bring the cached wiki state up to a new instant.
 //
-// The first refresh and every one after it differ in one respect only — which
-// cached pages are treated as stale — and share the walk that follows.
+// The first refresh and every one after it differ only in which cached pages
+// are treated as stale, and share the walk that follows.
 pub async fn refresh(
     wiki: &Wiki,
     previous: Option<&Snapshot>,

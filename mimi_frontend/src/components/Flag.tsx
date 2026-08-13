@@ -7,7 +7,7 @@ interface Props {
   aspect?: '1x1' | '4x3';
 }
 
-/* The flag SVGs are vendored from flag-icons (MIT) — the square 1x1 cuts
+/* The flag SVGs are vendored from flag-icons (MIT), the square 1x1 cuts
    suit the round language badges, and the 4x3 cuts fill the compact navbar
    flag. The navbar can't just crop the square art: cover-cropping a square
    to 4:3 shaves the top and bottom, which for a three-bar flag like Germany

@@ -1,8 +1,8 @@
 // The course's vocabulary: the fixed list of words it teaches, in frequency
 // order, each in dictionary form.
 //
-// A word is the atom of spaced repetition — one `WordState`, up to three cards
-// (see word.rs). It is deliberately *not* one inflection: a learner is asked
+// A word is the atom of spaced repetition: one `WordState`, up to three cards
+// (see word.rs). It is deliberately not one inflection: a learner is asked
 // about `comer` through whichever of `como`, `comí` or `comen` a sentence
 // happens to use, and every one of those verdicts lands on the same card. The
 // question the system asks is "do you know this word", and asking it through a
@@ -15,7 +15,7 @@
 //
 // Neither list is pruned for ambiguity here, deliberately. A sentence is only
 // ever searched for the handful of words it tags, so a form is confusing only
-// when two of *those* words offer it — `sentence::locate` drops exactly those
+// when two of those words offer it, and `sentence::locate` drops exactly those
 // clashes, per search. A course-wide pass would instead strip a form from
 // every word that shares it with anything, including the vast majority of
 // pairs that never meet in one sentence.
@@ -69,7 +69,7 @@ impl Vocab {
         self.words.len()
     }
 
-    // What a word id says, for the benefit of a person reading it — a profile
+    // What a word id says, for the benefit of a person reading it: a profile
     // says "you learnt comer", not "you learnt the word with id comer". They
     // are usually the same string; falling back to the id keeps a word the
     // list somehow doesn't cover visible rather than dropping it from

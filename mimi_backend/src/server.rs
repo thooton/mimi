@@ -39,7 +39,7 @@ pub struct AppState {
     store: Store,
     credentials: CredentialService,
     // Who is looking at their inbox right now, so that a message can reach
-    // them while they are. Nothing is kept here — the database is the record
+    // them while they are. Nothing is kept here; the database is the record
     // (see messages.rs).
     broker: Broker,
     // The last authenticated request seen from each recently present user.
@@ -168,7 +168,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/me/password", put(set_user_password))
         .route("/me/email", put(set_user_email))
         // Under `/users/…` because it names somebody else, but private
-        // because it is something *you* do: the session says who is
+        // because it is something you do: the session says who is
         // following, so a path can never nominate a follower.
         .route(
             "/users/{username}/follow",
@@ -227,7 +227,7 @@ const SESSION_SECONDS: u64 = 30 * 24 * 60 * 60;
 // of the indicator itself.
 const ONLINE_SECONDS: u64 = 30;
 
-// A guest's session is shorter than an account's because it is the *only*
+// A guest's session is shorter than an account's because it is the only
 // copy of them: there are no credentials to sign back in with, so when the
 // cookie goes the record goes (see `Store::create_guest`). A week is long
 // enough to come back tomorrow, and after the weekend, and short enough that
@@ -284,10 +284,10 @@ fn db_error(e: rusqlite::Error) -> ApiError {
     error(StatusCode::INTERNAL_SERVER_ERROR, "database error")
 }
 
-// Registering is also how a guest stops being one. The record they built
-// while trying the course is renamed onto the name mimi_auth has just minted
-// for them — see `Store::claim_guest` — so "save your progress" keeps their
-// words, their place in the tree and every day of their streak.
+// Registering is also how a guest stops being one. The record they built while
+// trying the course is renamed onto the name mimi_auth has just minted (see
+// `Store::claim_guest`), so "save your progress" keeps their words, their place
+// in the tree and every day of their streak.
 async fn register(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
@@ -323,9 +323,9 @@ async fn login(
     provision(&state, &user)?;
     // Signing in says the record that matters is the one behind these
     // credentials, so the guest record is discarded rather than merged.
-    // Folding two learners together has no honest answer — of two stages for
-    // the same word, neither is more true — and avoiding this is exactly what
-    // the offer to register after each lesson was for.
+    // Folding two learners together has no honest answer, since of two stages
+    // for the same word neither is more true, and avoiding this is what the
+    // offer to register after each lesson was for.
     if let Some(guest) = guest {
         state.store.delete_account(&guest).map_err(db_error)?;
     }
@@ -333,18 +333,18 @@ async fn login(
 }
 
 // Start the course without an account: open a credential-less learning
-// record and hand back a session for it. Everything downstream — the course
-// map, the lesson builder, the profile — reads a guest as an ordinary
-// learner, because a lesson is generated from the learner's own memory state
-// and there is nowhere but the database for that state to live.
+// record and hand back a session for it. Everything downstream (the course
+// map, the lesson builder, the profile) reads a guest as an ordinary learner,
+// because a lesson is generated from the learner's own memory state and there
+// is nowhere but the database for that state to live.
 async fn start_guest(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Result<Response, ApiError> {
     // Already somebody. Minting a second guest here would overwrite the
     // cookie that is the only way back to the first one's progress, so a
-    // double-click — or a page that isn't sure whether it has a session —
-    // gets an answer rather than a new identity.
+    // double-click, or a page unsure whether it has a session, gets an answer
+    // rather than a new identity.
     if let Some(identity) = current_session(&state, &headers)? {
         return Ok((
             [(header::CACHE_CONTROL, "no-store")],
@@ -390,11 +390,11 @@ fn current_session(
     Ok(identity)
 }
 
-// The guest whose record this request is carrying, if any — read *before*
-// the credential service is called, because that call is what decides
-// whether there is a name to carry the record onto. A database that won't
-// answer reads as "no guest": the sign-in still works, and the worst it
-// costs is a record that the next sweep collects.
+// The guest whose record this request is carrying, if any, read before the
+// credential service is called, because that call decides whether there is a
+// name to carry the record onto. A database that won't answer reads as "no
+// guest": the sign-in still works, and the worst it costs is a record that the
+// next sweep collects.
 fn guest_of(state: &AppState, headers: &axum::http::HeaderMap) -> Option<String> {
     let identity = current_session(state, headers).ok()??;
     identity.guest.then_some(identity.username)
@@ -458,8 +458,8 @@ async fn keep_alive() -> StatusCode {
     StatusCode::NO_CONTENT
 }
 
-// Who the caller is, in the one shape every `/auth` endpoint answers with —
-// so a client has a single question to ask and a single answer to read.
+// Who the caller is, in the one shape every `/auth` endpoint answers with, so
+// a client has a single question to ask and a single answer to read.
 #[derive(serde::Serialize)]
 struct ViewerView {
     username: String,
@@ -691,7 +691,7 @@ async fn get_user_profile(
 // user base the honest answer is the short one, and inventing a
 // limit now would fix a number nobody has measured. When the response gets
 // big enough to notice, the shape to reach for is a top slice plus the
-// caller's own row — which needs the session this handler currently doesn't.
+// caller's own row, which needs the session this handler currently doesn't.
 async fn get_leaderboard(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<LeaderboardView>, ApiError> {
@@ -731,7 +731,7 @@ async fn set_user_course(
 // The authored half of a profile, written whole (see `EditProfileRequest`).
 // Bound to the owner by the session like every other writer here: there is no
 // path parameter, so no request can nominate somebody else's profile to
-// rewrite. A guest may edit theirs — the record is real while it lasts, and
+// rewrite. A guest may edit theirs: the record is real while it lasts, and
 // "Guest" is a placeholder rather than a name they chose.
 async fn edit_user_profile(
     State(state): State<Arc<AppState>>,
@@ -750,9 +750,9 @@ async fn edit_user_profile(
     Ok(StatusCode::NO_CONTENT)
 }
 
-// Follow somebody, dated the day it happened — which is what puts it in the
-// follower's activity feed. Idempotent: following twice is one follow, and
-// the second call does not re-date the first.
+// Follow somebody, dated the day it happened, which is what puts it in the
+// follower's activity feed. Idempotent: following twice is one follow, and the
+// second call does not re-date the first.
 async fn follow_user(
     State(state): State<Arc<AppState>>,
     Extension(identity): Extension<SessionIdentity>,
@@ -769,7 +769,7 @@ async fn follow_user(
 // Stop following somebody. This ends the follow and nothing else: the feed
 // entry from the day it started stays where it is, because the feed is a
 // record of what the user did and this is not a claim that they didn't.
-// Idempotent in the same way — unfollowing somebody you never followed is
+// Idempotent in the same way: unfollowing somebody you never followed is
 // already true, so it is a 204 rather than an argument.
 async fn unfollow_user(
     State(state): State<Arc<AppState>>,
@@ -792,10 +792,10 @@ fn check_follow<'a>(
     identity: &'a SessionIdentity,
     followee: &str,
 ) -> Result<&'a str, ApiError> {
-    // Following is public and permanent — it goes on the follower's page and
-    // stays there — and a guest is neither. Their record has a week to live
-    // and no name behind it, which is the same reason the weekly board leaves
-    // them off; registering is what turns them into somebody who can do this.
+    // Following is public and permanent, and a guest is neither. Their record
+    // has a week to live and no name behind it, which is the same reason the
+    // weekly board leaves them off; registering is what turns them into
+    // somebody who can do this.
     if identity.guest {
         return Err(error(
             StatusCode::FORBIDDEN,
@@ -824,7 +824,7 @@ fn check_follow<'a>(
 // immediately, then message/read events as the broker publishes them. Its
 // other half is the three short HTTP commands below.
 //
-// **A guest has no inbox.** The same rule as following, for the same reason:
+// A guest has no inbox. The same rule as following, for the same reason:
 // a record with a week to live and no name behind it has nobody to write to,
 // and nobody could write back. Registering keeps everything they have done,
 // so the answer is an offer rather than a wall.
@@ -941,12 +941,12 @@ struct SearchQuery {
 // The account settings, which are the two things `mimi_auth` holds. Both are
 // proxies with a session in front: the account being edited is the one the
 // cookie names, never a field of the body, so a request can only ever reach
-// its own credentials. The rules — length, the common-password list, what a
-// valid address is — stay in `mimi_auth`, which is the one place they can be
-// enforced for the wiki as well as for us; the message it refuses with is
-// what the learner reads.
+// its own credentials. The rules (length, the common-password list, what a
+// valid address is) stay in `mimi_auth`, the one place they can be enforced for
+// the wiki as well as for us; the message it refuses with is what the learner
+// reads.
 //
-// **A username is not here**, deliberately: it addresses a profile, a
+// A username is not here, deliberately: it addresses a profile, a
 // leaderboard row and every link either of them appears in, and renaming an
 // account is a migration rather than a setting.
 async fn set_user_password(
@@ -965,8 +965,8 @@ async fn set_user_password(
         })
         .await
         .map_err(credential_error)?;
-    // The old password is out of use, so the sessions opened with it go too
-    // — `mimi_auth` can retire a credential but cannot reach the cookies its
+    // The old password is out of use, so the sessions opened with it go too:
+    // `mimi_auth` can retire a credential but cannot reach the cookies its
     // consumers hold. The browser that asked keeps its own (see
     // `Store::delete_other_sessions`); a request that somehow arrived
     // without a readable cookie can't have got past the middleware.
@@ -997,7 +997,7 @@ async fn set_user_email(
         .await
         .map_err(credential_error)?;
     // Sessions carry a copy of the address for `/auth/me` to answer from, so
-    // the copy follows the record — on this browser and on any other.
+    // the copy follows the record, on this browser and on any other.
     state
         .store
         .update_session_email(&username, &user.email)
@@ -1008,10 +1008,10 @@ async fn set_user_email(
     ))
 }
 
-// A guest has no credentials to edit — `mimi_auth` has never heard of them
-// (see AGENTS.md) — so there is nothing here to change and no current
-// password they could prove themselves with. Registering is the way in, and
-// it keeps the record they have already built.
+// A guest has no credentials to edit, since `mimi_auth` has never heard of
+// them (see AGENTS.md), so there is nothing to change and no current password
+// they could prove themselves with. Registering is the way in, and it keeps the
+// record they have already built.
 fn credentialed(identity: &SessionIdentity) -> Result<String, ApiError> {
     if identity.guest {
         return Err(error(
@@ -1059,7 +1059,7 @@ async fn create_lesson(
 
 // The tips a lesson carries, served on their own. The map's "Tips" button
 // reads this so a learner can read the lesson's material without starting
-// it — a GET, because nothing is built, stored or consumed here.
+// it. A GET, because nothing is built, stored or consumed here.
 async fn get_lesson_tips(
     State(state): State<Arc<AppState>>,
     Extension(identity): Extension<SessionIdentity>,
@@ -1408,9 +1408,8 @@ mod tests {
     }
 
     // Who may follow whom, from the handler's side. The rules exist because a
-    // follow is public and permanent — it goes on the follower's page and
-    // stays there — so both ends of one have to be somebody who will still be
-    // there tomorrow.
+    // follow is public and permanent, so both ends of one have to be somebody
+    // who will still be there tomorrow.
     #[tokio::test]
     async fn following_is_between_named_accounts_and_never_with_yourself() {
         let state = test_state();

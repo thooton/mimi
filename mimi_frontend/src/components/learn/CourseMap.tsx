@@ -41,14 +41,14 @@ function iconOf(skill: SkillNode) {
 
 /* Where a skill's card can go.
  *
- * Beside the stone is the right answer on a desktop — the tree is a column
+ * Beside the stone is the right answer on a desktop: the tree is a column
  * down the middle of a wide page and the card fills the margin next to it.
- * On a phone there is no margin: the tree *is* the page, the stone sits at
+ * On a phone there is no margin: the tree is the page, the stone sits at
  * its centre, and a 265px card asked for at `right` has nowhere to be. It
  * used to be placed there anyway and hang off the edge of the screen with
- * its Start button past the fold — which is the bug this answers.
+ * its Start button past the fold, which is the bug this answers.
  *
- * So under this width the card goes *under* the stone instead, where the
+ * So under this width the card goes under the stone instead, where the
  * full width of the screen is available to it.
  *
  * 720px is the navbar's breakpoint (chrome.css), reused deliberately: it is
@@ -60,7 +60,7 @@ const BESIDE_MIN = "(min-width: 721px)";
 function useBeside(): boolean {
     /* Starts false on both sides of hydration and corrects in the effect.
        The server has no viewport to measure, so anything else here would be
-       a guess that React would have to reconcile — and guessing "desktop"
+       a guess that React would have to reconcile, and guessing "desktop"
        is the guess that renders wrong on the phones this is for. Nothing
        moves when it corrects: every popover is closed at mount. */
     const [beside, setBeside] = useState(false);
@@ -206,11 +206,11 @@ function SkillMedallion({
                 <Popover
                     placement={beside ? "right" : "bottom"}
                     popoverClassName="node-popover bp6-popover-minimal-animation"
-                    /* Placement is where the card would *like* to be; this is
+                    /* Placement is where the card would like to be; this is
                        what stops it leaving the screen when it can't. Popper
                        shifts an overflowing popover back along its axis, and
                        the padding keeps a margin of paper between the card and
-                       the edge instead of letting it sit flush against it —
+                       the edge instead of letting it sit flush against it,
                        which on the outermost stone of a row is the difference
                        between a card and a card with a corner cut off. */
                     modifiers={{
@@ -242,8 +242,8 @@ function SkillMedallion({
     );
 }
 
-/* The castle between stretches: a crenellated silhouette — body, three
-   merlons, and the dark rim that gives it thickness — wearing its state
+/* The castle between stretches: a crenellated silhouette (body, three
+   merlons, and the dark rim that gives it thickness) wearing its state
    inside: a door when the test is open, a padlock before, a tick after.
    The same drawing the landing page's skill tree uses (SkillTreeArt.astro),
    in shared local coordinates. */
@@ -377,7 +377,7 @@ export default function CourseMap({
 }) {
     const target = useRef<HTMLDivElement>(null);
     /* block body, not a concise arrow: whatever scrollIntoView returns must
-       not become the effect's cleanup — React would call it on the next run */
+       not become the effect's cleanup, since React would call it on the next run */
     useEffect(() => {
         target.current?.scrollIntoView({
             block: "center",

@@ -48,10 +48,10 @@ $wgEmailAuthentication = true;
 
 // Sign-in goes to mimi_auth, the credential service every Mimi site shares. The
 // sites do not know about each other and each keeps its own session, so this is
-// not single sign-on — one account and one password simply work on all of them.
+// not single sign-on, one account and one password simply work on all of them.
 // MimiIncubator's provider sorts ahead of core's local password check and is
-// deliberately not authoritative, so the wiki's own accounts — Admin above all
-// — still sign in normally, including while mimi_auth is unreachable.
+// deliberately not authoritative, so the wiki's own accounts (Admin above all)
+// still sign in normally, including while mimi_auth is unreachable.
 $wgMimiAuthUrl = getenv( 'MIMI_AUTH_URL' ) ?: 'http://host.docker.internal:4770';
 // A Mimi account that has never been here has no row in the user table, and
 // AuthManager only creates one on a successful sign-in if this is granted.
@@ -63,7 +63,7 @@ $wgPasswordPolicy['policies']['default']['MinimalPasswordLength']['value'] = 8;
 $wgPasswordPolicy['policies']['default']['MaximalPasswordLength']['value'] = 1024;
 // AuthManager's own channel, sent to the container's stderr so it reaches
 // `docker compose logs mediawiki`. Without this the logs go nowhere, and an
-// unreachable mimi_auth looks exactly like a mistyped password — the sign-in
+// unreachable mimi_auth looks exactly like a mistyped password, the sign-in
 // form says "wrong password" and nothing anywhere says otherwise.
 $wgDebugLogGroups['authentication'] = 'php://stderr';
 
@@ -86,8 +86,8 @@ $wgUseInstantCommons = false;
 $wgPingback = false;
 $wgLanguageCode = 'en';
 $wgLocaltimezone = 'UTC';
-// A glossary segment is a couple of thousand rows of JSON — the letter C of a
-// five-thousand-word Spanish glossary is close to two megabytes on its own —
+// A glossary segment is a couple of thousand rows of JSON (the letter C of a
+// five-thousand-word Spanish glossary is close to two megabytes on its own)
 // and core's default of 2048 KB would refuse the largest of them. Segments are
 // what keeps a glossary out of one impossible page in the first place; this is
 // the headroom that stops the busiest letter from being the one nobody can

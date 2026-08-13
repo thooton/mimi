@@ -1,5 +1,5 @@
 /* ==========================================================================
-   blueprint — the generic refinements over Blueprint 6's chrome: the
+   blueprint: the generic refinements over Blueprint 6's chrome: the
    raised-button recipe and the lighter popover/dialog.
 
    IMPORTED BEFORE chrome.css: the navigation menu squares its popover off
@@ -34,15 +34,15 @@
 
 /* =============================================================== buttons ==
 
-   Blueprint 6 draws buttons flat — a solid fill with a hairline inset ring.
+   Blueprint 6 draws buttons flat, a solid fill with a hairline inset ring.
    The reference UI uses the older raised treatment, which reads as a real
    pressable object: a top-lit gradient, a hard bottom edge where the face
    meets the shadow, and a small drop shadow lifting it off the page.
 
    Rebuilt here as three stacked layers, so the recipe works for any fill:
      1. a translucent white sheen, brightest at the top   (the top light)
-     2. inset 0 -1px           — the darkened bottom lip  (the thickness)
-     3. inset 0 0 0 1px + drop — the ring and the lift
+     2. inset 0 -1px: the darkened bottom lip  (the thickness)
+     3. inset 0 0 0 1px + drop: the ring and the lift
 
    Selectors mirror Blueprint's own specificity (notably its
    :not([class*=bp6-intent-]) for the no-intent button) so these win on

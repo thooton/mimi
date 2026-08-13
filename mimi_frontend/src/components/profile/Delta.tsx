@@ -5,7 +5,7 @@ import { Icon } from '@blueprintjs/core';
    same: the reader is comparing the number in a tile against the number on
    the day that moved it.
 
-   Renders nothing when the score didn't move — "0" with an arrow beside it
+   Renders nothing when the score didn't move, "0" with an arrow beside it
    would claim a direction that isn't there. */
 export default function Delta({ value }: { value: number }) {
   if (value === 0) return null;

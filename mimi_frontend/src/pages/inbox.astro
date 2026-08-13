@@ -3,7 +3,7 @@ import AppLayout from "../layouts/AppLayout.astro";
 import InboxApp from "../components/inbox/InboxApp";
 
 /* Private messages, between accounts. One page, with live changes arriving
-   over Server-Sent Events (mimi_backend/src/messages.rs) — there is nothing to
+   over Server-Sent Events (mimi_backend/src/messages.rs), there is nothing to
    prerender but the frame, because an inbox is nobody's but the reader's and
    it changes while they are looking at it.
 

@@ -14,7 +14,7 @@ use MediaWiki\SpecialPage\SpecialPage;
  * Special:ChangeCredentials/MediaWiki\Auth\PasswordAuthenticationRequest, and
  * MimiAuthPrimaryAuthenticationProvider refuses that credential for accounts
  * whose password lives in mimi_auth. Left alone the shortcut therefore dead-ends
- * on "…is not a valid credential type" — a worse answer than the one the
+ * on "…is not a valid credential type", a worse answer than the one the
  * provider took the trouble to write, and reached from a link in preferences
  * that people actually follow.
  *

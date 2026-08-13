@@ -20,11 +20,11 @@ use Wikimedia\Rdbms\IDBAccessObject;
  *
  * The three mimi sites do not know about each other: the wiki, mimi_backend and
  * anything else all verify the same username and password against mimi_auth and
- * then keep their own session. That is not single sign-on — signing in here does
- * not sign anybody in over there — but one account and one password work
+ * then keep their own session. That is not single sign-on, signing in here does
+ * not sign anybody in over there, but one account and one password work
  * everywhere, which is the part that was actually wanted.
  *
- * This provider is deliberately **not** authoritative, and it sorts ahead of
+ * This provider is deliberately not authoritative, and it sorts ahead of
  * core's LocalPasswordPrimaryAuthenticationProvider rather than replacing it.
  * Both facts matter:
  *
@@ -32,7 +32,7 @@ use Wikimedia\Rdbms\IDBAccessObject;
  *     wiki's own `user` table, so mimi_auth stays the one source of truth for
  *     anybody who has an account there.
  *   - Not being authoritative means a rejection here ABSTAINs instead of
- *     failing, so the wiki's local accounts — `Admin`, above all — fall through
+ *     failing, so the wiki's local accounts, `Admin`, above all, fall through
  *     to the local password check and keep working. Core's provider is the
  *     authoritative last word, so a genuinely wrong password still ends in
  *     "wrong password" rather than something vaguer.
@@ -95,8 +95,8 @@ final class MimiAuthPrimaryAuthenticationProvider extends AbstractPasswordPrimar
 		}
 
 		// mimi_auth is unreachable or broken. Abstaining rather than failing
-		// keeps the local accounts usable while it is down — which is exactly
-		// when somebody needs to sign in as Admin — at the cost of the sign-in
+		// keeps the local accounts usable while it is down, which is exactly
+		// when somebody needs to sign in as Admin, at the cost of the sign-in
 		// form blaming the password. The log line is the honest explanation.
 		$this->logger->error( 'mimi_auth could not answer a sign-in for {user}: HTTP {code}', [
 			'user' => $username,
@@ -129,7 +129,7 @@ final class MimiAuthPrimaryAuthenticationProvider extends AbstractPasswordPrimar
 		}
 
 		// mimi_auth requires an address, because it is the other half of the
-		// login it accepts, while MediaWiki treats the field as optional — so
+		// login it accepts, while MediaWiki treats the field as optional, so
 		// the requirement has to be restated here. The address is read off the
 		// User rather than out of $reqs: AuthManager applies
 		// UserDataAuthenticationRequest with populateUser() before any primary
@@ -151,7 +151,7 @@ final class MimiAuthPrimaryAuthenticationProvider extends AbstractPasswordPrimar
 		}
 
 		// mimi_auth's own wording is more specific than anything restated here
-		// could be — it is the side that knows the username charset, the length
+		// could be, it is the side that knows the username charset, the length
 		// bounds and which of the two fields was already taken.
 		if ( $code === 400 || $code === 409 ) {
 			return AuthenticationResponse::newFail(
@@ -185,7 +185,7 @@ final class MimiAuthPrimaryAuthenticationProvider extends AbstractPasswordPrimar
 		// table, and for an account whose credentials live in mimi_auth that
 		// second password would keep working after the Mimi one was changed or
 		// the account disabled. Refusing it is what keeps there being one
-		// password. Accounts that really are local — Admin — have a local
+		// password. Accounts that really are local, Admin, have a local
 		// password already, and core stays in charge of theirs.
 		if ( get_class( $req ) === PasswordAuthenticationRequest::class
 			&& $req->username !== null
@@ -214,7 +214,7 @@ final class MimiAuthPrimaryAuthenticationProvider extends AbstractPasswordPrimar
 			'new_password' => (string)$req->password,
 		] );
 
-		// This method cannot report a failure — core declares it void, and
+		// This method cannot report a failure, core declares it void, and
 		// AuthManager has already told the user the change went through. The
 		// checks in providerAllowsAuthenticationDataChange run first and against
 		// the same service, so the realistic way to arrive here is mimi_auth
@@ -262,8 +262,8 @@ final class MimiAuthPrimaryAuthenticationProvider extends AbstractPasswordPrimar
 		// LocalSettings sets the policy from mimi_auth's bounds.
 		//
 		// Merged rather than tested with isOK(): a policy this wiki only
-		// *suggests* — which is how MinimalPasswordLength arrives, since it
-		// carries suggestChangeOnLogin — leaves isOK() true and isGood() false.
+		// suggests, which is how MinimalPasswordLength arrives, since it
+		// carries suggestChangeOnLogin, leaves isOK() true and isGood() false.
 		// AuthManager blocks the change on isGood(), so merging is what makes a
 		// six-character password a refusal here instead of a silent 400 from
 		// mimi_auth after the user has been told the change succeeded.
@@ -331,8 +331,8 @@ final class MimiAuthPrimaryAuthenticationProvider extends AbstractPasswordPrimar
 	 *
 	 * @param string $path
 	 * @param array $body
-	 * @return array{0:int,1:array} The HTTP status — 0 when the service could
-	 *   not be reached — and the decoded response body.
+	 * @return array{0:int,1:array} The HTTP status, 0 when the service could
+	 *   not be reached, and the decoded response body.
 	 */
 	private function post( string $path, array $body ): array {
 		$url = rtrim( $this->config->get( 'MimiAuthUrl' ), '/' ) . $path;

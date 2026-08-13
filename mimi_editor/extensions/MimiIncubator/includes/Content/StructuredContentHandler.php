@@ -22,7 +22,7 @@ abstract class StructuredContentHandler extends JsonContentHandler {
 
 	/**
 	 * The read view for one page of this model. The page itself is passed as
-	 * well as its course, because a view may need to name pages beside it — a
+	 * well as its course, because a view may need to name pages beside it, a
 	 * skill links to its tips, which share its name in another namespace.
 	 */
 	abstract protected function renderStructuredView( object $data, string $courseName, PageReference $page ): string;

@@ -1,13 +1,13 @@
 /* Where to go after signing in or signing up.
 
    A guest is prompted to save their progress from wherever they happen to be
-   — the end of a lesson, the top bar — and should land back there rather than
+  , the end of a lesson, the top bar, and should land back there rather than
    at some fixed page, so the auth pages take a `?next=` and honour it.
 
    Which makes this an open-redirect if it takes the parameter at its word: a
    link to `/signup?next=https://evil.example` would send somebody away from
    mimi wearing the trust of having just logged in. So only a *path on this
-   site* is accepted, and everything else falls back to /learn — including
+   site* is accepted, and everything else falls back to /learn, including
    protocol-relative `//host`, which is a URL wearing a path's clothes. */
 
 /** where the auth pages go when nothing (usable) was asked for */

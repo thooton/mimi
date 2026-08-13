@@ -1,5 +1,5 @@
 /* ==========================================================================
-   community & leaderboard — the two social tabs
+   community & leaderboard, the two social tabs
 
    One table style serves the weekly leaderboard, the club board beside it
    and the club preview on the community tab; the tag chip and the page
@@ -57,7 +57,7 @@
   color: var(--mimi-ink-muted);
 }
 
-/* podium — flat discs of colour, held together by a shared rim */
+/* podium: flat discs of colour, held together by a shared rim */
 .rank--1,
 .rank--2,
 .rank--3 {
@@ -127,7 +127,7 @@
 
 /* --------------------------------------------------------------- tag chip */
 
-/* A club's tag as worn before a member's name — [IVY] Clover. Flat fill and
+/* A club's tag as worn before a member's name, [IVY] Clover. Flat fill and
    an inset hairline: it reports an affiliation, it isn't pressed. Carries
    no margin of its own; the flex gap of whatever row it joins sets the
    spacing, so it lands the same distance from the name everywhere. */
@@ -515,7 +515,7 @@ a.thread:hover .thread-title {
   }
 
   /* the clubs page's directory is long, so once the rail stacks, the
-     leaderboard leads — the same way the learn page's rail pops above the
+     leaderboard leads, the same way the learn page's rail pops above the
      lesson map */
   .board-grid--clubs .board-rail {
     order: -1;
@@ -523,7 +523,7 @@ a.thread:hover .thread-title {
 }
 
 /* chat match is a single working panel with nothing beside it, so it gets
-   its own measure instead of the rail layout's full width — the site's
+   its own measure instead of the rail layout's full width, the site's
    major breakpoint, wide enough for the controls row to lie flat */
 .chat-page {
   max-width: 940px;
@@ -546,7 +546,7 @@ a.thread:hover .thread-title {
   width: 34px;
 }
 
-/* one ranked member: [TAG] name, then whatever honours the week gave them —
+/* one ranked member: [TAG] name, then whatever honours the week gave them,
    the tag chip, the you badge and the honour chips all space off this gap */
 .player {
   display: inline-flex;
@@ -584,7 +584,7 @@ a.thread:hover .thread-title {
 /* ------------------------------------------------------------------ badges */
 
 /* A weekly honour besides its holder's name: the icon, then the catchy
-   label. Flat and tinted like every other reporting element — five tones,
+   label. Flat and tinted like every other reporting element, five tones,
    one per achievement family. */
 .badge {
   display: inline-flex;

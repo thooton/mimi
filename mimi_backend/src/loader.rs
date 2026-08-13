@@ -3,24 +3,24 @@
 // definitions the interface: every source-side shape is gone by the time this
 // module validates content and builds the runtime course.
 //
-// Assembly is also where **everything expensive about a sentence happens**,
+// Assembly is also where everything expensive about a sentence happens,
 // once, so that the runtime only ever reads finished, marked-up prose:
 //
-//   1. **expand** each authored wording's brackets into the variants it
+//   1. expand each authored wording's brackets into the variants it
 //      stands for,
-//   2. **locate** each tagged word in each variant, by its forms — but only
-//      for a sentence that tags two or more, since one word alone is graded
+//   2. locate each tagged word in each variant, by its forms, but only for
+//      a sentence that tags two or more, since one word alone is graded
 //      all or nothing (see `wording`),
-//   3. **record** the located spans on the phrasing, so the client can grade
+//   3. record the located spans on the phrasing, so the client can grade
 //      word by word without looking for anything itself,
-//   4. **locate again for presentation** in the preferred target wording,
+//   4. locate again for presentation in the preferred target wording,
 //      including one-word sentences, so every first contact can highlight the
 //      word it announces without pretending that highlight is grading or a
 //      dictionary gloss.
 //
-// What it deliberately does *not* do is build exercises. A sentence has no
+// What it deliberately does not do is build exercises. A sentence has no
 // direction and no mode: it becomes a question only once a lesson has chosen
-// one of the four ways to ask it, which is a decision about a *learner* and so
+// one of the four ways to ask it, which is a decision about a learner and so
 // cannot be made here (see course.rs).
 //
 // And it is where the content is validated. Bad data should stop the server at
@@ -94,21 +94,21 @@ pub struct MaterialDef {
 }
 
 // One authored sentence: the same thing said in both languages, with no
-// direction at all. Every question the course can ask about it — tiles either
-// way round, typed either way round — is made from these two sides.
+// direction at all. Every question the course can ask about it (tiles either
+// way round, typed either way round) is made from these two sides.
 //
-// **Preferred and alternative are named outright** rather than being the first
+// Preferred and alternative are named outright rather than being the first
 // and the rest of one list, because they are used for genuinely different
 // things: a preferred wording is shown (as a prompt, as the answer, as a
 // bank's correct tiles) and an alternative is only ever accepted.
 #[derive(Deserialize)]
 pub struct SentenceDef {
-    // the words this sentence exercises. Only words of its own skill — the
+    // the words this sentence exercises. Only words of its own skill: the
     // rest of the sentence is scenery, and isn't graded.
     pub words: Vec<String>,
     // how the course says it in the source language, and any other phrasings
     // it will accept. Each may use bracket groups, which are a compact way of
-    // writing several wordings at once — `[Hello/Hi]!` is two.
+    // writing several wordings at once, so `[Hello/Hi]!` is two.
     pub preferred_source: String,
     #[serde(default)]
     pub alternative_sources: Vec<String>,
@@ -186,7 +186,7 @@ fn build_vocab(list: WordList) -> Result<Vocab, Box<dyn Error>> {
 // coordinates, and the layout remains the single place to read the shape of
 // the course off.
 // the skills, the rows they sit in, the castles that seal them, and each
-// skill's sentences — kept alongside rather than on the `Skill`, because they
+// skill's sentences, kept alongside rather than on the `Skill` because they
 // are raw material for `mint` and nothing at runtime wants them again
 type Tree = (
     Vec<Skill>,
@@ -213,7 +213,7 @@ fn build_tree(
     let mut rows: Vec<Vec<usize>> = Vec::new();
     let mut castles: Vec<Castle> = Vec::new();
     // every word must belong to exactly one skill, so the skills partition
-    // the vocabulary — this is what makes "the words of the rows behind this
+    // the vocabulary, which is what makes "the words of the rows behind this
     // castle" a well-defined set
     let mut owner: HashMap<&str, String> = HashMap::new();
 
@@ -351,13 +351,13 @@ fn build_skill<'a>(
 // Turn a skill's authored sentences into `Sentence`s: expand both sides,
 // locate every tagged word in every wording, and mark the spans.
 //
-// Both sides get the same treatment, and that symmetry is the point — the old
+// Both sides get the same treatment, and that symmetry is the point. The old
 // format made an author write "es->en" and "en->es" as two unrelated
 // sentences, each with its own alternatives, and then minted two exercises
 // from each. One bidirectional sentence says the same thing once and answers
 // four questions, because the objection that used to force the split
 // ("Comió la naranja" -> "He ate the orange", but the reverse also admits
-// "Él comió la naranja") is exactly what an *alternative* is for.
+// "Él comió la naranja") is exactly what an alternative is for.
 fn build_sentences(
     skill: &Skill,
     written: &[SentenceDef],
@@ -426,8 +426,8 @@ fn locations(
 // One side of one sentence, expanded and marked up.
 //
 // Expansion comes first and applies to the preferred wording too: `[Hello/Hi]!`
-// is a compact way of writing two wordings, and the **first branch of every
-// group is the preferred one**, so what an author reads off the page is what a
+// is a compact way of writing two wordings, and the first branch of every
+// group is the preferred one, so what an author reads off the page is what a
 // learner is shown. Everything the preferred wording expands into beyond that
 // first branch is an alternative like any other.
 fn wording(
@@ -444,21 +444,21 @@ fn wording(
         variants.extend(expand(alternative).map_err(fail)?);
     }
 
-    // **A sentence testing one word is not located at all**, and is therefore
+    // A sentence testing one word is not located at all, and is therefore
     // graded all or nothing.
     //
     // Spans exist to divide credit, and a sentence with one tagged word has
     // nothing to divide it between: the whole sentence is that word's
     // question, and everything else in it is scenery the learner still had to
     // produce. Marking the word anyway means "Juan girl" scores `nina` right
-    // for "The girl." — a right word inside a wrong sentence, reported to the
+    // for "The girl.": a right word inside a wrong sentence, reported to the
     // ladder as a clean success. Partial credit is for answers with something
     // to be partial about.
     //
     // With nothing marked, the client falls back to the exercise's overall
     // verdict for every word it was told to grade, which is exactly the rule
     // we want; nothing had to be added at either end to say so. It is also the
-    // cheaper path, and the common one — most sentences test one word.
+    // cheaper path, and the common one, since most sentences test one word.
     let located: Vec<HashMap<&str, Span>> = if sentence.words.len() < 2 {
         variants.iter().map(|_| HashMap::new()).collect()
     } else {
@@ -468,7 +468,7 @@ fn wording(
         // list for the word's translation.
         //
         // Only the tagged words are looked for, and that set is also the scope
-        // ambiguity is judged in: `locate` drops a form two of *these* words
+        // ambiguity is judged in: `locate` drops a form two of these words
         // share, and leaves alone the ones they merely share with the rest of
         // the course.
         let forms: Vec<(&str, &[String])> = sentence
@@ -488,8 +488,8 @@ fn wording(
 
     // A word is marked in every wording of a side or in none of them, so that
     // grading can't depend on which one the learner happened to hit. A word
-    // the sentence uses in a form its list doesn't cover — or in one another
-    // tagged word claims too, or in a sentence that tests it alone — is marked
+    // the sentence uses in a form its list doesn't cover, or in one another
+    // tagged word claims too, or in a sentence that tests it alone, is marked
     // nowhere, and the client falls back to the overall verdict for it: the
     // all-or-nothing case, which costs precision and never correctness.
     //
@@ -520,7 +520,7 @@ fn wording(
 // fall back to whole-answer grading, because the new-word UI must point at
 // every word it announces and must not derive that location from a gloss.
 //
-// **One sentence is enough — it does not have to use the word on its own.** It
+// One sentence is enough, and it need not use the word on its own. It
 // used to have to: an introduction was a sentence grading nothing else, and a
 // word without one was rejected here. But a sentence tags every word of its
 // skill it actually uses (see `convert::tag_words_used`), and demanding a solo

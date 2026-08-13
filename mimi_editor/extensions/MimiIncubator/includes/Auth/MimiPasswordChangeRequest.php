@@ -11,7 +11,7 @@ use MediaWiki\Message\Message;
  * This exists rather than reusing core's PasswordAuthenticationRequest for two
  * reasons, and both are load-bearing:
  *
- *   - mimi_auth needs the *current* password. It has no tokens, so retyping the
+ *   - mimi_auth needs the current password. It has no tokens, so retyping the
  *     password is what authorises replacing it, and core's change request
  *     carries only the new one. MediaWiki's own answer to that question is
  *     reauthentication, which proves who is asking but hands the provider
@@ -20,7 +20,7 @@ use MediaWiki\Message\Message;
  *     with `get_class( $req ) === PasswordAuthenticationRequest::class`, an
  *     exact match that a subclass would not satisfy either. Being a separate
  *     class is therefore what stops core writing a local password beside the
- *     one mimi_auth holds — which was the whole problem worth fixing.
+ *     one mimi_auth holds, which was the whole problem worth fixing.
  */
 final class MimiPasswordChangeRequest extends AuthenticationRequest {
 

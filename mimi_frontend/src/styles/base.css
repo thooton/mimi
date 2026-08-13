@@ -1,8 +1,8 @@
 /* ==========================================================================
-   base — the sheet everything else stands on: the webfont, the design
-   tokens (including the Blueprint token overrides), the reset Blueprint 6
-   doesn't ship, and the primitives every page shares — the shell, the panel
-   box, and the two shared micro-labels.
+   base: the sheet everything else stands on. The webfont, the design tokens
+   (including the Blueprint token overrides), the reset Blueprint 6 doesn't
+   ship, and the primitives every page shares: the shell, the panel box, and
+   the two shared micro-labels.
    ========================================================================== */
 
 /* ---------------------------------------------------------------- webfont */
@@ -74,7 +74,7 @@
     --mimi-accent: #2f6fd0;
     --mimi-accent-deep: #22539e;
     --mimi-accent-tint: #eaf1fc;
-    /* the solid colour under a raised accent face — its "thickness" */
+    /* the solid colour under a raised accent face, its "thickness" */
     --mimi-accent-base: #1d4a90;
 
     /* a fourth line colour, so a fourth language on the profile graph is still
@@ -105,8 +105,8 @@
      under, then the ring and the drop that lift it off the page.
 
      The sheen is what says "push me", so it is spent only where that is
-     true: the buttons and the lesson stones. Everything else — panel
-     heads, chips, badges, meters, medals — is a flat fill with a border,
+     true: the buttons and the lesson stones. Everything else (panel heads,
+     chips, badges, meters, medals) is a flat fill with a border,
      and reads as information rather than as a control. */
     --mimi-sheen: linear-gradient(
         to bottom,
@@ -119,13 +119,13 @@
      a difference anyone can see, so they are all this now. */
     --mimi-lift: 0 1px 2px rgba(29, 27, 22, 0.06);
 
-    /* the keyboard focus ring. Only the width and colour are shared — the
+    /* the keyboard focus ring. Only the width and colour are shared, the
      offset stays at the call site, because how far the ring should stand
      off depends on the corner radius of the thing it is drawn around
      (1px on a badge, 3px on a lesson stone). */
     --mimi-focus-ring: 2px solid var(--mimi-accent);
 
-    /* the streak accent — ember: an honest flame orange, muted one notch so
+    /* the streak accent, ember: an honest flame orange, muted one notch so
      it warms the parchment chrome instead of shouting over it */
     --mimi-flame: #c2611f;
     --mimi-flame-tint: #fae8dc;
@@ -136,14 +136,14 @@
     --mimi-gutter: 20px;
     --mimi-topbar-h: 52px;
     /* the nav tab's pill, inset inside the bar's full height. The practice
-     menu's offset is measured off the gap this leaves — see the popover in
+     menu's offset is measured off the gap this leaves, see the popover in
      AppNavbar.tsx. */
     --mimi-topnav-h: 36px;
 
     /* --- Blueprint token overrides --- */
 
     /* DINish Next carries the Latin UI. Noto Sans JP sits behind it to pick up
-       Japanese lesson copy. blueprint-icons-16 must stay in the stack —
+       Japanese lesson copy. blueprint-icons-16 must stay in the stack,
        Blueprint's CSS-only icons are glyphs from that family. */
     --bp-typography-family-default:
         "DINish Next", "Noto Sans JP", -apple-system, BlinkMacSystemFont,
@@ -185,8 +185,8 @@ html {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Blueprint paints a blue outline on *every* :focus and relies on its
-   FocusStyleManager JS to strip it for mouse users — that JS never runs
+/* Blueprint paints a blue outline on every :focus and relies on its
+   FocusStyleManager JS to strip it for mouse users, that JS never runs
    here, so a click left the ring stuck on the clicked control. Keep the
    ring only where the browser asks for it (keyboard focus), which is also
    where the :focus-visible rules across these sheets draw their own. */
@@ -195,8 +195,8 @@ html {
 }
 
 /* Chrome is furniture, not prose: clicking a nav link, a stone or a table
-   header shouldn't smear it in selection blue. Real content — lesson copy,
-   names, numbers — stays selectable. (These classes live all over the
+   header shouldn't smear it in selection blue. Real content (lesson copy,
+   names, numbers) stays selectable. (These classes live all over the
    partials; the rule lives here because it's reset, not component.) */
 .topbar,
 .panel-head,
@@ -215,7 +215,7 @@ html {
     user-select: none;
 }
 
-/* Form controls don't inherit type from their parent — the UA stylesheet
+/* Form controls don't inherit type from their parent, the UA stylesheet
    pins them to a system face. Without this, every <button> label (Blueprint
    never sets font-family itself) renders in the platform default instead of
    DINish Next. */
@@ -249,7 +249,7 @@ body {
 }
 
 /* Numbers line up in columns wherever they're compared. DINish Next ships both
-   tnum and lnum, so ask for lining figures too — the default set is
+   tnum and lnum, so ask for lining figures too, the default set is
    proportional and would jitter in the board tables. (The classes named here
    are scattered across the partials; this is reset-like, so it stays.) */
 .tnum,
@@ -286,7 +286,7 @@ body {
     flex: 1;
 }
 
-/* Present to a screen reader, absent to everyone else — for headings that
+/* Present to a screen reader, absent to everyone else, for headings that
    structure a view whose own labelling is positional rather than written. */
 .sr-only {
     position: absolute;
@@ -312,12 +312,12 @@ body {
      <span class="eyebrow node-kind">
 
    The two element selectors join the rule instead of composing, because
-   their markup is repetitive and generated — a board table's <th>, a facts
+   their markup is repetitive and generated, a board table's <th>, a facts
    list's <dt>. Tagging every cell by hand would be noise, and a row added
    later should pick the treatment up on its own.
 
-   Uppercase is this rule's alone. .topnav-link used to be the exception —
-   uppercase at 14px/500, a nav control rather than a label — and the size
+   Uppercase is this rule's alone. .topnav-link used to be the exception,
+   uppercase at 14px/500, a nav control rather than a label, and the size
    was exactly the problem: at body size the caps read as shouting rather
    than as a tag, and the bar became the loudest thing on every page. It is
    sentence case now, like the wordmark and the buttons beside it. If
@@ -335,7 +335,7 @@ body {
        uppercase face are drawn to be spaced, and at 10px bold with none the
        words pack into a single dark block ("INDIVIDUAL LEADERBOARD" read as
        one word rather than two). Tracking is the fifth invariant, not a
-       decoration — every use of this rule is uppercase. */
+       decoration: every use of this rule is uppercase. */
     letter-spacing: 0.07em;
 }
 
@@ -348,14 +348,14 @@ body {
 
 /* --------------------------------------------------- lettered round tiles */
 
-/* A single glyph centred in a disc or a rounded square — a rank on the board,
+/* A single glyph centred in a disc or a rounded square, a rank on the board,
    an initial where somebody has no picture.
 
-   Centring the *text* is not the same as centring what you can see. A line
+   Centring the text is not the same as centring what you can see. A line
    box is as tall as the font's ascent plus its descent, and DINish Next
    spends far more of its em above the baseline (800) than below it (224);
    digits and capitals have no descender to fill the bottom half, so a
-   perfectly centred line box leaves the ink itself sitting high — about
+   perfectly centred line box leaves the ink itself sitting high, about
    1.4px above the middle of an 18px rank disc, and 1.7px on the 76px
    profile tile. Trimming the box to the cap height and the alphabetic
    baseline makes the ink what gets centred, and because both edges are read
@@ -363,7 +363,7 @@ body {
    fallback face too while the webfont is still loading.
 
    The trim needs the tile to be the block container holding the text, so
-   these centre by `align-content` rather than as a grid — a grid puts the
+   these centre by `align-content` rather than as a grid, a grid puts the
    text in an anonymous item the property can't reach.
 
    `:not(:has(img))` keeps the picture case on its own rule: a linked avatar
@@ -389,8 +389,8 @@ body {
 /* An initial is set as a capital whatever case the name was typed in.
    Partly it is what a monogram is; mostly it is what makes the tile above
    honest. The trim centres the band between the baseline and the cap line,
-   so a lowercase letter — which only reaches the x-height, and which is what
-   a name like "soupskin" hands us — would be centred by a box half a
+   so a lowercase letter, which only reaches the x-height, and which is what
+   a name like "soupskin" hands us, would be centred by a box half a
    cap-height taller than the letter, and sit visibly low in the circle.
    Uppercasing makes every initial fill the band the tile is centring. */
 .avatar:not(:has(img)),

@@ -14,5 +14,5 @@
   "mimiincubator-auth-credential-provider": "Mimi account",
   "mimiincubator-auth-credential-account": "$1",
   "mimiincubator-auth-change-wrongpassword": "That is not your current Mimi password. Your password has not been changed.",
-  "mimiincubator-auth-change-elsewhere": "This account's password is held by Mimi, not by the wiki, so it cannot be changed here. Use [[Special:ChangeCredentials/MimiPassword|Change your Mimi password]] instead — the new password will work on every Mimi site."
+  "mimiincubator-auth-change-elsewhere": "This account's password is held by Mimi, not by the wiki, so it cannot be changed here. Use [[Special:ChangeCredentials/MimiPassword|Change your Mimi password]] instead; the new password will work on every Mimi site."
 }

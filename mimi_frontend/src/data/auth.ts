@@ -61,8 +61,8 @@ async function startAsGuest() {
   return user;
 }
 
-/* The two account settings. A password leaves the viewer as it was — there is
-   nothing about it here to go stale — but an address is on display in the
+/* The two account settings. A password leaves the viewer as it was, there is
+   nothing about it here to go stale, but an address is on display in the
    settings page and comes back from the backend, so the store takes the
    answer rather than the string that was typed. */
 async function setPassword(currentPassword: string, newPassword: string) {

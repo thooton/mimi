@@ -1,4 +1,4 @@
-# Proposal: the skill tree — words, skills, rows, castles
+# Proposal: the skill tree, words, skills, rows, castles
 
 **Status:** implemented. Supersedes the course-shape half of the previous design; the
 three-mode spaced repetition engine survives intact underneath it.
@@ -17,8 +17,8 @@ spans.
 
 This proposal replaces that with a structure borrowed from old Duolingo, in which the
 unit of authoring is the **skill**: a themed batch of words that also carries a grammar
-focus. It is a smaller model in every dimension — fewer files, fewer levels, no pattern
-language, no marker syntax, no scripted/pool distinction — and it is a model a generator
+focus. It is a smaller model in every dimension, fewer files, fewer levels, no pattern
+language, no marker syntax, no scripted/pool distinction, and it is a model a generator
 can fill in.
 
 **None of the learning machinery changes.** `card.rs`, `concept.rs`, the ladder, and
@@ -31,13 +31,13 @@ it is *taught*.
 A course is:
 
 - **A word list.** A few thousand words in roughly frequency order, in dictionary form.
-  A word is the atom of spaced repetition — one `WordState`, up to three cards, exactly
+  A word is the atom of spaced repetition, one `WordState`, up to three cards, exactly
   as concepts work today. **The learner is tested on whatever inflection a sentence
   happens to use, and all of them feed the one card.** This is deliberate: "do you know
   *comer*" is the question, and asking it through `comí` one day and `comen` the next is
   a feature.
 - **Skills.** A skill is a small batch of words with a name (`Food 1`, `Past 1`) and a
-  **grammar focus** — a short instruction describing what shape its sentences take.
+  **grammar focus**, a short instruction describing what shape its sentences take.
   Every word in the course belongs to **exactly one** skill, so skills partition the
   vocabulary. The words say what the sentences are *about*; the focus says what shape
   they take. The focus is an authoring instruction and a blurb for the learner; **it is
@@ -70,14 +70,14 @@ and it buys three things:
 2. **The corpus is predictable.** Every word's review pool is fixed at authoring time
    and knowable by counting: it is exactly the sentences in its own skill that tag it.
    Letting later skills tag earlier words would not create sentences, only redistribute
-   a fixed budget across thousands of competing words — with the count for any given
+   a fixed budget across thousands of competing words, with the count for any given
    word becoming a matter of luck.
 3. **Related words appear together.** A skill's words are thematically close, so
    sentences that combine them are pedagogically better than sentences that combine a
    food word with whatever else happened to be in scope.
 
-A sentence may contain untagged words from earlier rows — "Como pan" in a food skill
-uses `comer` — and those simply aren't graded. **The consequence to design around is
+A sentence may contain untagged words from earlier rows, "Como pan" in a food skill
+uses `comer`, and those simply aren't graded. **The consequence to design around is
 that sentences-per-word is a hard quality knob**: a word is reviewed through its own
 skill's sentences for the rest of the course, so author generously (8–12 per word,
 before bracket expansion) rather than minimally.
@@ -149,7 +149,7 @@ the flattened list, and that index is the course's only ordinal (§6).
     "words": ["pan", "agua", "comer", "beber", "leche", "manzana", "queso"],
     "material": [
         { "lesson": 1, "text": "Spanish nouns carry a gender..." },
-        { "lesson": 3, "text": "**el agua**, not *la agua* — but it's still feminine." }
+        { "lesson": 3, "text": "**el agua**, not *la agua*, but it's still feminine." }
     ],
     "sentences": [
         { "direction": "es->en", "words": ["pan"],
@@ -165,12 +165,12 @@ the flattened list, and that index is the course's only ordinal (§6).
   repetition system's job, not the learner's. Mastery is checked at castles, not by
   quietly rotting the tree.
 - **`material`** is plain markdown attached to a lesson number, and it teaches
-  **nothing** in the technical sense — it introduces no words and creates no cards. It
+  **nothing** in the technical sense, it introduces no words and creates no cards. It
   is a tip, shown up front. (Audio and character tags are dropped for now; a later
   revision can add an optional audio field.)
 - **`sentences`** are authored per direction. An `es->en` sentence is not reversible
-  into an `en->es` one — "Comió la naranja" → "He ate the orange" is correct, but the
-  reverse admits "Él comió la naranja" too — which is exactly why both lists exist and
+  into an `en->es` one, "Comió la naranja" → "He ate the orange" is correct, but the
+  reverse admits "Él comió la naranja" too, which is exactly why both lists exist and
   each carries its own alternatives.
 
 ## 4. The load-time pipeline
@@ -181,7 +181,7 @@ Everything expensive happens once, in `loader::load`, and the runtime sees only 
 ### 4.1 Expand brackets
 
 `[Yo como/Como] el pan` yields `Yo como el pan` and `Como el pan`. Brackets appear
-**only in the answer** — the prompt is fixed — so this is a compact spelling of the
+**only in the answer**, the prompt is fixed, so this is a compact spelling of the
 existing `accepted` list and involves no correlation with the prompt at all.
 
 - Multiple groups take the cartesian product: `[Yo como/Como] [el/un] pan` → 4.
@@ -195,7 +195,7 @@ Expansion runs first because the word forms differ between variants, and the mat
 
 ### 4.2 Locate each tagged word
 
-For each sentence and each word it tags, find the word's span in the **answer** — the
+For each sentence and each word it tags, find the word's span in the **answer**, the
 side the learner produces, and therefore the side that is graded. `en->es` answers are
 matched against `forms`, `es->en` answers against `glosses`.
 
@@ -212,7 +212,7 @@ Matching rules, all of which produce silent nonsense if left implicit:
 
 If every tagged word is located in every accepted variant, the exercise grades
 **per word**, exactly as concept markers allow today. If any word is missing from any
-variant — the sentence used a form the list doesn't cover — the exercise is marked
+variant: the sentence used a form the list doesn't cover, the exercise is marked
 **all-or-nothing**: a fully correct answer marks every tagged word right, anything else
 marks them all wrong.
 
@@ -232,8 +232,8 @@ resolved spans, and the all-or-nothing flag.
 ### 4.4 Generate distractors
 
 Word banks need wrong tiles. For each `word_bank`, sample surface tokens from the
-answers of other sentences **in the same skill or an earlier row** — never a later one,
-which would leak vocabulary the learner hasn't reached — excluding tokens already in the
+answers of other sentences **in the same skill or an earlier row**, never a later one,
+which would leak vocabulary the learner hasn't reached, excluding tokens already in the
 answer. Sampling is **seeded by the exercise id**, so a bank looks the same every time
 it is served and a re-taken lesson is genuinely the same lesson.
 
@@ -257,7 +257,7 @@ Two properties are worth stating as invariants:
 ## 6. Progress, unlocking, and eligibility
 
 `Position` shrinks from a four-level coordinate to `{ skill: SkillId, lesson: u8 }`, and
-stops being a user's identity — it is only an address for a lesson request. A user is:
+stops being a user's identity, it is only an address for a lesson request. A user is:
 
 ```
 words:    HashMap<WordId, WordState>     // unchanged but for the rename
@@ -291,7 +291,7 @@ key. This is what stops a learner retaking `Greetings` from being shown row-9 ma
 The second clause covers everything the first can't see. A learner retaking `Food 1` who
 has never touched its row-mate `Body 1` is excluded from `Body 1`'s sentences; a learner
 retaking lesson 2 of a 4-lesson skill is excluded from the words that skill introduces
-in lessons 3 and 4. There is therefore **no lesson-level era rule at all** — being met
+in lessons 3 and 4. There is therefore **no lesson-level era rule at all**, being met
 is the whole of it.
 
 This clause needs to become a real gate. Today it is only *nearly* true: `User::allows`
@@ -309,11 +309,11 @@ distinction. Lesson *n* of a skill is:
    introduction queue, split as evenly as possible across its `lessons` (7 words over 4
    lessons → 2, 2, 2, 1), remainder to the earlier lessons. The split is deterministic,
    so a retake introduces exactly what it did the first time.
-3. **The rest filled by the existing builder** — `take_urgent`, then `top_up`, 85%
+3. **The rest filled by the existing builder**, `take_urgent`, then `top_up`, 85%
    targeting, easiest-first / second-easiest-last ordering, no repeated words. Unchanged.
 
 The introducing exercise is a `word_bank` in the `es->en` direction over a sentence
-tagging **only that word** — the gentlest possible first contact. This is a generation
+tagging **only that word**, the gentlest possible first contact. This is a generation
 requirement: **every word needs at least one `es->en` sentence tagging it alone.**
 
 Three consequences worth being explicit about:
@@ -324,7 +324,7 @@ Three consequences worth being explicit about:
   the only one.
 - **The scripted/pool split disappears.** Introducing exercises came out of the pool and
   go back into it. The old rule barring them existed because a scripted exercise sat
-  directly after the material that taught it, so answering it proved nothing — with no
+  directly after the material that taught it, so answering it proved nothing, with no
   teaching material, it is a genuine first attempt and there is no reason to bar it from
   later review. The "skip scripted exercises in a re-taken lesson" rule goes too.
 - **The client must show the gloss on first contact.** A learner assembling "bread" from
@@ -348,7 +348,7 @@ sample evenly across every word in the castle's rows
 to prepare the learner for it, and a test restricted to what the ladder already permits
 would not be testing the thing worth testing. Every word in the stretch is guaranteed to
 have been *met*, because reaching the castle requires completing every skill in its rows
-and completing a skill introduces all of its words — so there is no unmet-word case to
+and completing a skill introduces all of its words, so there is no unmet-word case to
 handle.
 
 **Verdicts at an illegal mode are asymmetric**, and this needs a code change:
@@ -356,7 +356,7 @@ handle.
 | | word allows the mode | word does not |
 |---|---|---|
 | **correct** | normal `record` | credit it: card + streak, as `mode >= top` already implies |
-| **wrong** | normal `record` | **ignore entirely** — no card, no counter |
+| **wrong** | normal `record` | **ignore entirely**, no card, no counter |
 
 The castle can help a learner and can never hurt one for material they weren't expected
 to know. Someone who can produce a word they were only ever scaffolded on has
@@ -367,7 +367,7 @@ least as much" rule is exactly right for it.
 updates the card *unconditionally*, before any legality check; only the ladder counters
 are gated, and only on the failure branch ([concept.rs:225](src/concept.rs:225)). As
 written, a failed production question on a Scaffolding word mints a fresh production
-card in the `again` state. It would never be served — `due()` only yields legal modes —
+card in the `again` state. It would never be served, `due()` only yields legal modes,
 but it sits there, and when the word finally graduates to Production weeks later it
 inherits a damaged card instead of FSRS's first-review initialization. That is precisely
 the punishment this rule exists to prevent, merely deferred. `ConceptState::record`
@@ -375,8 +375,8 @@ needs the legality check moved above `set_card`.
 
 Failing a castle costs nothing but a retry, and the pressure to review comes from not
 passing: a learner who has forgotten too much cannot pass a fresh sample either, and the
-only way through is more lessons. That is the intended effect — capping how fast new
-material piles onto a shaky foundation — and it needs no punishment mechanic to work.
+only way through is more lessons. That is the intended effect, capping how fast new
+material piles onto a shaky foundation, and it needs no punishment mechanic to work.
 
 ## 9. What the engine keeps
 
@@ -395,7 +395,7 @@ Unchanged in substance, renamed in the obvious way (`concept` → `word`,
 dictionary, which covers tagged vocabulary and untagged sentence words alike; `forms`
 and `glosses` remain the separate, deliberately curated inputs to credit assignment.
 
-The score becomes `400 + words×1.6 + skills×40 + lessons×0.5` — a straight substitution
+The score becomes `400 + words×1.6 + skills×40 + lessons×0.5`, a straight substitution
 of skills for units.
 
 ## 10. HTTP API
@@ -419,7 +419,7 @@ Worth listing, because shrinking the system is the point:
 - `pattern`, `task_count`, `content` letters, `new_exercises`, and every validation
   about them.
 - The entire `[C_x=...]` marker syntax and its parser.
-- `script.rs` in full — `Script`, `Slot`, `Material`, `ScriptedExercise`, `introduces`.
+- `script.rs` in full, `Script`, `Slot`, `Material`, `ScriptedExercise`, `introduces`.
 - `User::learn`, `WordState::taught`, and the scripted-exercise carve-outs in
   `submit_lesson`.
 - `Course::glossary` and the marker-scraping it does.
@@ -431,7 +431,7 @@ Worth listing, because shrinking the system is the point:
 ## 12. Deliberate non-goals and known approximations
 
 - **No migration.** `mimi.db` is deleted, per existing convention. More significantly,
-  **`courses/spanish` cannot be converted mechanically** — there is no word list, no
+  **`courses/spanish` cannot be converted mechanically**, there is no word list, no
   forms, and the markers are hand-written. This proposal implies regenerating the course
   content, and the loader tests will need a small hand-written fixture course in the new
   shape.
@@ -454,7 +454,7 @@ Worth listing, because shrinking the system is the point:
 1. **`words.rs` (new) + `position.rs`.** The word list, forms, glosses; `Position`
    becomes `{skill, lesson}`; row as the ordinal.
 2. **`sentence.rs` (new).** Bracket expansion and the form matcher, with their own
-   tests — these are pure functions over strings and the easiest thing to get right
+   tests: these are pure functions over strings and the easiest thing to get right
    first.
 3. **`loader.rs`.** The four new file shapes, the §4 pipeline, distractor generation,
    the reduced validation set. Delete `script.rs`.

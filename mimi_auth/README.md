@@ -36,7 +36,7 @@ buy predictable substitutions rather than better passwords.
 The blocklist is SecLists' `10_million_password_list_top_100000`, the same one
 MediaWiki screens against, embedded as `internal/auth/commonpasswords.txt.gz`.
 It is checked here rather than only in the consumers because a rule the sign-up
-form applies and this service does not is not a rule — `/v1/register` can be
+form applies and this service does not is not a rule, `/v1/register` can be
 called directly. Matching is exact, as MediaWiki's is; the list carries its own
 capitalisations, so `password`, `Password` and `PASSWORD` are all refused.
 
@@ -73,8 +73,8 @@ invalid credentials`, so neither confirms that an account exists. Success
 returns the same public user record as login, and the old password stops
 working immediately.
 
-It does **not** sign the account out anywhere. Sessions belong to the consumers
-— `mimi_backend`'s cookie, the wiki's — and this service has no way to reach
+It does **not** sign the account out anywhere. Sessions belong to the consumers,
+`mimi_backend`'s cookie, the wiki's, and this service has no way to reach
 them, so a password changed here leaves every existing session alive. Ending
 them is each consumer's job: `mimi_backend` closes the account's other
 sessions itself whenever it proxies a change (they are its own rows, so it
@@ -92,7 +92,7 @@ The password authorises this one too. It is asked for even though the new
 address is not itself a secret, because an address *is* a login: a session
 somebody left open should not be enough to point an account somewhere else.
 An address already registered to somebody answers `409 that email is already
-registered`, and the username is untouched — that is the name, and this is a
+registered`, and the username is untouched, that is the name, and this is a
 contact detail.
 
 Nothing is emailed. Confirming a new address, and telling the old one that it
@@ -105,7 +105,7 @@ Other settings are `MIMI_AUTH_ADDR` and `MIMI_AUTH_DB`.
 This service once carried a SAML 2.0 *service provider*, meant to let the other
 mimi sites sign in through it. That could never have worked: a service provider
 consumes assertions from an identity provider, so it can only delegate
-authentication outwards to an IdP — it cannot answer anybody else's sign-in.
+authentication outwards to an IdP, it cannot answer anybody else's sign-in.
 The sites share credentials by verifying against `/v1/login` here instead, which
 is what the consumers always did in practice. Reintroducing SAML means writing
 an *identity* provider, which is a much larger thing than the code that was

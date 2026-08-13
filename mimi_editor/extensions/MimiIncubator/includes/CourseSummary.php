@@ -26,7 +26,7 @@ final class CourseSummary {
 			: (int)round( $this->completeSentences / $this->sentences * 100 );
 	}
 
-	/** "Spanish, taught in English" — or the page name when it is not a pair. */
+	/** "Spanish, taught in English", or the page name when it is not a pair. */
 	public function subtitle(): string {
 		return $this->targetLanguage === ''
 			? $this->name

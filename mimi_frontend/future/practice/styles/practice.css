@@ -2,16 +2,16 @@
    practice
 
    The ways to work on a language outside the lesson path. Their marketing
-   rows live on the landing page's concepts section — copy on one side, a
+   rows live on the landing page's concepts section, copy on one side, a
    mockup of the screen on the other, reusing landing.css's .concept-row
-   scaffolding — so the mockup drawings are styled here, next to the real
+   scaffolding: so the mockup drawings are styled here, next to the real
    thing. The mockups are pictures of screens, not working ones: the landing
    ships them no script, so their "buttons" are spans wearing the raised
    recipe (see blueprint.css).
 
    The one working mode, /practice/flashcards, shares the bottom of this
    file: its chrome is entirely the lesson player's (shell, progress strip,
-   footer, summary — lesson-player.css), so only the card itself is styled here.
+   footer, summary, lesson-player.css), so only the card itself is styled here.
    ========================================================================== */
 
 /* icon and honesty tag above each mode's title, on the landing */
@@ -73,7 +73,7 @@
   color: var(--mimi-ink);
 }
 
-/* the revealed side, in the accent — the answer is the point of the card */
+/* the revealed side, in the accent, the answer is the point of the card */
 .flash-back {
   margin: 4px 0 0;
   font-size: 16px;
@@ -81,8 +81,8 @@
   color: var(--mimi-accent-deep);
 }
 
-/* NB: .flash-example names two things in this file — this mockup line and
-   the demo's revealed answer below — and both rules reach both elements.
+/* NB: .flash-example names two things in this file, this mockup line and
+   the demo's revealed answer below, and both rules reach both elements.
    Later wins on the shared properties (margin, font-size), so the mock
    takes the demo's values; keep the two rules here, in this order, together. */
 .flash-example {
@@ -290,7 +290,7 @@ button.flash-grade:focus-visible {
   margin-top: 14px;
 }
 
-/* the one round thing in the mockups — a small lesson stone of a play
+/* the one round thing in the mockups, a small lesson stone of a play
    button */
 .pod-play {
   flex: none;
@@ -368,11 +368,11 @@ button.flash-grade:focus-visible {
 /* --- the working flashcard demo (/practice/flashcards) ---
 
    The mockup above is the picture; this is the thing itself. The chrome is
-   entirely the lesson player's (shell, progress strip, footer, summary) —
+   entirely the lesson player's (shell, progress strip, footer, summary),
    what follows is only the card the chrome is carrying. */
 
 /* the flippable stage. Clicking it reveals the answer, so until it has been
-   revealed it reads as pressable — after that it is just the card */
+   revealed it reads as pressable, after that it is just the card */
 .flash-stage {
   display: flex;
   flex-direction: column;
@@ -410,7 +410,7 @@ button.flash-grade:focus-visible {
   color: var(--mimi-ink);
 }
 
-/* the word's speaker — quiet until needed, like the lesson's quit X */
+/* the word's speaker, quiet until needed, like the lesson's quit X */
 .flash-say {
   display: grid;
   place-items: center;
@@ -443,7 +443,7 @@ button.flash-grade:focus-visible {
   color: var(--mimi-accent-deep);
 }
 
-/* (shares its class with the mockup's example line above — see the NB there) */
+/* (shares its class with the mockup's example line above, see the NB there) */
 .flash-example {
   display: flex;
   align-items: center;

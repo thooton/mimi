@@ -9,8 +9,8 @@ import { shuffledBank } from '../data/wordBank';
 /* Two exercises from the front of the Spanish course, playable on the landing
    page. The point is that this is not a mock-up: the tiles are scrambled by
    the same shuffledBank the lesson player uses, the answer goes through the
-   same gradeWordBank — accents and punctuation forgiven exactly as they are in
-   a real lesson — and the speaker button is the same speech synthesiser. A
+   same gradeWordBank, accents and punctuation forgiven exactly as they are in
+   a real lesson, and the speaker button is the same speech synthesiser. A
    drawing of an exercise would have been less code and would have proved
    nothing.
 
@@ -24,13 +24,13 @@ interface Task {
   prompt: string;
   /** Accepted answers, canonical first. Plain text: a real exercise carries
       the spans that let each word be graded on its own, and this demo grades
-      nothing per word — there is no account here for a verdict to land in. */
+      nothing per word, there is no account here for a verdict to land in. */
   answers: string[];
   /**
    * The answer's tokens plus a few distractors, written down in an order that
    * already doesn't spell the answer. A real bank arrives from the backend
    * answer-first and is scrambled on arrival, but this one is also what the
-   * server renders into the HTML — so its authored order has to be safe on its
+   * server renders into the HTML, so its authored order has to be safe on its
    * own, for the moment before the shuffle below can run.
    */
   bank: string[];
@@ -56,7 +56,7 @@ export default function TryIt() {
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   /* Whether we're past hydration. Math.random() during the first render would
      deal a different hand than the server put in the HTML, and React answers a
-     mismatch by throwing the island away and rebuilding it — so the authored
+     mismatch by throwing the island away and rebuilding it, so the authored
      order stands until the client is definitely the one rendering. */
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -129,7 +129,7 @@ export default function TryIt() {
               type="button"
               disabled={answered || spent}
               tabIndex={spent ? -1 : undefined}
-              /* updater form, so two taps landing in one batch both count —
+              /* updater form, so two taps landing in one batch both count,
                  React would otherwise hand the second one a stale `chosen` */
               onClick={() => setChosen((picks) => [...picks, i])}
             >

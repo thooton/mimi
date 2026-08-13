@@ -1,15 +1,15 @@
 // Everything the server knows about one word for one user: where it stands
-// on the **ladder**, the counters that move it along, and one FSRS card per
+// on the ladder, the counters that move it along, and one FSRS card per
 // retrieval mode.
 //
-// The ladder decides *whether* a mode may be served for a word; FSRS (see
-// card.rs) decides *when*. Keeping the two apart is what makes word banks safe
+// The ladder decides whether a mode may be served for a word; FSRS (see
+// card.rs) decides when. Keeping the two apart is what makes word banks safe
 // to serve at all: a bank success is weak evidence, so it stays in its own
 // card and only earns the word a rung, never a place in the harder modes'
 // scheduling.
 //
-// This module owns both halves of a verdict — the card it lands on and the
-// rung it moves — so `record` is the single place a word changes. The user
+// This module owns both halves of a verdict, the card it lands on and the rung
+// it moves, so `record` is the single place a word changes. The user
 // (see user.rs) routes verdicts here and never touches a stage or a counter
 // itself.
 
@@ -31,7 +31,7 @@ const STREAK_REPROMOTE_R: u32 = 2;
 // consecutive failures at a word's top mode before it's demoted a rung
 const LAPSE_DEMOTE: u32 = 2;
 // a mode whose card's retrievability falls below this demotes its word a
-// rung — clearly below FSRS's normal 0.7–0.9 operating band, so merely-due
+// rung. Clearly below FSRS's normal 0.7-0.9 operating band, so merely-due
 // cards don't bounce
 const DEMOTE_R: f64 = 0.45;
 // the derived success probability of a word's FIRST exercise in a freshly
@@ -41,8 +41,8 @@ const C_RECOGNITION: f64 = 0.75;
 const C_PRODUCTION: f64 = 0.60;
 
 // Where a word stands on the ladder: which modes the lesson builder may
-// serve for it. Graduation retires exactly one mode — scaffolding — and
-// recognition is never retired: understanding and producing are both real
+// serve for it. Graduation retires one mode, scaffolding, and recognition is
+// never retired: understanding and producing are both real
 // skills, and retiring recognition would halve the builder's candidate pool
 // for exactly the user's best-known words.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -80,7 +80,7 @@ impl Stage {
     //
     // In practice this is always Scaffolding: a lesson introduces a word with
     // a word bank over a sentence that uses nothing else, which is the
-    // gentlest possible first contact. The other arms are defensive — being
+    // gentlest possible first contact. The other arms are defensive: being
     // asked to produce a word you have never seen isn't teaching.
     pub fn introduced_by(mode: Mode) -> Stage {
         match mode {
@@ -97,18 +97,18 @@ impl Stage {
 // recall are different retrieval tasks with different difficulties, and a
 // verdict updates only the card of the mode that produced it, ever. FSRS's
 // per-card difficulty is literally its item-difficulty knob, so the three
-// cards self-separate by task — and a guessable bank success can't inflate
-// the state that drives scheduling for the harder modes.
+// cards self-separate by task, and a guessable bank success can't inflate the
+// state that drives scheduling for the harder modes.
 //
 // The counters climb the ladder: `streak` consecutive successes toward the
-// next rung (a success at the word's top mode *or a harder one* counts —
+// next rung (a success at the word's top mode or a harder one counts, since
 // proving you can type it counts at least as proving you can tap it), and
 // `lapses` consecutive failures at the top mode. Graduation is deliberately
 // easy (the ladder is optimistic, so an engaged user unlocks harder material
 // quickly), and demotion is the corrector: `LAPSE_DEMOTE` lapses, or a card's
 // retrievability decaying below `DEMOTE_R`, drops the word a rung and sets
-// `repromoting`, which shortens the streak needed to climb back — relearning
-// is faster than learning. A demoted mode's card is left alone: its
+// `repromoting`, which shortens the streak needed to climb back, since
+// relearning is faster than learning. A demoted mode's card is left alone: its
 // honestly-decayed R is the right prior, and on re-promotion it is maximally
 // urgent, so the builder's first phase resurfaces it promptly.
 #[derive(Clone, Serialize, Deserialize)]
@@ -142,7 +142,7 @@ impl WordState {
     }
 
     // a word sitting at `stage` with `card` as the card of that stage's top
-    // mode — the shape most tests want to set a word up in
+    // mode: the shape most tests want to set a word up in
     #[cfg(test)]
     pub fn at(stage: Stage, card: Card) -> WordState {
         let mut state = WordState::new(stage);
@@ -151,14 +151,14 @@ impl WordState {
     }
 
     // a word at the bottom of the ladder, answered right when it was
-    // introduced — what a lesson's introducing word bank leaves behind
+    // introduced: what a lesson's introducing word bank leaves behind
     #[cfg(test)]
     pub fn scaffolded(timestamp: u64) -> WordState {
         WordState::at(Stage::Scaffolding, Card::new().good(timestamp))
     }
 
     // the card for this mode, if the word has one (a mode's card is born
-    // from its first real verdict — no seeding, no fake reviews)
+    // from its first real verdict, with no seeding and no fake reviews)
     pub fn card(&self, mode: Mode) -> Option<Card> {
         match mode {
             Mode::Scaffolding => self.bank,
@@ -188,13 +188,13 @@ impl WordState {
     //
     // Then the rung. Successes at the word's top mode or a harder one count
     // toward the next one; failures at any legal mode break the streak, and
-    // failures at the top mode count toward demotion. A *failure* at a mode
+    // failures at the top mode count toward demotion. A failure at a mode
     // the stage forbids proves nothing about the rung being climbed, so it
     // moves no counter.
     //
     // In an ordinary lesson a verdict at a forbidden mode cannot happen at
     // all: the builder's legality gate sees to that. A castle is the one
-    // place it can, because a castle asks what it asks — and there the caller
+    // place it can, because a castle asks what it asks, and there the caller
     // uses `record_test`, which is careful about the card as well as the
     // counters.
     pub fn record(&mut self, mode: Mode, correct: bool, timestamp: u64) {
@@ -235,23 +235,23 @@ impl WordState {
         }
     }
 
-    // One verdict from a **castle**, where the ladder is bypassed on the way
+    // One verdict from a castle, where the ladder is bypassed on the way
     // in: the test asks for recognition and production regardless of what
     // stage a word has reached, because a test restricted to what the ladder
     // already permits would not be testing the thing worth testing.
     //
-    // The rule is asymmetric on purpose. **A castle can help a learner and can
-    // never hurt one for material they weren't expected to know**: producing a
+    // The rule is asymmetric on purpose. A castle can help a learner and can
+    // never hurt one for material they weren't expected to know: producing a
     // word you were only ever scaffolded on demonstrates something real and is
     // credited in full (the card is born, and `record`'s "a success at a
     // harder mode counts at least as much" rule advances the rung), while
     // failing one proves nothing and is dropped entirely.
     //
-    // Dropping it has to mean dropping the *card* too, not just the counters.
+    // Dropping it has to mean dropping the card too, not just the counters.
     // `record` writes the card before it looks at legality, so letting a
     // failure through here would mint a fresh production card in the `again`
-    // state for a word still at Scaffolding. It would never be served — `due`
-    // only yields legal modes — but it would sit there, and when the word
+    // state for a word still at Scaffolding. It would never be served, since
+    // `due` only yields legal modes, but it would sit there, and when the word
     // finally graduated weeks later it would inherit a damaged card instead of
     // FSRS's first-review initialization. That is the punishment this rule
     // exists to prevent, merely deferred.
@@ -262,12 +262,12 @@ impl WordState {
     }
 
     // The deep-forgetting path: a top-mode card that has decayed below
-    // DEMOTE_R slides the word down a rung without any verdict at all —
-    // possibly two, if both cards are gone. This is what makes "back from
+    // DEMOTE_R slides the word down a rung without any verdict at all, or two
+    // rungs if both cards are gone. This is what makes "back from
     // vacation" work on its own: R decays past the threshold, the next lesson
     // is warm-ups, and urgency floods the higher modes back in over the
-    // following lessons. A mode with no card yet can't be forgotten — it is
-    // simply unattempted — so missing cards are skipped.
+    // following lessons. A mode with no card yet can't be forgotten, only
+    // unattempted, so missing cards are skipped.
     pub fn demote_if_decayed(&mut self, timestamp: u64) {
         let decayed =
             |card: Option<Card>| card.is_some_and(|card| card.retrievability(timestamp) < DEMOTE_R);
@@ -283,9 +283,9 @@ impl WordState {
     // mode, right now.
     //
     // A mode the stage allows but that has no card yet contributes a derived
-    // first-attempt probability — a constant times the retrievability of the
-    // card one rung below — which the builder uses both to *target* (how
-    // likely this exercise is to go right) and to *schedule* (`due` sorts an
+    // first-attempt probability, a constant times the retrievability of the
+    // card one rung below, which the builder uses both to target (how likely
+    // this exercise is to go right) and to schedule (`due` sorts an
     // unattempted mode by it, so a just-graduated word is urgent). This
     // is a pick probability only; it is never written to state.
     pub fn probability(&self, mode: Mode, timestamp: u64) -> f64 {
@@ -301,7 +301,7 @@ impl WordState {
     }
 
     // How urgently each of this word's legal modes wants serving, as
-    // (success probability, mode) pairs — lowest is most urgent.
+    // (success probability, mode) pairs, lowest being most urgent.
     //
     // One entry per mode the stage allows: urgency is per (word, mode),
     // because an RP word with a fresh recognition card and a decayed
@@ -309,10 +309,10 @@ impl WordState {
     // decay would never be addressed. A mode with a card sorts by its
     // retrievability; a mode with no card yet sorts by its derived
     // first-attempt probability (see `probability`), so a freshly unlocked
-    // mode is *urgent*: the builder's first phase serves it, and the verdict
-    // births its card. Merely making it *pickable* in the fill phase instead
-    // starves it forever — the derived probability loses every comparison
-    // there, so the mode never gets a card, so it is never due.
+    // mode is urgent: the builder's first phase serves it, and the verdict
+    // births its card. Merely making it pickable in the fill phase starves it
+    // forever, since the derived probability loses every comparison there, so
+    // the mode never gets a card and is never due.
     pub fn due(&self, timestamp: u64) -> impl Iterator<Item = (f64, Mode)> {
         [Mode::Scaffolding, Mode::Recognition, Mode::Production]
             .into_iter()
@@ -346,7 +346,7 @@ impl WordState {
 
     // down a rung (no further than the bottom), counters cleared and the
     // short re-promotion streaks armed. The demoted mode's card is left
-    // alone — no fake ratings, no clock resets.
+    // alone: no fake ratings, no clock resets.
     fn demote(&mut self) {
         self.stage = match self.stage {
             Stage::Scaffolding => Stage::Scaffolding,
@@ -404,7 +404,7 @@ mod tests {
     }
 
     // a word that almost graduated must start its streak over when it
-    // fails — the streak is *consecutive* successes
+    // fails, since the streak is consecutive successes
     #[test]
     fn a_failure_resets_the_streak() {
         let mut state = WordState::new(Stage::Scaffolding);
@@ -466,7 +466,7 @@ mod tests {
     }
 
     // the deep-forgetting path: a card that has decayed well past FSRS's
-    // operating band demotes its word without any verdict at all — this is
+    // operating band demotes its word without any verdict at all, which is
     // what makes "back from vacation" slide words down the ladder
     #[test]
     fn decay_below_the_threshold_demotes_a_rung_at_a_time() {
@@ -528,8 +528,8 @@ mod tests {
         assert_eq!(state.stage, Stage::Recognition);
         assert_eq!(state.streak, 0);
         assert_eq!(state.lapses, 0);
-        // the card still took the verdict, though — it is honest evidence
-        // about the bank, just not about the rung
+        // the card still took the verdict: honest evidence about the bank,
+        // just not about the rung
         assert_eq!(state.bank.unwrap().last_reviewed, t0 + 1);
     }
 
@@ -537,7 +537,7 @@ mod tests {
 
     // A castle asks for production regardless of where a word sits, and
     // getting it right is real evidence: the card is born and the rung moves.
-    // This is how a castle can *accelerate* a strong learner's tree.
+    // This is how a castle can accelerate a strong learner's tree.
     #[test]
     fn a_castle_success_above_the_ladder_counts_in_full() {
         let t0 = now();
@@ -562,7 +562,7 @@ mod tests {
         assert_eq!(state.stage, Stage::Scaffolding);
     }
 
-    // a verdict at a mode the word *has* reached is ordinary evidence,
+    // a verdict at a mode the word has reached is ordinary evidence,
     // however it came about
     #[test]
     fn a_castle_verdict_at_a_legal_mode_is_recorded_normally() {
@@ -606,7 +606,7 @@ mod tests {
     // --- probabilities and urgency ---
 
     // a just-graduated word has no card in its newly unlocked mode, so the
-    // probability is derived from the rung below — hard enough to be
+    // probability is derived from the rung below: hard enough to be
     // interesting, never written to state
     #[test]
     fn a_new_modes_probability_is_derived_from_the_rung_below() {
@@ -653,7 +653,7 @@ mod tests {
 
     // a mode the stage allows but that has never been attempted is due at
     // its derived first-attempt probability: this is what gets a freshly
-    // unlocked mode served — and its card born — instead of starving it
+    // unlocked mode served, and its card born, instead of starving it
     #[test]
     fn due_includes_an_unattempted_mode_at_its_derived_probability() {
         let t0 = now();

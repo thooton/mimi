@@ -1,11 +1,11 @@
 // User-to-user messages: the inbox, its event stream, and its commands.
 //
-// A **thread** is a pair of people, and that is all it is. There is no thread
+// A thread is a pair of people, and that is all it is. There is no thread
 // record to create before the first message and none to tidy up after the
-// last — `Store::load_threads` derives the list from the messages themselves,
+// last: `Store::load_threads` derives the list from the messages themselves,
 // so a conversation exists exactly while something has been said in it.
 //
-// **Events flow down; commands go up.** One Server-Sent Events connection per
+// Events flow down; commands go up. One Server-Sent Events connection per
 // open page carries the initial thread list and every live change after it.
 // Ordinary authenticated HTTP requests open a thread, mark it read, or send a
 // message. Keeping the directions separate fits HTTP while retaining one
@@ -14,20 +14,20 @@
 //
 // The pieces:
 //
-// - **`Broker`** is the routing table — username → their live event feeds. It
+// - `Broker` is the routing table, username to their live event feeds. It
 //   holds no messages and no history: the database is the record, and this is
 //   only how a write reaches somebody who is looking. A learner with no page
 //   open has no entry, which is the same thing as being offline.
-// - **`events`** is one connection: it writes the thread list, then turns that
+// - `events` is one connection: it writes the thread list, then turns that
 //   connection's broker channel into an SSE response until the page leaves.
-// - **`open`/`read`/`send`** are the command side and the seam the tests use.
+// - `open`/`read`/`send` are the command side and the seam the tests use.
 //
-// **Every send publishes to both ends, including the sender's own.** The tab
+// Every send publishes to both ends, including the sender's own. The tab
 // that sent a message learns it landed the same way every other tab does,
 // through the broker, so there is one path into the client's state instead of
 // an optimistic local one and a real one that have to agree.
 //
-// Guests are not here at all — the route turns them away (see
+// Guests are not here at all; the route turns them away (see
 // `server::inbox_events`) for the reason they are not on the leaderboard and
 // cannot be followed: there is nobody behind the record to write to, and it
 // goes when its cookie does.
@@ -53,7 +53,7 @@ const MAX_BODY: usize = 2000;
 
 // How much of a conversation is served when it is opened. There is no way to
 // ask for what came before (see `Store::load_thread`), so this is also how
-// far back a thread can be read — which is the trade being made until paging
+// far back a thread can be read, which is the trade being made until paging
 // is worth its own protocol.
 const THREAD_LIMIT: u32 = 200;
 
@@ -72,7 +72,7 @@ pub struct Message {
 /// said in it, and whether the reader has seen that.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Thread {
-    /// the *other* person — a thread is named by whoever isn't reading it
+    /// the other person: a thread is named by whoever isn't reading it
     pub with: String,
     pub display: String,
     /// so the list can say "You: …" without guessing from the body
@@ -84,8 +84,8 @@ pub struct Thread {
 
 // --- the broker ---
 
-/// Every open inbox, by whose it is. One learner may have several — two tabs,
-/// a phone — and a message reaches all of them or none.
+/// Every open inbox, by whose it is. One learner may have several (two tabs, a
+/// phone) and a message reaches all of them or none.
 #[derive(Clone)]
 pub struct Broker {
     inner: Arc<BrokerInner>,
@@ -94,7 +94,7 @@ pub struct Broker {
 struct BrokerInner {
     connections: Mutex<HashMap<String, Vec<(u64, UnboundedSender<ServerEvent>)>>>,
     // connections are told apart by a number rather than by their channel,
-    // because closing one has to remove *that* one and a sender has no
+    // because closing one has to remove that one and a sender has no
     // identity worth comparing
     next: AtomicU64,
 }
@@ -157,8 +157,8 @@ impl Broker {
     }
 
     /// Send one event to every inbox this user has open.
-    /// Nobody looking is not a failure — it is the ordinary case, and the
-    /// message is in the database either way.
+    /// Nobody looking is not a failure but the ordinary case, and the message
+    /// is in the database either way.
     fn publish(&self, username: &str, event: ServerEvent) {
         let mut connections = self.inner.connections.lock().unwrap();
         let Some(open) = connections.get_mut(username) else {
@@ -196,8 +196,8 @@ impl Drop for Connection {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerEvent {
-    /// the inbox list, newest first — and who the reader is, so the client
-    /// need not be told twice which messages are its own
+    /// the inbox list, newest first, and who the reader is, so the client need
+    /// not be told twice which messages are its own
     Threads { me: String, threads: Vec<Thread> },
     Thread {
         with: String,
@@ -205,7 +205,7 @@ pub enum ServerEvent {
         messages: Vec<Message>,
     },
     /// One message, to one side of the conversation: `with` and `display`
-    /// name the *other* person from that side's point of view, which is why
+    /// name the other person from that side's point of view, which is why
     /// the two ends get different events for the same row.
     ///
     /// This is both of the updates a client needs. If the named thread is the
@@ -257,7 +257,7 @@ impl From<rusqlite::Error> for CommandError {
 }
 
 /// Show a conversation. Opening one is also reading it, so the dot goes out
-/// here — on every tab of the reader's, which is why it is published rather
+/// here, on every tab of the reader's, which is why it is published rather
 /// than left for this command's reply to imply.
 pub fn open(
     me: &str,
@@ -283,8 +283,8 @@ pub fn open(
 
 /// A message arrived in the conversation already on screen. Without this the
 /// dot would come back on the next reload for something the reader watched
-/// arrive — `open` is not repeated, because the client has the message
-/// already and re-sending the thread would only make it flicker.
+/// arrive. `open` is not repeated, because the client has the message already
+/// and re-sending the thread would only make it flicker.
 pub fn read(me: &str, with: &str, store: &Store, broker: &Broker) -> Result<(), CommandError> {
     correspondent(me, with, store)?;
     store.mark_read(me, with)?;
@@ -320,7 +320,7 @@ pub fn send(
         )));
     }
     let theirs = correspondent(me, to, store)?;
-    // what *they* will see this conversation named as
+    // what they will see this conversation named as
     let mine = match store.correspondent(me)? {
         Some((_, display)) => display,
         // the session names an account that has since been deleted
@@ -369,7 +369,7 @@ fn correspondent(me: &str, with: &str, store: &Store) -> Result<String, CommandE
         None => Err(CommandError::Rejected(format!("no user named '{with}'"))),
         // A guest is a record with a week to live and no name behind it, so
         // there is nobody there to write to. They cannot reach this end
-        // either — the event route turns them away.
+        // either, since the event route turns them away.
         Some((true, _)) => Err(CommandError::Rejected(
             "that account cannot be messaged".into(),
         )),
@@ -400,7 +400,7 @@ mod tests {
     }
 
     // The shape the whole feature turns on: one write, and both ends hear
-    // about it through their own connection — the sender's included, so a
+    // about it through their own connection, the sender's included, so a
     // second tab of theirs is as up to date as the recipient is.
     #[test]
     fn a_sent_message_reaches_both_ends_and_every_page_they_have_open() {

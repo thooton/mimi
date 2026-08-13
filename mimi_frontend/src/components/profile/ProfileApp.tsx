@@ -20,7 +20,7 @@ import ActivityFeed from "./ActivityFeed";
 
 /* The public profile page, read top to bottom: who this is, the languages
    they're learning and how those scores have moved, the practice behind them,
-   and then the day-by-day record. Anyone can open anyone's — the viewer's
+   and then the day-by-day record. Anyone can open anyone's; the viewer's
    identity only decides the row of buttons. Social actions belong to an
    account, so a signed-out visitor (including a temporary guest record) sees
    the profile without controls they cannot use. A profile is never scored
@@ -30,8 +30,8 @@ import ActivityFeed from "./ActivityFeed";
    the learn page fetches its course: the record changes every time its owner
    finishes a lesson, so there is no build at which it could be baked in. */
 
-/* One figure from the totals. The streak is the only live one — it can break
-   tomorrow — so it carries the flame and the accent; the rest sit plain. */
+/* One figure from the totals. The streak is the only live one, since it can
+   break tomorrow, so it carries the flame and the accent; the rest sit plain. */
 function Counter({
     value,
     label,
@@ -46,7 +46,7 @@ function Counter({
             <span className="counter-value">
                 {tone === "streak" && <Flame size={16} />}
                 {/* the figure carries its own box so the row can centre the
-                    digits rather than the line they sit on — see
+                    digits rather than the line they sit on; see
                     .counter-number */}
                 <span className="counter-number">{formatXp(value)}</span>
             </span>
@@ -112,10 +112,10 @@ export default function ProfileApp({ username }: { username?: string }) {
         };
     }, [viewedUsername]);
 
-    /* Read the profile again after something changed it, *without* blanking
+    /* Read the profile again after something changed it, without blanking
        the page first: the record is already on screen and this is a redraw of
-       it, not a new page. Everything a follow or an edit touches — the
-       counters, the button, the feed entry the follow just wrote — comes back
+       it, not a new page. Everything a follow or an edit touches (the
+       counters, the button, the feed entry the follow just wrote) comes back
        in the one response, so there is nothing to patch by hand and nothing
        that can drift from what the server thinks. */
     async function reload(username: string) {
@@ -168,7 +168,7 @@ export default function ProfileApp({ username }: { username?: string }) {
         );
     }
 
-    /* while the profile is in flight the page is simply blank — no spinner,
+    /* while the profile is in flight the page is simply blank: no spinner,
        no skeleton; the record appears whole once it arrives */
     if (!api) {
         return <div className="shell profile-page" />;
@@ -184,9 +184,9 @@ export default function ProfileApp({ username }: { username?: string }) {
             <section className="panel profile-head">
                 {/* A linked picture or the initial behind it. The image is
                     somebody else's file on somebody else's server (see
-                    safeAvatar), so it is loaded without a referrer — which
-                    profile a reader is looking at is not that host's
-                    business — and it is decoration either way, because the
+                    safeAvatar), so it is loaded without a referrer, since
+                    which profile a reader is looking at is not that host's
+                    business. It is decoration either way, because the
                     name it belongs to is right beside it. */}
                 <span className="profile-avatar" aria-hidden="true">
                     {profile.avatar ? (
@@ -276,7 +276,7 @@ export default function ProfileApp({ username }: { username?: string }) {
                                         onClick={toggleFollow}
                                     />
                                     {/* the inbox opens on this conversation,
-                                        which may not exist yet — a thread is
+                                        which may not exist yet: a thread is
                                         the pair of people in it, so there is
                                         nothing to create first */}
                                     <Button

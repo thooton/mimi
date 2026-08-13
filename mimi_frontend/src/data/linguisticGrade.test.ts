@@ -2,8 +2,8 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { linguisticGrade, type Answer } from "./linguisticGrade.ts";
 
-/* The cases below write an answer in a compact marker notation —
-   "¡[C_hola=Hola], Juan!" — and this expands it into the shape the backend
+/* The cases below write an answer in a compact marker notation,
+   "¡[C_hola=Hola], Juan!", and this expands it into the shape the backend
    actually serves: the plain text, plus the span of it that proves each
    concept. The notation is a fixture and nothing more; no code outside these
    tests has parsed anything like it since the wire format became structured. */
@@ -97,7 +97,7 @@ test("grading picks the closest accepted answer", () => {
 });
 
 // an omission in the middle must not drag the words after it out of
-// alignment — that's why grading aligns instead of comparing pairwise
+// alignment, that's why grading aligns instead of comparing pairwise
 test("grading realigns around a missing word", () => {
   const answers = ["[C_muy=Muy] [C_mal=mal], [C_ana=Ana]."];
   const grade = linguisticGrade("Mal, Ana.", answers_(answers));

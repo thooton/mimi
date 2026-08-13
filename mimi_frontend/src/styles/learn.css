@@ -1,12 +1,12 @@
 /* ==========================================================================
-   learn — the / page frame: the grid of map and side rail, the rail's
+   learn: the / page frame: the grid of map and side rail, the rail's
    own cards (metrics, quests, meters), and the placeholders shown while the
    backend answers.
 
    The two large things the page holds are sheets of their own, because each
    belongs to one component and neither is referenced from here:
-     course-map.css    — the map, its floating header and lesson path
-     lesson-player.css — the player that takes over the screen from it
+     course-map.css: the map, its floating header and lesson path
+     lesson-player.css: the player that takes over the screen from it
 
    .meter is the one export: it is defined here for the quest rows.
    ========================================================================== */
@@ -30,10 +30,10 @@
 }
 
 /* Below the breakpoint the rail stops being a rail and becomes a block of
-   stats above the map, so it must drop out of sticky — pinned, it would
+   stats above the map, so it must drop out of sticky, pinned, it would
    hold its place while the map scrolled underneath it.
 
-   This block has to come *after* the rule above, not before: same
+   This block has to come after the rule above, not before: same
    specificity, so source order is all that decides which position wins. */
 @media (max-width: 940px) {
   .learn-grid {
@@ -102,7 +102,7 @@
   box-shadow: inset 0 1px 2px rgba(29, 27, 22, 0.1);
 }
 
-/* a completed quest's mark fills in — flat, since it only reports state */
+/* a completed quest's mark fills in, flat, since it only reports state */
 .quest.is-done .quest-mark {
   background-color: var(--mimi-done);
   border-color: var(--mimi-done-deep);

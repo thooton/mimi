@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Notes for anyone — human or agent — picking this repository up.
+Notes for anyone, human or agent, picking this repository up.
 
 ## What this is
 
@@ -14,7 +14,7 @@ The two `Course_*.txt` / `Course_*.webp` pairs in the root are descriptions and
 screenshots of the original Duolingo screens. They are the design reference for
 the course tree and the sentence editor; read them before redesigning either.
 
-Nothing here is a stock MediaWiki fork — `mediawiki:1.46.0` is pulled as an
+Nothing here is a stock MediaWiki fork, `mediawiki:1.46.0` is pulled as an
 image and only `config/LocalSettings.php` and `extensions/MimiIncubator` are
 mounted into it. Do not go looking for MediaWiki core in the repository.
 
@@ -40,8 +40,8 @@ extensions/MimiIncubator/
   includes/*.php             front page tags, course catalogue, name/icon/flag helpers
   resources/editor.js        the whole Vue 3 + Codex editor, all four kinds
   resources/view.js          progressive enhancement for the read views
-  resources/tailwind.css     generated — never hand-edit
-  resources/frontpage.css    hand-written — the one stylesheet Tailwind does not own
+  resources/tailwind.css     generated, never hand-edit
+  resources/frontpage.css    hand-written, the one stylesheet Tailwind does not own
   maintenance/SeedMainPage.php   the front page
 ```
 
@@ -64,13 +64,13 @@ production systemd units and upgrade procedures.
 example beside it is the shared configuration, so a change every clone should
 get belongs in the example (and in your own copy). Compose mounts the copy
 read-only, and Docker meets a missing mount source by creating a root-owned
-directory at that path instead of failing, which then needs `sudo` to remove —
+directory at that path instead of failing, which then needs `sudo` to remove,
 so the copy has to exist before the first `up`.
 
 The entrypoint installs only when the `page` table is missing, then runs
 `SeedMainPage.php` on every start. It is guarded: the front page is only written
 while the main page still holds the installer's placeholder, so it will not
-clobber an edit you made in the browser. The wiki otherwise starts empty —
+clobber an edit you made in the browser. The wiki otherwise starts empty,
 create courses through `Special:NewCourse`.
 
 `MIMI_PORT` / `MIMI_SERVER` in a `.env` file move the wiki off port 4771; both
@@ -99,14 +99,14 @@ choosing one.
 the language pair from the title. Skills are subpages,
 `Skill:<course>/<skill>`; the glossary is `Glossary:<course>`; a skill's tips
 are the same name again in `Tips:`, which is the whole of the link between the
-two — neither page stores a pointer to the other. Language names
-and page names are deliberately *not* stored in the JSON — successive schema
+two: neither page stores a pointer to the other. Language names
+and page names are deliberately *not* stored in the JSON, successive schema
 versions removed them, precisely because two sources of truth can disagree. Do
 not reintroduce them.
 
 **A glossary may be spread over segments, and they are subpages too.** A
-language has more words than `$wgMaxArticleSize` has bytes — five thousand
-Spanish lemmas with their forms are some fourteen megabytes — so a large
+language has more words than `$wgMaxArticleSize` has bytes, five thousand
+Spanish lemmas with their forms are some fourteen megabytes, so a large
 glossary is written to `Glossary:<course>/<letter>` pages, and the whole
 glossary is `Glossary:<course>` *together with* everything beneath it. Nothing
 lists the segments: they are found by sitting under the page the course names,
@@ -114,7 +114,7 @@ which is why the read view, `CourseCatalogue::glossaryTerms()` and
 `convert::glossary_entries` in mimi_backend each query for subpages rather than
 following a pointer. A small glossary stays on one page and shows no index; the
 split is what a glossary grows into, not a shape it is born in. Lemmas are
-unique *per page* — the check cannot span pages it has not read — so the same
+unique *per page*, the check cannot span pages it has not read, so the same
 word filed under two letters is possible, and the backend resolves it by
 visiting pages in title order.
 
@@ -123,15 +123,15 @@ read view that does not write its content out in full: a segment is fifteen
 thousand rows, so `renderStructuredView()` writes the first fifty entries and
 attaches all of them as JSON, and `view.js` builds a block of rows as it is
 scrolled near and takes it down once it is past. Two consequences are easy to
-trip over. The row markup exists twice — in PHP for the reader without
-JavaScript and in `group()` for everyone else — and they have to agree. And the
+trip over. The row markup exists twice, in PHP for the reader without
+JavaScript and in `group()` for everyone else, and they have to agree. And the
 blocks are measured, not watched: a block runs to thousands of pixels, so an
 `IntersectionObserver` on any one node inside it reports a block as gone while
 it still fills the screen. That was tried; it left blank pages.
 
 **A diff is drawn in the vocabulary of the editor, not of the JSON.**
-`StructuredSlotDiffRenderer` reduces each revision to `DiffSection`s — a word, a
-glossary entry, a tip, the course tree — and draws a card per section that
+`StructuredSlotDiffRenderer` reduces each revision to `DiffSection`s, a word, a
+glossary entry, a tip, the course tree, and draws a card per section that
 differs, headed by what became of it and holding one line per changed field.
 Four things about it are decisions rather than details:
 
@@ -143,20 +143,20 @@ Four things about it are decisions rather than details:
   The price is that renaming a word is a removal and an addition, which is
   roughly what it is.
 - **Inside a section, groups are keyed by position**, because a sentence and a
-  glossary form have no name of their own — so inserting a sentence renumbers
+  glossary form have no name of their own, so inserting a sentence renumbers
   the ones after it. The section around it stops that spreading any further,
   and a group that is empty on one side is labelled added or removed rather
   than shown as four fields that each became "not set".
 - **A field whose value is the empty string is absent, not blank.** That is what
   lets a sentence with no notes say nothing about notes, and it is why the
-  disabled flag contributes `'Disabled'` or `''` and never `'Active'` — a field
+  disabled flag contributes `'Disabled'` or `''` and never `'Active'`, a field
   that always has a value would make every group look present on both sides and
   defeat the check above.
 - **The highlighting is core's `WordLevelDiff`**, and the cells keep core's
   `diff-addedline` / `diff-deletedline` classes, so an edited sentence marks the
   words that moved in the colours the rest of the wiki uses. Only the typeface
   is overridden: the editfont preference is about wikitext, and these cells hold
-  prose. Derived numbers — word counts, entry counts — are deliberately *not*
+  prose. Derived numbers, word counts, entry counts, are deliberately *not*
   diffed; they became the tally in the bar at the top, because a count changing
   says nothing the added and removed cards below do not already say.
 
@@ -179,7 +179,7 @@ deleted with it. Readers address their fields directly.
 
 The cost is paid in **page history**: revisions written before those versions
 are still stored, and nothing understands them any more. A diff or a permalink
-reaching one renders the fields it cannot read as absent rather than failing —
+reaching one renders the fields it cannot read as absent rather than failing,
 a v4 sentence shows its text and "not set" where its translation would be. That
 is accepted, not a bug to fix by reintroducing tolerance.
 
@@ -193,19 +193,19 @@ render the subset to show what is being written and serialise it back on every
 keystroke, while `includes/Markdown.php` renders the same grammar for the read
 view. The two must agree; render a battery of inputs through both and diff the
 output after touching either. Markdown is what makes a tip diff as text in page
-history and keeps the read view safe — the canvas's own HTML would do neither.
+history and keeps the read view safe, the canvas's own HTML would do neither.
 
 **Below 1024px every editor becomes an app, not a narrow page.** None of the
 four layouts survives being squeezed, so each one turns its columns into a
-sequence of screens — words → sentences → sentence, entries → entry → form,
-tips → tip, and the course tree's single screen — and shows one at a time.
+sequence of screens, words → sentences → sentence, entries → entry → form,
+tips → tip, and the course tree's single screen, and shows one at a time.
 `SCREENS` in `editor.js` names that sequence per kind and `screenClass()` decides which way
 the rest slide out; the `mimi-editor-screen*` rules in `tailwind.input.css` are
 the only part that moves them, and they are inert above the breakpoint, so the
 desktop layouts are still plain grids. Two things are easy to undo by accident:
 `editor.js` reparents `#mimi-editor-root` to `<body>`, because Vector gives its
 page container a `z-index: 0` that no descendant can escape; and the one
-breakpoint lives in three places that have to agree — the media queries in the
+breakpoint lives in three places that have to agree, the media queries in the
 stylesheet, the `lg:` variants in the templates, and the `matchMedia` call that
 reparents. Touch is not a small mouse, either: hover-only affordances are shown
 outright below `lg:`, and the course tree's cards may only be dragged by their
@@ -217,8 +217,8 @@ translations are all dragged by `createRowDrag()` in `editor.js`: the row picked
 up follows the pointer as a ghost, the list holds a gap where it would land, and
 the array is only rewritten once the ghost has flown into that gap, because
 committing in the tick the ghost vanishes makes the rows jump. Each list gives it
-the array, the text the ghost carries, and — where a selection is remembered by
-index — an `onMove` that walks that index along with the row. A glossary entry's
+the array, the text the ghost carries, and, where a selection is remembered by
+index: an `onMove` that walks that index along with the row. A glossary entry's
 first form is the lemma itself, so that structural row gives the factory a lower
 bound and cannot be moved. Rows are keyed from a side band the factory keeps
 rather than by position, since a translation is a plain string with no identity
@@ -229,8 +229,8 @@ than at one column, which is a different problem.
 
 Each non-virtualized list's `transition-group` is keyed by the list it is
 showing, not left unkeyed. Selecting another word hands the group an entirely
-new set of row keys, so without that every row leaves as its replacement enters
-— and Vue keeps a leaving row in the flow until its leave transition resolves,
+new set of row keys, so without that every row leaves as its replacement enters,
+and Vue keeps a leaving row in the flow until its leave transition resolves,
 which takes a frame or two even when there is none, long enough to see both
 words' sentences stacked on top of each other. Keying the group swaps it in a
 single patch instead. Taking leaving rows out of the flow, the usual advice, is
@@ -251,8 +251,8 @@ ghost teleported to `<body>` would lose its border.
 `includes/Auth/MimiAuthPrimaryAuthenticationProvider.php` is a
 `PrimaryAuthenticationProvider` that verifies against `mimi_auth`'s `/v1/login`
 and registers through `/v1/register`. Every Mimi site verifies against that one
-service and keeps its own session, so this is *not* single sign-on — the sites
-do not know about each other — but one account works on all of them.
+service and keeps its own session, so this is *not* single sign-on, the sites
+do not know about each other, but one account works on all of them.
 
 Two properties hold the whole thing up, and undoing either breaks something
 that no test will catch:
@@ -260,8 +260,8 @@ that no test will catch:
 - It sorts at 50, ahead of core's `LocalPasswordPrimaryAuthenticationProvider`
   at 100, so `mimi_auth` is asked first and stays the source of truth.
 - It is **not authoritative**, so a rejection ABSTAINs rather than fails and
-  core's local check still gets its turn. That is the only reason `Admin` — a
-  local account `mimi_auth` has never heard of — can still sign in, and it keeps
+  core's local check still gets its turn. That is the only reason `Admin`, a
+  local account `mimi_auth` has never heard of, can still sign in, and it keeps
   working while `mimi_auth` is down. Core's provider is authoritative and runs
   last, so a genuinely wrong password still ends in "wrong password".
 
@@ -270,8 +270,8 @@ password at the form. `$wgDebugLogGroups['authentication']` sends the real
 reason to the container's stderr; without it the outage is silent.
 
 **Changing a password needs its own credential type.** `MimiPasswordChangeRequest`
-exists because mimi_auth wants the *current* password — it has no tokens, so
-retyping it is the authorisation — and core's change request carries only the
+exists because mimi_auth wants the *current* password, it has no tokens, so
+retyping it is the authorisation, and core's change request carries only the
 new one. It deliberately does not extend `PasswordAuthenticationRequest`:
 `LocalPasswordPrimaryAuthenticationProvider` claims a request with
 `get_class( $req ) === PasswordAuthenticationRequest::class`, an exact match a
@@ -286,13 +286,13 @@ That refusal removes the credential Special:ChangePassword shortcuts to, so
 there is one rule about who is local.
 
 Two traps in that flow. `providerChangeAuthenticationData()` returns **void** and
-cannot report failure, so everything that can be rejected — the retype, the
-policy, the current password — has to be settled in
+cannot report failure, so everything that can be rejected, the retype, the
+policy, the current password, has to be settled in
 `providerAllowsAuthenticationDataChange()` while a status can still be returned.
 And password-policy failures arrive as *warnings*: `MinimalPasswordLength`
 carries `suggestChangeOnLogin`, so `checkPasswordValidity()` leaves `isOK()`
 true and only `isGood()` false. Testing `isOK()` lets a six-character password
-through to a silent 400 from mimi_auth after the user has been told it worked —
+through to a silent 400 from mimi_auth after the user has been told it worked,
 merge the status and let AuthManager judge it, as core does.
 
 Three things about MediaWiki's auth are easy to get wrong here, and each cost
@@ -321,25 +321,25 @@ on an edit to the main page.
 
 A version bump touches five places. Miss one and the failure is silent:
 
-1. `schemas/<model>.schema.json` — the `const` schemaVersion and the fields.
-2. `<Model>ContentHandler::makeEmptyContent()` — the blank page.
-3. `resources/editor.js` `normalize()` — defaults for whatever the new shape
+1. `schemas/<model>.schema.json`, the `const` schemaVersion and the fields.
+2. `<Model>ContentHandler::makeEmptyContent()`, the blank page.
+3. `resources/editor.js` `normalize()`, defaults for whatever the new shape
    leaves optional.
-4. `StructuredSlotDiffRenderer`'s `*Sections()` method for the model — so
+4. `StructuredSlotDiffRenderer`'s `*Sections()` method for the model, so
    history stays readable.
 5. Both READMEs.
 
 Then **rewrite every stored page in the same change**, because no reader here
 tolerates an older shape and one left behind is a page that silently reads as
 blank. A one-off maintenance script that walks the four namespaces, applies the
-transform and saves through the ordinary page updater — so the schema checks it
-on the way in — is how the last bump was done; write one, run it, delete it.
+transform and saves through the ordinary page updater, so the schema checks it
+on the way in, is how the last bump was done; write one, run it, delete it.
 
 ## Conventions
 
 - PHP follows MediaWiki style: tabs, spaces inside parentheses, `Html::element`
   rather than string concatenation, services from `MediaWikiServices`.
-- Comments explain *why*, in full sentences, and are load-bearing — most of the
+- Comments explain *why*, in full sentences, and are load-bearing, most of the
   non-obvious decisions in this codebase are recorded only there. Match that
   register when you add code; do not strip the existing ones.
 - `resources/editor.js` is Prettier-formatted (4 spaces, double quotes);
@@ -348,14 +348,14 @@ on the way in — is how the last bump was done; write one, run it, delete it.
   Rebuild `resources/tailwind.css` with `./build-tailwind.sh` after changing any
   class, and commit the result. Tailwind's content globs only cover
   `includes/**/*.php` and `resources/**/*.js`, so a class that only ever appears
-  in wikitext will not be generated — that is why `frontpage.css` is hand-written.
+  in wikitext will not be generated, that is why `frontpage.css` is hand-written.
 - Preflight is off, so Tailwind's `border-*` utilities need the reset that
   `tailwind.input.css` reproduces for `#mimi-editor-root`.
 - Icons are Codex icons: server-rendered as inline SVG via `Icon::codex()` in
   read views, and delivered through ResourceLoader's `CodexModule` in the
   editor. New icons must be added to the `callbackParam` list in
   `extension.json` before the editor can use them.
-- Missing pages are linked red on purpose — the course tree uses red links as
+- Missing pages are linked red on purpose, the course tree uses red links as
   the invitation to write what is missing.
 
 ## Verifying a change
@@ -366,7 +366,7 @@ refuses. Use instead:
 
 - `curl http://mimi.localhost:4771/index.php/<Page>` for rendered output.
 - `docker compose exec -T mediawiki php /var/www/html/maintenance/run.php eval`
-  with statements on stdin — the fastest way to exercise a content handler,
+  with statements on stdin, the fastest way to exercise a content handler,
   `validateSave()` or the diff renderer directly.
 - `api.php` with `action=login` as `Admin` / `mimi-editor-admin` for a real save
   round trip (`action=edit&contentmodel=mimi-glossary`).
@@ -383,10 +383,10 @@ CI. Verification is manual, and the list above is all of it.
 - **PHP changes need `docker compose restart mediawiki`.** Opcache keeps the old
   bytecode, so purging the parser cache first re-renders with the *previous*
   code and the change looks like it did nothing. Restart, then purge, then curl.
-  JS and CSS are live immediately — they are bind-mounted.
+  JS and CSS are live immediately, they are bind-mounted.
 - **Edits to `config/LocalSettings.php` do not reach anybody else.** It is
   gitignored, so a configuration change that everyone should get has to go into
-  `config/LocalSettings.example.php` as well — and the two drift silently,
+  `config/LocalSettings.example.php` as well, and the two drift silently,
   because nothing compares them.
 - **`.gitattributes` forces LF.** `docker/entrypoint.sh` is mounted straight into
   Linux; a CRLF checkout kills the container on a `#!/bin/sh\r` shebang. Do not

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   lesson player — the view that takes the whole screen over from the course
+   lesson player, the view that takes the whole screen over from the course
    map once a stone is tapped: the prompt column, the word bank, the reading
    material and the end-of-lesson summary.
 
@@ -58,8 +58,8 @@
   height: 100%;
   border-radius: 5px;
   background-color: var(--mimi-done);
-  /* the strip glides to each new width — an answered task's slice, the next
-     task's count — instead of jumping */
+  /* the strip glides to each new width, an answered task's slice, the next
+     task's count, instead of jumping */
   transition: width 220ms ease-out;
 }
 
@@ -117,7 +117,7 @@
 
 /* ---- word bank ---- */
 
-/* The assembly line plays the part of the text input — same box — but fills
+/* The assembly line plays the part of the text input, same box, but fills
    with the tokens the user taps instead of typed text. */
 .lesson-bank-answer {
   display: flex;
@@ -169,7 +169,7 @@
   margin-top: 18px;
 }
 
-/* a spent token keeps its slot — the bank doesn't reflow mid-exercise — but
+/* a spent token keeps its slot, the bank doesn't reflow mid-exercise, but
    leaves only a hole */
 .lesson-bank-token.is-spent {
   visibility: hidden;
@@ -328,7 +328,7 @@
    this carries its own tinted pill: it is about the user's own history with
    this question rather than about the sentence, so it should read as a label
    stuck on the task and not as another note about the words in it. Gold, not
-   the miss red — the mistake already had its red feedback; this is a second
+   the miss red, the mistake already had its red feedback; this is a second
    chance, not a scolding. */
 .lesson-retry {
   display: inline-flex;
@@ -357,7 +357,7 @@
 /* ---- word hints ---- */
 
 /* A word the lesson can explain, set in the prompt: the dotted rule is the
-   whole invitation — it says "this one has a hint" without spending a
+   whole invitation, it says "this one has a hint" without spending a
    colour or a box on it. Underline rather than a border, so it follows the
    word across a line break instead of boxing it. */
 .lesson-hint-word {
@@ -372,7 +372,7 @@
   text-underline-offset: 6px;
 }
 
-/* open or merely pointed at, the word takes the accent — the hint below it
+/* open or merely pointed at, the word takes the accent, the hint below it
    is the one being read */
 .lesson-hint-word:hover,
 .bp6-popover-open > .lesson-hint-word {
@@ -398,7 +398,7 @@
 /* The hint appears, it doesn't arrive: Blueprint scales and fades its
    popovers in, which on a word you only pointed at reads as a delay. Killed
    here rather than with the `minimal` prop, which would take the arrow with
-   it — and the arrow is what ties the card to the word it explains. */
+   it: and the arrow is what ties the card to the word it explains. */
 .lesson-hint-portal .bp6-popover-transition-container {
   opacity: 1;
   transition: none;

@@ -1,6 +1,6 @@
 /* ==========================================================================
-   motion — the site's motion, gathered in one place: keyframes beside the
-   classes that run them. House rules — transform and opacity only (both are
+   motion: the site's motion, gathered in one place: keyframes beside the
+   classes that run them. House rules, transform and opacity only (both are
    cheap for the compositor and neither pushes layout), exits shorter than
    entrances, and nothing over a quarter second.
 
@@ -11,7 +11,7 @@
    LearnApp.tsx's QUIT_MS with #2 and LessonPlayer.tsx's EXIT_MS with #3
    (FlashcardApp.tsx reuses #3). */
 
-/* 1. The lesson card pops out of its stone — a 160ms fade with a small
+/* 1. The lesson card pops out of its stone, a 160ms fade with a small
    settle into place. Blueprint sets transform-origin inline from the
    placement, so the card grows out of the arrow side; Popper's own
    positioning lives on the transition container (its 100ms fade
@@ -35,7 +35,7 @@
    Leaving (the X, or the summary's Continue) is a crossfade, not a
    fade-out: LearnApp mounts the map immediately and holds the player's
    unmount for the fade's run, and is-quitting lifts the shell out of
-   the flow as an opaque overlay — so it fades to transparency over the
+   the flow as an opaque overlay, so it fades to transparency over the
    page it's returning to rather than to bare paper. Opaque because the
    fade would otherwise let the map bleed through at mid-strength; the
    overlay paints the page colour and its alpha carries the blend.
@@ -73,7 +73,7 @@
 
 /* 3. Within a lesson, the working area turns over like a carousel: the
    finished task shifts out to the left, its replacement shifts in from
-   the right. Only .lesson-body moves — the progress strip and the action
+   the right. Only .lesson-body moves, the progress strip and the action
    button stay put so the chrome doesn't bounce. The exit runs first
    (LessonPlayer holds the swap for EXIT_MS, kept in step with the 140ms
    here), then the fresh task's own mount plays the entrance. */
@@ -99,7 +99,7 @@
   animation: lesson-task-in 200ms ease-out both;
 }
 
-/* 4. A correct answer pops the verdict strip — quick, with a small
+/* 4. A correct answer pops the verdict strip, quick, with a small
    overshoot before it lands. A wrong answer wants a look, not applause,
    so those stay still. The progress fill glides to match (see
    .lesson-progress-fill in lesson-player.css). */
@@ -122,7 +122,7 @@
 }
 
 /* 5. The flashcard's answer rises into place on the reveal. The card itself
-   doesn't move — the stage is tall enough for both states — so this is the
+   doesn't move, the stage is tall enough for both states, so this is the
    whole motion. (The class running it is .flash-reveal in practice.css.) */
 @keyframes flash-answer-in {
   from {

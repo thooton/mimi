@@ -1,4 +1,4 @@
-// A read-only MediaWiki client that can read the wiki *as it was*.
+// A read-only MediaWiki client that can read the wiki as it was.
 //
 // Everything fetched is pinned to one timestamp, so that a course assembled
 // from a dozen pages is a coherent whole rather than a mix of states from
@@ -9,13 +9,13 @@
 // "may only be used on a single page", so a pinned read cannot be batched. That
 // would be one request per page, which is why `at` below is written in two
 // phases: the latest revision of every page is fetched in batches of fifty, and
-// only the pages whose latest revision turns out to be *newer* than the
+// only the pages whose latest revision turns out to be newer than the
 // snapshot need a second, single-page, pinned request. Since the snapshot is
 // taken from the newest change on the wiki, that second phase is normally
 // empty. Do not "simplify" this into one pinned request per page.
 //
 // Timestamps are compared as strings throughout. MediaWiki's are ISO 8601 in
-// UTC with a fixed width, so lexicographic order *is* chronological order, and
+// UTC with a fixed width, so lexicographic order is chronological order, and
 // parsing them would buy nothing but a way to fail.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -277,9 +277,9 @@ impl Wiki {
     // Both ends are inclusive. MediaWiki timestamps are only accurate to the
     // second, so an edit sharing its second with the snapshot boundary would
     // otherwise be able to fall through the gap between two runs. Re-reporting
-    // a page we already have is free — refetching is idempotent — while missing
-    // one leaves the course quietly wrong, so the window overlaps by a second
-    // on purpose.
+    // a page we already have is free, since refetching is idempotent, while
+    // missing one leaves the course quietly wrong, so the window overlaps by a
+    // second on purpose.
     pub async fn changed_between(
         &self,
         since: &str,
@@ -321,7 +321,7 @@ impl Wiki {
         Ok(titles)
     }
 
-    // Every page that exists in a namespace *now*.
+    // Every page that exists in a namespace now.
     //
     // Deliberately unpinned: it is only used to find the courses to start the
     // walk from, and a course that did not yet exist at the snapshot drops out
@@ -355,8 +355,8 @@ impl Wiki {
 
     // Read pages as they stood at `timestamp`.
     //
-    // A title maps to None when the page did not exist then — either because it
-    // has since been deleted, or because it had not been created yet.
+    // A title maps to None when the page did not exist then, either because it
+    // has since been deleted or because it had not been created yet.
     pub async fn at(
         &self,
         titles: &[String],
@@ -564,7 +564,7 @@ fn build_revision(title: &str, revision: &Value) -> Result<Revision, WikiError> 
 }
 
 // Percent-encode one query component. Page titles carry spaces, slashes and
-// accents, all of which have to survive the round trip intact — a title is the
+// accents, all of which have to survive the round trip intact: a title is the
 // only thing linking a skill to its tips, so mangling one silently loses a page.
 fn encode(value: &str) -> String {
     let mut out = String::with_capacity(value.len());
