@@ -37,6 +37,11 @@
     color: var(--mimi-ink);
 }
 
+.land-h1-mimi {
+    color: var(--mimi-accent);
+    font-weight: 800;
+}
+
 .land-actions {
     display: flex;
     flex-wrap: wrap;
