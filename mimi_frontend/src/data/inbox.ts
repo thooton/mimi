@@ -1,22 +1,19 @@
 /* The inbox's connection to the backend (see mimi_backend/src/messages.rs).
 
-   Messaging has no REST endpoints, deliberately: an inbox is a thing two
-   people change while both are looking at it, so every read would need a poll
-   behind it to stay true. One socket per open page instead, a frame in each
-   direction, and the same frame that delivers a message to the person it was
-   sent to delivers it to the sender's other tabs.
+   One EventSource per open page carries the initial thread list and live
+   changes down. Opening, reading and sending are ordinary HTTP commands in
+   the other direction. The same event that delivers a stored message to its
+   recipient delivers it to the sender's other tabs and the sending tab.
 
-   This module is the wire and nothing else — it parses frames, hands them to
-   the handlers it was given, and puts the connection back when it drops. What
-   any of it *means* to the page belongs to InboxApp, which is the only thing
-   that knows which conversation is on screen.
+   This module is the wire and nothing else — it parses events, hands them to
+   the handlers it was given, issues commands, and lets EventSource reconnect
+   when the feed drops. What any of it *means* to the page belongs to InboxApp,
+   which is the only thing that knows which conversation is on screen.
 
-   Frame types live here rather than in api.ts because they are not the HTTP
-   API: they are a protocol with a session behind it, and the only piece of
-   messaging that api.ts owns is the user search the new-conversation box
-   uses. Where the socket *goes* is still api.ts's business, though — it is
-   the same backend — so `connect` is handed an address rather than working
-   one out, which also leaves everything below testable off a browser. */
+   Event types live here rather than in api.ts because they form one small
+   streaming protocol. `connect` is handed the inbox's HTTP address rather
+   than working it out, which also leaves everything below testable off a
+   browser. */
 
 /** one message, exactly as the backend stores it */
 export interface Message {
@@ -42,9 +39,9 @@ export interface Thread {
 
 /* --- the wire ---
 
-   Snake case, and a `type` tag on every frame. Kept apart from the camelCase
+   Snake case, and a `type` tag on every event. Kept apart from the camelCase
    the rest of the file uses so that exactly one place converts between them:
-   a socket that quietly handed `sent_at` to the UI would work until the day
+   a feed that quietly handed `sent_at` to the UI would work until the day
    somebody read it. */
 
 interface WireMessage {
@@ -63,12 +60,11 @@ interface WireThread {
   unread: boolean;
 }
 
-type ServerFrame =
+type ServerEvent =
   | { type: 'threads'; me: string; threads: WireThread[] }
   | { type: 'thread'; with: string; display: string; messages: WireMessage[] }
   | { type: 'message'; with: string; display: string; message: WireMessage }
-  | { type: 'read'; with: string }
-  | { type: 'error'; message: string };
+  | { type: 'read'; with: string };
 
 function message(wire: WireMessage): Message {
   return { id: wire.id, from: wire.from, body: wire.body, sentAt: wire.sent_at };
@@ -86,7 +82,7 @@ function thread(wire: WireThread): Thread {
 }
 
 export interface InboxHandlers {
-  /** the list, which arrives unasked the moment the socket opens — and again
+  /** the list, which arrives unasked the moment the feed opens — and again
       after a reconnection, which is why it replaces rather than merges */
   onThreads(me: string, threads: Thread[]): void;
   onThread(username: string, display: string, messages: Message[]): void;
@@ -98,7 +94,7 @@ export interface InboxHandlers {
   /** this conversation has no unread messages left in it */
   onRead(username: string): void;
   onError(reason: string): void;
-  /** whether there is a live socket, so the page can say when there isn't */
+  /** whether there is a live event feed, so the page can say when there isn't */
   onLive(live: boolean): void;
 }
 
@@ -112,73 +108,76 @@ export interface Inbox {
   close(): void;
 }
 
-/* How long to wait before dialling again. One delay rather than a backoff
-   curve: a dropped socket here is a laptop waking up or a wifi handover, and
-   the honest response to that is to try again shortly. */
-const RETRY_MS = 2000;
+function reason(value: unknown): string {
+  return value instanceof Error ? value.message : String(value);
+}
 
-/** Open an inbox socket, and keep it open. A drop is not an error the page
-    has to handle — the connection comes back, the backend sends the thread
-    list again, and `onLive` is what the page shows in the meantime. */
+async function command<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    credentials: 'include',
+    headers: init?.body ? { 'content-type': 'application/json' } : {},
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { error?: string } | null;
+    throw new Error(body?.error ?? `request failed: ${response.status}`);
+  }
+  return response.status === 204 ? undefined as T : response.json() as Promise<T>;
+}
+
+/** Open an inbox event feed and let the browser keep it open. EventSource
+    owns reconnection; every reconnect receives a fresh thread list, and the
+    page re-opens its current conversation to recover anything missed. */
 export function connect(url: string, handlers: InboxHandlers): Inbox {
-  let socket: WebSocket | null = null;
-  let retry: ReturnType<typeof setTimeout> | null = null;
-  let closed = false;
+  const events = new EventSource(url, { withCredentials: true });
 
-  const dial = () => {
-    if (closed) return;
-    const live = new WebSocket(url);
-    socket = live;
-    live.onopen = () => handlers.onLive(true);
-    live.onmessage = (event) => {
-      let frame: ServerFrame;
-      try {
-        frame = JSON.parse(event.data as string) as ServerFrame;
-      } catch {
-        /* a frame we can't read is the backend's problem, not the page's */
-        return;
-      }
-      switch (frame.type) {
-        case 'threads':
-          handlers.onThreads(frame.me, frame.threads.map(thread));
-          break;
-        case 'thread':
-          handlers.onThread(frame.with, frame.display, frame.messages.map(message));
-          break;
-        case 'message':
-          handlers.onMessage(frame.with, frame.display, message(frame.message));
-          break;
-        case 'read':
-          handlers.onRead(frame.with);
-          break;
-        case 'error':
-          handlers.onError(frame.message);
-          break;
-      }
-    };
-    /* onclose covers both endings: a socket that fails to open closes too, so
-       there is one path back to dialling rather than two that must agree. */
-    live.onclose = () => {
-      if (closed) return;
-      handlers.onLive(false);
-      retry = setTimeout(dial, RETRY_MS);
-    };
+  const dispatch = (event: ServerEvent) => {
+    switch (event.type) {
+      case 'threads':
+        handlers.onThreads(event.me, event.threads.map(thread));
+        break;
+      case 'thread':
+        handlers.onThread(event.with, event.display, event.messages.map(message));
+        break;
+      case 'message':
+        handlers.onMessage(event.with, event.display, message(event.message));
+        break;
+      case 'read':
+        handlers.onRead(event.with);
+        break;
+    }
   };
 
-  const say = (frame: object) => {
-    if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(frame));
+  events.onopen = () => handlers.onLive(true);
+  events.onerror = () => handlers.onLive(false);
+  events.onmessage = (incoming) => {
+    try {
+      dispatch(JSON.parse(incoming.data) as ServerEvent);
+    } catch {
+      /* an event we can't read is the backend's problem, not the page's */
+    }
   };
 
-  dial();
+  const report = (error: unknown) => handlers.onError(reason(error));
+  const correspondent = (username: string) =>
+    `${url}/with/${encodeURIComponent(username)}`;
 
   return {
-    open: (username) => say({ type: 'open', with: username }),
-    read: (username) => say({ type: 'read', with: username }),
-    send: (to, body) => say({ type: 'send', to, body }),
+    open: (username) => {
+      command<ServerEvent>(correspondent(username)).then(dispatch).catch(report);
+    },
+    read: (username) => {
+      command<void>(`${correspondent(username)}/read`, { method: 'PUT' }).catch(report);
+    },
+    send: (to, body) => {
+      command<void>(correspondent(to), {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      }).catch(report);
+    },
     close: () => {
-      closed = true;
-      if (retry) clearTimeout(retry);
-      socket?.close();
+      events.close();
+      handlers.onLive(false);
     },
   };
 }

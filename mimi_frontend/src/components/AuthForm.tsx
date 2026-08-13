@@ -20,6 +20,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     const [email, setEmail] = useState("");
     const [login, setLogin] = useState("");
     const [password, setPassword] = useState("");
+    const [confirmedPassword, setConfirmedPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
@@ -35,6 +36,10 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     async function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError(null);
+        if (mode === "signup" && password !== confirmedPassword) {
+            setError("The passwords do not match.");
+            return;
+        }
         setSubmitting(true);
         try {
             if (mode === "signup") {
@@ -139,6 +144,24 @@ export default function AuthForm({ mode }: { mode: Mode }) {
                         />
                         {signup && <small>Use at least 8 characters.</small>}
                     </label>
+
+                    {signup && (
+                        <label>
+                            <span>Confirm password</span>
+                            <input
+                                name="confirm-password"
+                                type="password"
+                                value={confirmedPassword}
+                                onChange={(event) =>
+                                    setConfirmedPassword(event.target.value)
+                                }
+                                autoComplete="new-password"
+                                minLength={8}
+                                maxLength={1024}
+                                required
+                            />
+                        </label>
+                    )}
 
                     {error && (
                         <p className="auth-error" role="alert">

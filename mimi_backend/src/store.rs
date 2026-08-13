@@ -695,7 +695,7 @@ impl Store {
     // Say something, and hand back the stored row. The id it was given is the
     // message's place in its thread and the thing 'read up to here' is
     // counted in, so the caller gets the whole record rather than the pieces
-    // it passed in — what goes out over the sockets is what went into the
+    // it passed in — what goes out over the event feeds is what went into the
     // database.
     pub fn send_message(
         &self,

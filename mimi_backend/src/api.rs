@@ -629,9 +629,9 @@ impl LeaderboardView {
 /// substring, `SEARCH_LIMIT` of them, and only the two fields a row in the
 /// box shows. Guests are absent, having nobody to write to.
 ///
-/// It is also the only piece of messaging with an HTTP shape — the inbox
-/// itself is a socket (see messages.rs). Searching is a question with one
-/// answer that changes nothing, which is exactly what a GET is for.
+/// Unlike opening a conversation, searching is a question with one answer
+/// that changes nothing, which is exactly what a GET is for (see messages.rs
+/// for the inbox's event feed and commands).
 #[derive(Debug, Serialize)]
 pub struct UserSearchView {
     pub users: Vec<FoundUserView>,

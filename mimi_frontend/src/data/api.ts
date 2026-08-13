@@ -447,18 +447,11 @@ export interface ApiUserSearch {
   users: ApiFoundUser[];
 }
 
-/** The same base every request above uses, as a websocket address: the two
-    servers are the same server, and the inbox's socket has to reach it
-    wherever the API is. `http` becomes `ws` and `https` becomes `wss`, so a
-    deployment behind TLS needs nothing said twice.
-
-    Browser-only, like the socket it addresses — `location` is what resolves a
-    relative base, and there is no socket to open while a page is being
-    prerendered. */
-export function socketUrl(path: string): string {
-  const base = new URL(API, window.location.href);
-  base.protocol = base.protocol === 'https:' ? 'wss:' : 'ws:';
-  return new URL(path, base).toString();
+/** Resolve a browser-only API address for a primitive that needs a URL rather
+    than the request helper below. The inbox's EventSource is the one such
+    primitive: it still reaches the same backend and keeps the HTTP(S) scheme. */
+export function apiUrl(path: string): string {
+  return `${API}${path}`;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -571,8 +564,8 @@ export function updateProfile(edit: ApiProfileEdit): Promise<void> {
 }
 
 /** Accounts whose username or display name starts with `q` — the inbox's
-    "start a new conversation" box, and the only piece of messaging with an
-    HTTP shape (the inbox itself is a socket; see inbox.ts).
+    "start a new conversation" box (see inbox.ts for the messaging feed and
+    commands).
 
     Signed-in callers only, unlike a profile or the board: reading somebody's
     page needs no account, but asking for a list of people is a question only

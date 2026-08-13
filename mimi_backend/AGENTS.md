@@ -57,8 +57,8 @@ src/
 │                 day-by-day activity — one mutex'd connection
 ├── profile.rs    Profile/ProfileEdit (authored, checked) + Activity/Counts/Day/History
 │                 (derived) + Follow
-├── messages.rs   the inbox: its socket protocol, and the broker that routes a message
-│                 to whoever is looking
+├── messages.rs   the inbox: its SSE feed, HTTP commands, and the broker that routes a
+│                 message to whoever is looking
 ├── leaderboard.rs the weekly board: Monday arithmetic + one week's activity ranked
 ├── quests.rs      three rotating daily goals measured from today's activity
 ├── wiki.rs       read-only MediaWiki client, with coherent timestamp-pinned reads
@@ -236,14 +236,16 @@ All four answer with the same viewer shape: `{"username", "email", "guest"}`, wh
   competition rank (a tie shares a place, the next one skips). Everything is summed from
   the activity rows since Monday when the request is served, so nothing is stored and
   nothing happens when the week turns over. **Guests are not ranked** (see below).
-- **`GET /me/inbox`** — **a websocket**, and the whole of messaging's API (see the
-  messages section below). Refused with 403 for a guest, and 403 for any `Origin` but
-  `MIMI_FRONTEND_ORIGIN` — a handshake is not a CORS request, so that check is made by
-  hand or not at all.
+- **`GET /me/inbox`** — the inbox's **Server-Sent Events** feed: a `threads`
+  snapshot immediately, then live `message` and `read` events (see the messages section
+  below). **`GET /me/inbox/with/{username}`** opens and returns one `thread`, **`POST`**
+  to the same path sends `{"body":"…"}`, and **`PUT`** to its `/read` child marks
+  watched arrivals read. All are refused with 403 for a guest and use the same CORS
+  policy as the rest of the credentialed HTTP API.
 - **`GET /users?q=`** — `{"users":[{"username","display"}]}`, accounts whose username or
   display name *starts with* `q`, at most `SEARCH_LIMIT` (8) of them, guests and the
   caller excluded. The inbox's "start a new conversation" box, and the only piece of
-  messaging with an HTTP shape. Private, unlike a profile or the board: reading somebody's
+  messaging used to find a correspondent. Private, unlike a profile or the board: reading somebody's
   page needs no account, but asking the server to list people is a question only somebody
   writing a message has. An empty `q` matches nobody rather than everybody.
 - **`GET /me/quests`** — three daily quests selected from the XP, lessons, correct-answer
@@ -681,24 +683,23 @@ what the design falls out of.
 ### Messages (messages.rs, the `messages` and `reads` tables)
 
 Private messages between two accounts. `/inbox` on the frontend is a thread list and one
-open conversation; everything under it is one websocket.
+open conversation; live changes arrive through one EventSource per open page.
 
 - **A thread is a pair of people, and nothing else.** `messages.thread` is their two
   usernames sorted and joined with `\n` (no username can contain one), so there is no
   thread record to create before the first message and none to tidy up after the last —
   `Store::load_threads` derives the list from the messages themselves. Whoever writes
   first, both of them address the same conversation.
-- **The socket is the whole API.** An inbox is a thing two people change while both are
-  looking at it, so every REST read here would need a poll behind it to stay true.
-  `Broker` is the routing table — username → their live sockets, holding no messages and
+- **Events flow down; commands go up.** `GET /me/inbox` is an SSE feed carrying
+  `threads`/`message`/`read`; HTTP `GET`/`POST`/`PUT` commands open, send and read.
+  `Broker` is the routing table — username → their live feeds, holding no messages and
   no history — and a learner with no page open simply has no entry, which is the same
-  thing as being offline. The frames are `open`/`read`/`send` in, and
-  `threads`/`thread`/`message`/`read`/`error` out; `handle` is the seam the tests use,
-  taking one frame's text and returning what it answers with.
+  thing as being offline. EventSource reconnects itself; the fresh `threads` snapshot
+  makes the client reopen its visible conversation and recover anything missed.
 - **Every send publishes to both ends, the sender's own included.** The tab that wrote a
   message learns it landed the same way every other tab does, so the client has one path
   into its state rather than an optimistic copy and a real one that have to agree. The
-  two ends get *different* frames for the same row, because `with` names the other person
+  two ends get *different* events for the same row, because `with` names the other person
   from the reader's side.
 - **The message is stored first and delivered from what was stored**, so what is on two
   screens is a row rather than two hopeful copies of it. `id` is the ordering — `sent_at`
@@ -709,9 +710,9 @@ open conversation; everything under it is one websocket.
   something arrives in the one on screen — without that, watching a message land would
   leave a dot behind on the next reload. The marker only ever moves forward (`MAX`),
   because two tabs can report it in either order.
-- **A refusal is an answer, not a closed socket**: an empty message, one over `MAX_BODY`
-  (2000 characters), a name that isn't an account, a guest, or yourself all come back as
-  an `error` frame with the page still up.
+- **A refusal is a command response, not a closed feed**: an empty message, one over
+  `MAX_BODY` (2000 characters), a name that isn't an account, a guest, or yourself comes
+  back as the ordinary JSON error shape while EventSource stays up.
 - **Guests are not here at all.** The route turns them away for the reason they are not
   on the board and cannot be followed: nobody is behind the record to write to, and it
   goes when its cookie does. `delete_account` clears messages at both ends anyway.
@@ -839,8 +840,9 @@ the wiki and in the API.
 ## Conventions and invariants
 
 - **Toolchain:** plain Cargo. Dependencies are `axum` + `tokio`, `tower-http` (CORS),
-  `serde`/`serde_json`, `rand`, `rs-fsrs`, `rusqlite`. Prefer not to add more — the
-  inbox's socket is axum's own `ws` feature and tokio's `sync`, not a new crate.
+  `serde`/`serde_json`, `rand`, `rs-fsrs`, `rusqlite`, and the small `futures-util`
+  stream combinators used to join the inbox snapshot to its live SSE feed. Prefer not
+  to add more.
 - **Testing:** unit tests live in the same file as the code, with descriptive names and
   comments explaining *why* a case matters. The builder's output is randomized, so its
   tests assert on properties (no repeated words, respects the row, accuracy near target,

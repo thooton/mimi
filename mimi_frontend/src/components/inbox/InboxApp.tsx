@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { Button, Icon, Spinner } from "@blueprintjs/core";
-import { searchUsers, socketUrl } from "../../data/api";
+import { apiUrl, searchUsers } from "../../data/api";
 import type { ApiFoundUser } from "../../data/api";
 import { useAuth } from "../../data/auth";
 import { ago, clockTime, connect, withMessage } from "../../data/inbox";
@@ -15,10 +15,10 @@ import type { Inbox, Message, Thread } from "../../data/inbox";
    state here rather than a route: on a phone it is also *which page* you are
    looking at, and going back to the list must not be a page load.
 
-   Everything arrives over one socket (see data/inbox.ts). The page holds no
+   Live changes arrive over one event feed (see data/inbox.ts). The page holds no
    opinion the backend hasn't given it: a message it sends appears when the
    backend sends it back, so what is on screen is what was stored rather than
-   an optimistic copy that has to be reconciled if the socket drops between
+   an optimistic copy that has to be reconciled if the feed drops between
    the two.
 
    The address bar carries the open thread (`/inbox?with=ana`), so a profile's
@@ -84,7 +84,7 @@ function ThreadRow({
 
 export default function InboxApp() {
     const { user, ready } = useAuth();
-    /* A guest has no inbox — the socket route turns them away, for the same
+    /* A guest has no inbox — the event route turns them away, for the same
        reason they are not on the leaderboard and cannot be followed. The
        offer below is the answer, not the refusal. */
     const guest = ready && user?.guest === true;
@@ -106,7 +106,7 @@ export default function InboxApp() {
     const [found, setFound] = useState<ApiFoundUser[] | null>(null);
 
     const inbox = useRef<Inbox | null>(null);
-    /* The socket's handlers are installed once and live as long as the page,
+    /* The feed's handlers are installed once and live as long as the page,
        so what they read has to be a box rather than a closed-over value: `me`
        and `open` are both used to decide what an arriving message means. */
     const openRef = useRef<string | null>(null);
@@ -146,18 +146,18 @@ export default function InboxApp() {
     useEffect(() => {
         if (!signedIn) return;
         /* Where the page was asked to start. Read once, and used when the
-           thread list arrives — the socket is what can open a conversation,
+           thread list arrives — the feed is what establishes the inbox,
            and it isn't connected yet. */
         let wanted = new URLSearchParams(window.location.search).get("with");
 
-        const connection = connect(socketUrl("/me/inbox"), {
+        const connection = connect(apiUrl("/me/inbox"), {
             onThreads: (who, rows) => {
                 meRef.current = who;
                 setMe(who);
                 setThreads(rows);
                 /* The list also arrives after a reconnection, and then the
                    conversation on screen is re-opened rather than dropped —
-                   whatever was said while the socket was away is in it. */
+                   whatever was said while the feed was away is in it. */
                 const resume = wanted ?? openRef.current;
                 wanted = null;
                 if (resume) {
@@ -177,7 +177,13 @@ export default function InboxApp() {
                     withMessage(rows, username, name, value, !mine && !looking),
                 );
                 if (!looking) return;
-                setMessages((list) => (list ? [...list, value] : [value]));
+                setMessages((list) =>
+                    list?.some((item) => item.id === value.id)
+                        ? list
+                        : list
+                          ? [...list, value]
+                          : [value],
+                );
                 /* Watching a message arrive is reading it. Without this the
                    dot would be back on the next reload for something they
                    saw land. */
@@ -197,7 +203,7 @@ export default function InboxApp() {
             connection.close();
             inbox.current = null;
         };
-        /* One socket per signed-in page, and the session is the only thing
+        /* One event feed per signed-in page, and the session is the only thing
            that could change which. `show` is deliberately not a dependency:
            everything it touches is a ref or a setter, and re-dialling on
            every render is the bug leaving it out avoids. */

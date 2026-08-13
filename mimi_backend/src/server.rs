@@ -4,7 +4,7 @@ use std::time::{Duration, SystemTime};
 
 use axum::{
     Extension, Json, Router,
-    extract::{Path, Query, Request, State, ws::WebSocketUpgrade},
+    extract::{Path, Query, Request, State},
     http::{HeaderName, HeaderValue, Method, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -48,8 +48,7 @@ pub struct AppState {
     presence: RwLock<HashMap<String, u64>>,
     secure_cookies: bool,
     // The one origin a browser may reach this server from. CORS is built from
-    // it, and so is the check on the inbox socket's handshake — which CORS
-    // does not cover, so the two would otherwise disagree about who we serve.
+    // it for ordinary requests and the inbox's HTTP event stream alike.
     frontend_origin: String,
 }
 
@@ -179,9 +178,15 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/me/lessons/{skill}/{lesson}/tips", get(get_lesson_tips))
         .route("/me/castles", post(create_castle))
         .route("/me/lessons/submit", post(submit_lesson))
-        // The inbox: a websocket, and the whole of messaging's API (see
-        // messages.rs). Under `/me` because an inbox is nobody else's.
-        .route("/me/inbox", get(inbox_socket))
+        // Inbox changes flow down one event stream; the three things its
+        // owner can do are ordinary HTTP commands. All live under `/me`
+        // because an inbox is nobody else's (see messages.rs).
+        .route("/me/inbox", get(inbox_events))
+        .route(
+            "/me/inbox/with/{username}",
+            get(open_inbox_thread).post(send_inbox_message),
+        )
+        .route("/me/inbox/with/{username}/read", put(read_inbox_thread))
         // Who you might write to. Private, unlike a profile or the board:
         // reading somebody's page needs no account, but asking the server to
         // list people is a question only somebody using the inbox has.
@@ -815,41 +820,78 @@ fn check_follow<'a>(
     }
 }
 
-// The inbox, which is one socket and no endpoints. Everything a client can
-// say and everything it is told lives in messages.rs; this is the handshake
-// in front of it, and it decides two things.
+// The inbox's long-lived half is an EventSource feed. It sends the thread list
+// immediately, then message/read events as the broker publishes them. Its
+// other half is the three short HTTP commands below.
 //
 // **A guest has no inbox.** The same rule as following, for the same reason:
 // a record with a week to live and no name behind it has nobody to write to,
 // and nobody could write back. Registering keeps everything they have done,
 // so the answer is an offer rather than a wall.
 //
-// **The origin is checked here by hand.** A websocket handshake is not a CORS
-// request — the browser sends it with the session cookie and no preflight,
-// and the CORS layer above never sees it — so any page anywhere could
-// otherwise open a socket as whoever is signed in and read their mail. This
-// is the check that isn't happening for us.
-async fn inbox_socket(
+// SSE is ordinary HTTP, so the router's credentialed CORS policy covers this
+// response and the command requests rather than needing a second origin rule.
+async fn inbox_events(
     State(state): State<Arc<AppState>>,
     Extension(identity): Extension<SessionIdentity>,
-    headers: axum::http::HeaderMap,
-    upgrade: WebSocketUpgrade,
-) -> Result<Response, ApiError> {
+) -> Result<impl IntoResponse, ApiError> {
+    let username = inbox_owner(&identity)?;
+    messages::events(username.to_string(), &state.store, &state.broker).map_err(db_error)
+}
+
+async fn open_inbox_thread(
+    State(state): State<Arc<AppState>>,
+    Extension(identity): Extension<SessionIdentity>,
+    Path(with): Path<String>,
+) -> Result<Json<messages::ServerEvent>, ApiError> {
+    let me = inbox_owner(&identity)?;
+    messages::open(me, &with, &state.store, &state.broker)
+        .map(Json)
+        .map_err(message_error)
+}
+
+async fn read_inbox_thread(
+    State(state): State<Arc<AppState>>,
+    Extension(identity): Extension<SessionIdentity>,
+    Path(with): Path<String>,
+) -> Result<StatusCode, ApiError> {
+    let me = inbox_owner(&identity)?;
+    messages::read(me, &with, &state.store, &state.broker).map_err(message_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(serde::Deserialize)]
+struct SendMessageRequest {
+    body: String,
+}
+
+async fn send_inbox_message(
+    State(state): State<Arc<AppState>>,
+    Extension(identity): Extension<SessionIdentity>,
+    Path(to): Path<String>,
+    Json(request): Json<SendMessageRequest>,
+) -> Result<StatusCode, ApiError> {
+    let me = inbox_owner(&identity)?;
+    messages::send(me, &to, &request.body, &state.store, &state.broker).map_err(message_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+fn inbox_owner(identity: &SessionIdentity) -> Result<&str, ApiError> {
     if identity.guest {
-        return Err(error(
+        Err(error(
             StatusCode::FORBIDDEN,
             "save your progress before using messages",
-        ));
+        ))
+    } else {
+        Ok(&identity.username)
     }
-    let origin = headers
-        .get(header::ORIGIN)
-        .and_then(|value| value.to_str().ok());
-    if origin != Some(state.frontend_origin.as_str()) {
-        return Err(error(StatusCode::FORBIDDEN, "unrecognized origin"));
+}
+
+fn message_error(value: messages::CommandError) -> ApiError {
+    match value {
+        messages::CommandError::Rejected(message) => error(StatusCode::BAD_REQUEST, message),
+        messages::CommandError::Database(value) => db_error(value),
     }
-    Ok(upgrade.on_upgrade(move |socket| async move {
-        messages::serve(socket, identity.username, &state.store, &state.broker).await
-    }))
 }
 
 // How many accounts a search may name at once. Enough to pick out of, short
