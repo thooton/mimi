@@ -241,12 +241,15 @@ button.topnav-link::after {
   width: 34px;
   height: 34px;
   border-radius: 5px;
-  color: var(--mimi-ink-soft);
+  /* Discord's own blurple, like the flame's ember beside it: the two marks
+     in the bar that stand for something outside the interface both keep
+     their own colour rather than taking the chrome's grey. */
+  color: #5865f2;
 }
 
 .discord-link:hover {
   background-color: var(--mimi-surface-sunken);
-  color: var(--mimi-accent);
+  color: #4752c4;
 }
 
 /* --- account --- */

@@ -282,18 +282,9 @@ export default function AppNavbar({ active = '' }: Props) {
               A guest has no streak. Days in a row is a thing an account
               keeps; offering one to a record that lives in a cookie would be
               promising something we can't hold on to. */}
-          {ready && user && me && !guest && (
-            <Tooltip content={`${me.streak} days in a row`} placement="bottom">
-              <div className="streak" aria-label={`${me.streak} day streak`}>
-                <Flame size={20} />
-                <span className="streak-count">{me.streak}</span>
-              </div>
-            </Tooltip>
-          )}
-
-          {/* The community, beside the streak. It waits on nothing — the link
-              is the same for everyone, signed in or not — so unlike its
-              neighbours it is in the bar from the first paint. */}
+          {/* The community, to the left of the streak. It waits on nothing —
+              the link is the same for everyone, signed in or not — so unlike
+              its neighbours it is in the bar from the first paint. */}
           <Tooltip content="Join us on Discord" placement="bottom">
             <a
               className="discord-link"
@@ -305,6 +296,15 @@ export default function AppNavbar({ active = '' }: Props) {
               <DiscordMark size={19} />
             </a>
           </Tooltip>
+
+          {ready && user && me && !guest && (
+            <Tooltip content={`${me.streak} days in a row`} placement="bottom">
+              <div className="streak" aria-label={`${me.streak} day streak`}>
+                <Flame size={20} />
+                <span className="streak-count">{me.streak}</span>
+              </div>
+            </Tooltip>
+          )}
 
           {/* stays mounted while hidden, so its profile fetch has long
               finished by the time `visible` lets it render */}
