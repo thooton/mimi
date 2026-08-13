@@ -324,6 +324,27 @@
 
 }
 
+/* The one returning question, marked as such. Unlike the new-word cue above
+   this carries its own tinted pill: it is about the user's own history with
+   this question rather than about the sentence, so it should read as a label
+   stuck on the task and not as another note about the words in it. Gold, not
+   the miss red — the mistake already had its red feedback; this is a second
+   chance, not a scolding. */
+.lesson-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 8px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background-color: var(--mimi-gold-tint);
+  color: var(--mimi-gold-base);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
 /* The backend points at this exact run independently of dictionary hints and
    grading marks. Keep the vocabulary cue to colour alone: `mark` has a
    browser-default highlight which would otherwise add a box behind the word.

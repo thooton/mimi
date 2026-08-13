@@ -21,10 +21,13 @@ import { markdown } from './markdown';
    user's position on the map (unless the lesson was a re-take — reviewing
    moves nothing). Material carries no verdict and changes no memory state.
 
-   A wrongly-answered exercise isn't done, though: it goes back on the end of
-   the queue and keeps reappearing until it's answered right (see
-   lessonQueue.ts). Only the first attempt is reported — the backend still
-   hears the answer was wrong; the retries are just the user practicing. */
+   A wrongly-answered exercise isn't done, though: a retry of it joins the end
+   of the queue and keeps reappearing until it's answered right (see
+   lessonQueue.ts) — so a mistake makes the lesson one task longer, which the
+   count and the progress strip both show, and the returning question wears a
+   "previous mistake" tag so it isn't mistaken for the lesson repeating
+   itself. Only the first attempt is reported — the backend still hears the
+   answer was wrong; the retries are just the user practicing. */
 
 /* Between tasks the old one shifts out to the left and the next shifts in
    from the right (both keyframes live in styles/motion.css).
@@ -81,7 +84,8 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
   useEffect(() => () => clearTimeout(leaveTimer.current), []);
 
   const total = queue.length;
-  const current = queue[index].task;
+  const entry = queue[index];
+  const current = entry.task;
   const answered = verdict !== null;
   // a word-bank exercise without its bank is a backend bug; fall back to the
   // text input rather than strand the user on an unanswerable task
@@ -161,8 +165,9 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
       setLeaving(true);
       leaveTimer.current = setTimeout(() => {
         commit();
-        // a moved task leaves its slot to whatever was next: stay put
-        if (!step.moved) setIndex(index + 1);
+        // every task retires where it stands, a wrong one leaving a retry of
+        // itself at the end of the (now longer) queue: the position always moves
+        setIndex(index + 1);
         setSwap(swap + 1);
         setLeaving(false);
       }, EXIT_MS);
@@ -259,6 +264,15 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
         ) : (
           <>
             <p className="eyebrow lesson-kind">{directionLabel(current.task.direction)}</p>
+            {/* A question the user has already seen and missed looks exactly
+                like a fresh one, which is its own small insult: they read it
+                as the lesson repeating itself rather than as the mistake
+                coming back around. Say which it is. */}
+            {entry.retry && (
+              <p className="lesson-retry">
+                <Icon icon="warning-sign" size={14} /> Previous mistake
+              </p>
+            )}
             {current.task.new_words.length > 0 && <p className="lesson-new-word"><Icon icon="new-object" size={14} /> New word</p>}
             <Prompt
               text={current.task.prompt}
