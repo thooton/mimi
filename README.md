@@ -1,6 +1,6 @@
 # mimi
 
-Mimi is the language learning application that anyone can edit! It's like a combination of Duolingo + Wikipedia. It's open-source under AGPLv3. If you have any contributions or suggestions feel free to open an issue or pull request.
+Mimi is the free language learning application that anyone can edit! It's like a combination of Duolingo + Wikipedia. It's open-source under AGPLv3. If you have any contributions or suggestions feel free to open an issue or pull request.
 
 ## Building
 
