@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import { Icon, Menu, MenuDivider, MenuItem, Popover, Tooltip } from '@blueprintjs/core';
 import { ShareIcon } from '@blueprintjs/icons';
+import DiscordMark from './DiscordMark';
 import Flame from './Flame';
 import LanguagePicker from './LanguagePicker';
 import MimiDog from './MimiDog';
 import { fetchProfile, keepAlive } from '../data/api';
 import { useAuth } from '../data/auth';
 import { onProfileEdit, safeAvatar } from '../data/profile';
-import { EDITOR_URL } from '../data/site';
+import { DISCORD_URL, EDITOR_URL } from '../data/site';
 
 /** Compact labels keep the navigation legible beside Mimi's photo mark. */
 const NAV = [
@@ -289,6 +290,21 @@ export default function AppNavbar({ active = '' }: Props) {
               </div>
             </Tooltip>
           )}
+
+          {/* The community, beside the streak. It waits on nothing — the link
+              is the same for everyone, signed in or not — so unlike its
+              neighbours it is in the bar from the first paint. */}
+          <Tooltip content="Join us on Discord" placement="bottom">
+            <a
+              className="discord-link"
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Join us on Discord"
+            >
+              <DiscordMark size={19} />
+            </a>
+          </Tooltip>
 
           {/* stays mounted while hidden, so its profile fetch has long
               finished by the time `visible` lets it render */}

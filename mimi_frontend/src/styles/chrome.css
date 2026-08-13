@@ -231,6 +231,24 @@ button.topnav-link::after {
   text-box: trim-both cap alphabetic;
 }
 
+/* discord — a square target beside the streak, sized and lit like the
+   hamburger so the bar's two icon buttons behave alike. The mark is wider
+   than it is tall, so the box is what's square, not the glyph. */
+.discord-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
+  color: var(--mimi-ink-soft);
+}
+
+.discord-link:hover {
+  background-color: var(--mimi-surface-sunken);
+  color: var(--mimi-accent);
+}
+
 /* --- account --- */
 
 .account-btn {

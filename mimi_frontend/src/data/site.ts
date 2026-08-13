@@ -4,6 +4,9 @@
    it exists exactly once. */
 export const REPO_URL = 'https://github.com/thooton/mimi';
 
+/* Where the community talks. Linked from the navbar. */
+export const DISCORD_URL = 'https://discord.gg/tbMGDvrEk4';
+
 /* The course editor: kept in one configurable place for the navbar and every
    marketing CTA. Astro replaces the public environment value while building;
    the fallback keeps a source checkout useful without local configuration. */
