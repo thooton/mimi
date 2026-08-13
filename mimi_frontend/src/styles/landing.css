@@ -30,9 +30,9 @@
 .land-h1 {
     margin: 0;
     max-width: 22ch;
-    font-size: clamp(30px, 3.6vw, 48px);
+    font-size: clamp(31px, 3.6vw, 43px);
     line-height: 1.1;
-    font-weight: 700;
+    font-weight: 900;
     letter-spacing: -0.02em;
     color: var(--mimi-ink);
 }
