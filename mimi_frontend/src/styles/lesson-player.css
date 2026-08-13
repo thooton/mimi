@@ -325,15 +325,12 @@
 }
 
 /* The backend points at this exact run independently of dictionary hints and
-   grading marks. A tint reads as a highlight even when the same word also has
-   the dotted hint underline; no padding means the sentence's spacing and
-   wrapping stay unchanged. */
+   grading marks. Keep the vocabulary cue to colour alone: `mark` has a
+   browser-default highlight which would otherwise add a box behind the word.
+   A dictionary hint can still supply its dotted underline independently. */
 .lesson-new-word-highlight {
   color: var(--mimi-violet-deep);
-  background-color: var(--mimi-violet-tint);
-  border-radius: 3px;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+  background: none;
 }
 
 /* ---- word hints ---- */
