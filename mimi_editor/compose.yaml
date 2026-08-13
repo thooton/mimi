@@ -2,6 +2,12 @@ services:
   database:
     image: mariadb:11.8
     restart: unless-stopped
+    # MariaDB can need longer than Compose's ten-second default to flush its
+    # transaction coordinator log. A SIGKILL during that window can leave the
+    # tc.log header unusable for crash recovery, so the next start refuses it.
+    # This applies to `stop`, `down`, and container
+    # recreation, not just the production systemd unit.
+    stop_grace_period: 2m
     environment:
       MARIADB_DATABASE: mediawiki
       MARIADB_USER: mediawiki

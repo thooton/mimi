@@ -14,7 +14,8 @@ WorkingDirectory=/home/mimi/mimi_editor
 ExecStartPre=/usr/bin/test -f /home/mimi/mimi_editor/config/LocalSettings.php
 ExecStart=/usr/bin/docker compose --env-file /home/mimi/mimi_editor/mimi-editor.env up -d --remove-orphans
 ExecReload=/usr/bin/docker compose --env-file /home/mimi/mimi_editor/mimi-editor.env up -d --remove-orphans
-ExecStop=/usr/bin/docker compose --env-file /home/mimi/mimi_editor/mimi-editor.env stop
+ExecStop=/usr/bin/docker compose --env-file /home/mimi/mimi_editor/mimi-editor.env stop --timeout 120
 TimeoutStartSec=0
-TimeoutStopSec=120s
-
+# Compose's timeout bounds each container stop, so leave enough room for the
+# web container to exit before MariaDB receives its full shutdown allowance.
+TimeoutStopSec=5min

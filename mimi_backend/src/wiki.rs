@@ -40,19 +40,49 @@ pub const NAMESPACES: [i64; 4] = [NS_SKILL, NS_COURSE, NS_GLOSSARY, NS_TIPS];
 // The API's limit for an ordinary (non-bot) account.
 const BATCH: usize = 50;
 
-// The wiki refused a request, or answered with something unusable.
+// The wiki refused a request, or answered with something unusable. Most wiki
+// failures can be repaired outside this process -- by bringing the service
+// back, finishing a deployment, or correcting a page -- and are therefore
+// retryable. `fatal` is reserved for requests that this process can never make
+// successfully, such as a malformed endpoint or a definitive API refusal.
 #[derive(Debug)]
-pub struct WikiError(pub String);
+pub struct WikiError {
+    message: String,
+    retryable: bool,
+}
 
 impl fmt::Display for WikiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.message)
     }
 }
 impl std::error::Error for WikiError {}
 
 fn err(message: impl Into<String>) -> WikiError {
-    WikiError(message.into())
+    WikiError {
+        message: message.into(),
+        retryable: true,
+    }
+}
+
+fn fatal(message: impl Into<String>) -> WikiError {
+    WikiError {
+        message: message.into(),
+        retryable: false,
+    }
+}
+
+impl WikiError {
+    pub fn is_retryable(&self) -> bool {
+        self.retryable
+    }
+
+    fn at(self, endpoint: &str) -> Self {
+        Self {
+            message: format!("{endpoint}: {}", self.message),
+            ..self
+        }
+    }
 }
 
 // One page as it stood at the snapshot.
@@ -70,18 +100,31 @@ pub struct Wiki {
     client: Client<HttpConnector, Empty<Bytes>>,
     user_agent: String,
     timeout: Duration,
-    retries: u32,
 }
 
 impl Wiki {
-    pub fn new(api_url: impl Into<String>) -> Self {
-        Wiki {
-            api_url: api_url.into(),
+    pub fn new(api_url: impl Into<String>) -> Result<Self, WikiError> {
+        let api_url = api_url.into();
+        let uri = api_url
+            .parse::<hyper::Uri>()
+            .map_err(|error| fatal(format!("invalid wiki API URL '{api_url}': {error}")))?;
+        if uri.scheme_str() != Some("http") || uri.authority().is_none() {
+            return Err(fatal(format!(
+                "wiki API URL must be an absolute http URL: '{api_url}'"
+            )));
+        }
+        if uri.query().is_some() {
+            return Err(fatal(format!(
+                "wiki API URL must not contain a query string: '{api_url}'"
+            )));
+        }
+
+        Ok(Wiki {
+            api_url,
             client: Client::builder(TokioExecutor::new()).build_http(),
             user_agent: "mimi_backend/1.0".to_string(),
             timeout: Duration::from_secs(30),
-            retries: 3,
-        }
+        })
     }
 
     // --- transport ---
@@ -97,39 +140,36 @@ impl Wiki {
             .collect();
         let url = format!("{}?{}", self.api_url, encoded.join("&"));
 
-        let mut last = String::new();
-        for attempt in 0..self.retries {
-            match self.fetch(&url).await {
-                Ok(body) => {
-                    if let Some(error) = body.get("error") {
-                        let code = error.get("code").and_then(Value::as_str).unwrap_or("?");
-                        let info = error.get("info").and_then(Value::as_str).unwrap_or("?");
-                        return Err(err(format!("{code}: {info}")));
-                    }
-                    return Ok(body);
-                }
-                Err(e) => {
-                    last = e.0;
-                    // Plain linear backoff: this talks to one wiki, usually a
-                    // local one, and a thundering herd is not a risk worth code.
-                    if attempt + 1 < self.retries {
-                        tokio::time::sleep(Duration::from_secs(1 + attempt as u64)).await;
-                    }
-                }
-            }
+        // Retry timing belongs to the startup/refresh loop in main.rs. Keeping
+        // one transport attempt here means every kind of recoverable failure
+        // follows the same fixed cadence instead of hiding a second backoff in
+        // the HTTP client.
+        let body = self
+            .fetch(&url)
+            .await
+            .map_err(|error| error.at(&self.api_url))?;
+        if let Some(error) = body.get("error") {
+            let code = error.get("code").and_then(Value::as_str).unwrap_or("?");
+            let info = error.get("info").and_then(Value::as_str).unwrap_or("?");
+            return match code {
+                // These describe the wiki's present state, not a bad request;
+                // a later attempt can succeed unchanged.
+                "maxlag" | "readonly" | "ratelimited" => Err(err(format!("{code}: {info}"))),
+                _ => Err(fatal(format!("{code}: {info}"))),
+            };
         }
-        Err(err(format!("{}: {last}", self.api_url)))
+        Ok(body)
     }
 
     async fn fetch(&self, url: &str) -> Result<Value, WikiError> {
         let uri = url
             .parse::<hyper::Uri>()
-            .map_err(|e| err(format!("{url}: {e}")))?;
+            .map_err(|e| fatal(format!("{url}: {e}")))?;
         let request = hyper::Request::builder()
             .uri(uri)
             .header(hyper::header::USER_AGENT, &self.user_agent)
             .body(Empty::<Bytes>::new())
-            .map_err(|e| err(e.to_string()))?;
+            .map_err(|e| fatal(e.to_string()))?;
 
         let response = tokio::time::timeout(self.timeout, self.client.request(request))
             .await
@@ -142,7 +182,15 @@ impl Wiki {
             .map_err(|e| err(e.to_string()))?
             .to_bytes();
         if !status.is_success() {
-            return Err(err(format!("HTTP {status}")));
+            let message = format!("HTTP {status}");
+            return if status.is_server_error()
+                || status == hyper::StatusCode::REQUEST_TIMEOUT
+                || status == hyper::StatusCode::TOO_MANY_REQUESTS
+            {
+                Err(err(message))
+            } else {
+                Err(fatal(message))
+            };
         }
         serde_json::from_slice(&body).map_err(|e| err(e.to_string()))
     }
@@ -535,6 +583,21 @@ fn encode(value: &str) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn an_endpoint_that_cannot_be_requested_is_not_retried() {
+        assert!(Wiki::new("http://wiki.example/api.php").is_ok());
+        for endpoint in [
+            "not-a-url",
+            "https://wiki.example/api.php",
+            "http://wiki.example/api.php?old=query",
+        ] {
+            let Err(error) = Wiki::new(endpoint) else {
+                panic!("accepted invalid endpoint {endpoint}");
+            };
+            assert!(!error.is_retryable());
+        }
+    }
 
     #[test]
     fn encoding_survives_the_characters_a_title_actually_uses() {

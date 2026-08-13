@@ -17,8 +17,9 @@ Learning."
 answers (a learner who wants to cheat already can, and instant feedback can't wait for a
 round trip), and the client reports per-exercise and per-word verdicts back.
 
-`cargo run` reads the wiki at `http://mimi.localhost:4771/api.php`, uses the private
-credential service at `http://127.0.0.1:4770`, and serves on `127.0.0.1:4772`.
+`cargo run` reads the wiki at `http://mimi.localhost:4771/api.php`, waiting and retrying
+once a second if it is not online yet, uses the private credential service at
+`http://127.0.0.1:4770`, and serves on `127.0.0.1:4772`.
 Override these with `WIKI_API`, `MIMI_AUTH_URL`, `MIMI_FRONTEND_ORIGIN`,
 `HOST`/`PORT`, and `DB_PATH`; set `MIMI_SECURE_COOKIES=true` behind HTTPS. Repeat
 `--language NAME=CODE` for language names outside the built-in table. `cargo test` runs
@@ -769,7 +770,8 @@ title — a segment nobody linked is still part of the glossary. Both readings k
 first `convert::GLOSSES` (3) meanings of anything: a wiki glossary is written for a reader
 with time, and a tap on a word should answer in a line rather than a column. A successful
 rebuild swaps both projections together; a bad poll or bad edit leaves the previous
-generation serving.
+generation serving and is retried once a second until it works again. An idle, healthy
+wiki is still polled every five seconds.
 
 When a spelling is both its own lemma and another lemma's form, the lemma owns its tap
 gloss completely. Form definitions are merged only when no lemma with that spelling

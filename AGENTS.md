@@ -94,7 +94,8 @@ talk to a consumer's own `/auth/*`, never to `mimi_auth` directly.
 
 ## Bringing the stack up
 
-Dependency order — later ones fail without the earlier ones:
+Dependency order — start the earlier services first. The backend waits for an offline
+wiki, retrying once a second, while other missing dependencies may still fail:
 
 ```sh
 cd mimi_auth     && MIMI_AUTH_ADDR=0.0.0.0:4770 go run ./cmd/mimi-auth

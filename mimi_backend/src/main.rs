@@ -32,16 +32,17 @@ use std::time::Duration;
 const DB_PATH: &str = "mimi.db";
 const WIKI_API: &str = "http://mimi.localhost:4771/api.php";
 const POLL_EVERY: Duration = Duration::from_secs(5);
+const RETRY_EVERY: Duration = Duration::from_secs(1);
+
+type Content = HashMap<String, (course::Course, dictionary::Dictionary)>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api = std::env::var("WIKI_API").unwrap_or_else(|_| WIKI_API.to_string());
     let language_codes = language_codes()?;
-    let wiki = Arc::new(wiki::Wiki::new(&api));
+    let wiki = Arc::new(wiki::Wiki::new(&api)?);
 
-    let mut report = |message: &str| println!("wiki: {message}");
-    let snapshot = snapshot::refresh(&wiki, None, &mut report).await?;
-    let courses = content_of(&snapshot, &language_codes).map_err(io::Error::other)?;
+    let (snapshot, courses) = initial_content(&wiki, &language_codes).await?;
     println!("loaded {} course(s) from {api}", courses.len());
     for (id, (course, _)) in &courses {
         println!(
@@ -93,7 +94,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn content_of(
     snapshot: &snapshot::Snapshot,
     language_codes: &HashMap<String, String>,
-) -> Result<HashMap<String, (course::Course, dictionary::Dictionary)>, String> {
+) -> Result<Content, String> {
     let conversion = convert::convert(snapshot, language_codes);
     for warning in conversion.warnings {
         eprintln!("wiki content warning: {warning}");
@@ -117,25 +118,54 @@ fn content_of(
     Ok(courses)
 }
 
-// Keep the last known-good snapshot and content alive. A network, conversion
-// or validation failure is reported and retried on the next tick; it never
-// takes the current courses away from learners.
+// Content is required before the HTTP server can answer honestly, but the wiki
+// need not win the process-start race. Stay alive while an offline wiki or an
+// editable content problem is repaired, using one predictable retry interval.
+// A malformed endpoint or definitive API refusal cannot improve by waiting and
+// is returned to main instead.
+async fn initial_content(
+    wiki: &wiki::Wiki,
+    language_codes: &HashMap<String, String>,
+) -> Result<(snapshot::Snapshot, Content), wiki::WikiError> {
+    loop {
+        let mut report = |message: &str| println!("wiki: {message}");
+        match snapshot::refresh(wiki, None, &mut report).await {
+            Ok(snapshot) => match content_of(&snapshot, language_codes) {
+                Ok(content) => return Ok((snapshot, content)),
+                Err(error) => eprintln!("initial wiki rebuild failed: {error}"),
+            },
+            Err(error) if error.is_retryable() => {
+                eprintln!("initial wiki load failed: {error}");
+            }
+            Err(error) => return Err(error),
+        }
+        tokio::time::sleep(RETRY_EVERY).await;
+    }
+}
+
+// Keep the last known-good snapshot and content alive. A recoverable network,
+// conversion or validation failure is reported and retried after one second;
+// it never takes the current courses away from learners.
 async fn poll(
     wiki: Arc<wiki::Wiki>,
     mut snapshot: snapshot::Snapshot,
     language_codes: HashMap<String, String>,
     state: Arc<server::AppState>,
 ) {
-    let mut ticks = tokio::time::interval(POLL_EVERY);
-    // `interval`'s first tick is immediate; boot already fetched the wiki.
-    ticks.tick().await;
+    let mut delay = POLL_EVERY;
     loop {
-        ticks.tick().await;
+        tokio::time::sleep(delay).await;
+        delay = POLL_EVERY;
         let newest = match wiki.newest_change().await {
             Ok(value) => value,
-            Err(error) => {
+            Err(error) if error.is_retryable() => {
                 eprintln!("wiki poll failed: {error}");
+                delay = RETRY_EVERY;
                 continue;
+            }
+            Err(error) => {
+                eprintln!("wiki polling stopped after an unrecoverable error: {error}");
+                return;
             }
         };
         let Some(newest) = newest else {
@@ -151,6 +181,11 @@ async fn poll(
                 Ok(snapshot) => snapshot,
                 Err(error) => {
                     eprintln!("wiki refresh failed: {error}");
+                    if !error.is_retryable() {
+                        eprintln!("wiki polling stopped because that error is unrecoverable");
+                        return;
+                    }
+                    delay = RETRY_EVERY;
                     continue;
                 }
             };
@@ -158,6 +193,7 @@ async fn poll(
             Ok(content) => content,
             Err(error) => {
                 eprintln!("wiki rebuild failed: {error}");
+                delay = RETRY_EVERY;
                 continue;
             }
         };

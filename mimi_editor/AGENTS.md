@@ -54,6 +54,12 @@ docker compose restart mediawiki   # after any PHP or extension.json change
 docker compose down           # volumes keep the database; --volumes wipes it
 ```
 
+The database service has a two-minute `stop_grace_period`. MariaDB may still be
+flushing its memory-mapped transaction coordinator log when Compose's default
+ten seconds expire; the resulting `SIGKILL` leaves `tc.log` invalid and prevents
+the next start. Keep the extended grace period on every stop path, including
+production systemd units and upgrade procedures.
+
 `config/LocalSettings.php` is untracked and holds one installation's keys; the
 example beside it is the shared configuration, so a change every clone should
 get belongs in the example (and in your own copy). Compose mounts the copy

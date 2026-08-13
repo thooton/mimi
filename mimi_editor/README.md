@@ -122,5 +122,8 @@ shell script mounted straight into Linux, and a CRLF checkout stops it booting.
 docker compose down
 ```
 
-The database and uploaded files are retained in Docker volumes. To remove the
-installation data as well, run `docker compose down --volumes`.
+The database and uploaded files are retained in Docker volumes. MariaDB gets a
+two-minute shutdown grace period: Compose's ten-second default can kill it
+while it is flushing `tc.log`, leaving the next start unable to recover that
+transaction-coordinator log. To remove the installation data as well, run
+`docker compose down --volumes`.

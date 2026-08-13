@@ -248,17 +248,30 @@ Do not copy the example over an existing file: that would quietly put
 `edit.example.com` back into a release. On the server, run as root:
 
 ```sh
+# Install the new stop policy before stopping the old release. Nothing else in
+# deployment/ is live application code, so extracting this one file early is
+# safe and makes the first upgrade from an older, short-timeout unit safe too.
+tar --no-same-owner -xzf /tmp/mimi-deployment.tar.gz -C /home/mimi \
+  ./deployment/mimi-editor.service
+install -m 0644 /home/mimi/deployment/mimi-editor.service /etc/systemd/system/
+systemctl daemon-reload
 systemctl stop mimi.target
 find /home/mimi/mimi_frontend -mindepth 1 -delete
 tar --no-same-owner -xzf /tmp/mimi-deployment.tar.gz -C /home/mimi
 chown -R mimi:mimi /home/mimi
+install -m 0644 /home/mimi/deployment/mimi-auth.service /etc/systemd/system/
+install -m 0644 /home/mimi/deployment/mimi-backend.service /etc/systemd/system/
+install -m 0644 /home/mimi/deployment/mimi-editor.service /etc/systemd/system/
+install -m 0644 /home/mimi/deployment/mimi.target /etc/systemd/system/
+systemctl daemon-reload
 systemctl start mimi.target
 ```
 
 The archive does not contain live `.env` files, `LocalSettings.php`, databases,
-or uploads, so updating preserves them. Reinstall changed systemd or NGINX
-files when their packaged copies change, then validate and reload the affected
-service.
+or uploads, so updating preserves them. The service files are deliberately
+reinstalled on every update so lifecycle fixes take effect in the same release.
+When the packaged NGINX file changes, reinstall it separately, run `nginx -t`,
+and reload NGINX.
 
 ## Backups
 
