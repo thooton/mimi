@@ -5,5 +5,7 @@
 export const REPO_URL = 'https://github.com/thooton/mimi';
 
 /* The course editor: kept in one configurable place for the navbar and every
-   marketing CTA. It runs locally until the deployed URL is ready. */
-export const EDITOR_URL = 'http://mimi.localhost:4771';
+   marketing CTA. Astro replaces the public environment value while building;
+   the fallback keeps a source checkout useful without local configuration. */
+export const EDITOR_URL =
+  import.meta.env.PUBLIC_MIMI_EDITOR ?? 'http://mimi.localhost:4771';

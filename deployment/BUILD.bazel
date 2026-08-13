@@ -12,6 +12,7 @@ genrule(
         "mimi-backend.service",
         "mimi-editor.env.example",
         "mimi-editor.service",
+        "mimi-frontend.env.example",
         "mimi.target",
         "nginx.conf",
     ],
@@ -38,6 +39,7 @@ genrule(
             $$DEPLOYMENT_DIR/mimi-backend.service \
             $$DEPLOYMENT_DIR/mimi-editor.env.example \
             $$DEPLOYMENT_DIR/mimi-editor.service \
+            $$DEPLOYMENT_DIR/mimi-frontend.env.example \
             $$DEPLOYMENT_DIR/mimi.target \
             $$DEPLOYMENT_DIR/nginx.conf \
             $$STAGE/deployment/

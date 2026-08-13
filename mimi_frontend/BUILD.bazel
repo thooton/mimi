@@ -17,9 +17,10 @@ genrule(
 genrule(
     name = "build",
     srcs = glob([
+        ".env",
         "public/**/*",
         "src/**/*",
-    ]) + [
+    ], allow_empty = True) + [
         "astro.config.mjs",
         "package.json",
         "tsconfig.json",

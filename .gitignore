@@ -21,3 +21,6 @@ user.bazelrc
 
 # claude
 /.claude
+
+# Deployment-specific public URLs embedded by Astro at build time.
+/mimi_frontend/.env

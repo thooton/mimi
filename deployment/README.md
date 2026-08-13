@@ -39,11 +39,38 @@ does not use Certbot.
 On the build machine, from the Mimi source directory:
 
 ```sh
+test -f mimi_frontend/.env || cp deployment/mimi-frontend.env.example mimi_frontend/.env
+# Edit mimi_frontend/.env and replace edit.example.com with the real hostname.
 bazel build //deployment:deploy
 scp bazel-bin/deployment/mimi-deployment.tar.gz ADMIN@SERVER:/tmp/
 ```
 
 That one archive contains all four applications and the deployment files.
+The frontend is static, so Astro reads `mimi_frontend/.env` at build time and
+embeds the editor URL in the site. Keep this untracked file on the build
+machine for subsequent releases; copying an env file onto the server after the
+build cannot reconfigure the generated HTML and JavaScript.
+
+### Optional: bring the local wiki pages
+
+To start production with the pages from the local editor, export one XML file
+while the local editor is running. From the Mimi source directory on the build
+machine:
+
+```sh
+cd mimi_editor
+docker compose exec -T mediawiki \
+  php /var/www/html/maintenance/run.php dumpBackup --current --quiet \
+  > mimi-pages.xml
+scp mimi-pages.xml ADMIN@SERVER:/tmp/
+cd ..
+```
+
+`--current` exports only the current version of every page, not its revision
+history. The dump also excludes accounts, passwords, sessions, deleted pages,
+and uploaded files. Revision attribution names remain attached to the exported
+page versions, but they do not create accounts on the server. Skip this section
+for an empty production wiki.
 
 ## 2. Unpack the server
 
@@ -74,7 +101,7 @@ mkdir -p mimi_editor/data/database mimi_editor/data/uploads
 chmod 0600 mimi_auth/mimi-auth.env mimi_backend/mimi-backend.env mimi_editor/mimi-editor.env
 ```
 
-Edit the three `.env` files:
+Edit the three server `.env` files:
 
 - replace `learn.example.com` and `edit.example.com` with the real hostnames;
 - replace the four `REPLACE_WITH_...` values in `mimi-editor.env` with four
@@ -149,10 +176,29 @@ systemctl enable --now mimi.target
 systemctl --no-pager --full status mimi.target mimi-auth mimi-editor mimi-backend nginx
 ```
 
-A fresh wiki has no course. Create one at
-`https://edit.example.com/Special:NewCourse`, or restore the editor database.
-The backend retries until at least one course contains valid content, then
-publishes every usable course through its catalog.
+If `/tmp/mimi-pages.xml` was uploaded in step 1, import it now. The shell is
+still running as root, so switch to `mimi`, copy the dump into the MediaWiki
+container, and give the maintenance script its container path:
+
+```sh
+su - mimi
+docker compose --env-file mimi_editor/mimi-editor.env \
+  -f mimi_editor/compose.yaml cp \
+  /tmp/mimi-pages.xml mediawiki:/tmp/mimi-pages.xml
+docker compose --env-file mimi_editor/mimi-editor.env \
+  -f mimi_editor/compose.yaml exec -T mediawiki \
+  php /var/www/html/maintenance/run.php importDump /tmp/mimi-pages.xml
+exit
+```
+
+Import into the new wiki before editing it: MediaWiki merges imports with pages
+that already exist and does not replace a newer destination revision with an
+older imported one. The uploaded XML can be deleted after verifying the pages.
+
+Without an import, a fresh wiki has no course. Create one at
+`https://edit.example.com/Special:NewCourse`. The backend retries until at
+least one course contains valid content, then publishes every usable course
+through its catalog.
 
 Check the public routes:
 
@@ -181,8 +227,19 @@ docker compose --env-file mimi_editor/mimi-editor.env -f mimi_editor/compose.yam
 
 ## Updating
 
-Build and upload a new `mimi-deployment.tar.gz` exactly as in step 1. Then run
-on the server as root:
+On the build machine, keep the frontend configuration from the first release.
+For a deployment created before `mimi_frontend/.env` existed, create it once
+and set the real editor hostname before rebuilding:
+
+```sh
+test -f mimi_frontend/.env || cp deployment/mimi-frontend.env.example mimi_frontend/.env
+# Review mimi_frontend/.env, especially after adding a new PUBLIC_* setting.
+bazel build //deployment:deploy
+scp bazel-bin/deployment/mimi-deployment.tar.gz ADMIN@SERVER:/tmp/
+```
+
+Do not copy the example over an existing file: that would quietly put
+`edit.example.com` back into a release. On the server, run as root:
 
 ```sh
 systemctl stop mimi.target
