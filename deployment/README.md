@@ -238,10 +238,6 @@ systemctl stop mimi.target
 find /home/mimi/mimi_frontend -mindepth 1 -delete
 tar --no-same-owner -xzf ./mimi-deployment.tar.gz -C /home/mimi
 chown -R mimi:mimi /home/mimi
-install -m 0644 /home/mimi/deployment/mimi-auth.service /etc/systemd/system/
-install -m 0644 /home/mimi/deployment/mimi-backend.service /etc/systemd/system/
-install -m 0644 /home/mimi/deployment/mimi-editor.service /etc/systemd/system/
-install -m 0644 /home/mimi/deployment/mimi.target /etc/systemd/system/
 systemctl daemon-reload
 systemctl start mimi.target
 ```
