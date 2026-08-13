@@ -55,7 +55,11 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 	}
 	in.Username, in.Email = strings.TrimSpace(in.Username), strings.TrimSpace(in.Email)
 	if !validUsername(in.Username) {
-		writeError(w, http.StatusBadRequest, "username must be 3-64 characters using letters, numbers, '.', '_' or '-'")
+		writeError(w, http.StatusBadRequest, "username must be 3-64 characters using only A-Z, a-z, 0-9 or '_'")
+		return
+	}
+	if reservedUsername(in.Username) {
+		writeError(w, http.StatusBadRequest, "username must not contain a reserved role or permission name")
 		return
 	}
 	if !validEmail(in.Email) {
@@ -242,12 +246,39 @@ func validUsername(s string) bool {
 		return false
 	}
 	for _, r := range s {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("._-", r)) {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_') {
 			return false
 		}
 	}
 	return true
 }
+
+// A username is shown without a separate badge everywhere from profiles to
+// wiki history. These words would therefore let an ordinary account present
+// itself as holding authority it does not have. Match substrings, not just a
+// whole name, and fold case so decorations such as SuperAdmin or CHECKUSER_1
+// cannot evade the rule.
+var reservedUsernameTerms = []string{
+	"administrator",
+	"bureaucrat",
+	"steward",
+	"checkuser",
+	"oversight",
+	"admin",
+	"sysop",
+	"moderator",
+}
+
+func reservedUsername(s string) bool {
+	folded := strings.ToLower(s)
+	for _, term := range reservedUsernameTerms {
+		if strings.Contains(folded, term) {
+			return true
+		}
+	}
+	return false
+}
+
 func validEmail(s string) bool {
 	a, err := mail.ParseAddress(s)
 	return err == nil && a.Address == s && strings.Contains(s, "@") && len(s) <= 254

@@ -3,6 +3,7 @@ package auth
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -41,6 +42,88 @@ func TestRegisterAndLogin(t *testing.T) {
 	w = call("/v1/register", `{"username":"other_user","email":"mimi@example.com","password":"another secure password"}`)
 	if w.Code != http.StatusConflict {
 		t.Fatalf("duplicate: %d", w.Code)
+	}
+}
+
+func TestUsernameRules(t *testing.T) {
+	store, err := Open(t.TempDir() + "/test.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	mux := http.NewServeMux()
+	NewHandler(store).Routes(mux)
+	register := func(username, email string) *httptest.ResponseRecorder {
+		body, _ := json.Marshal(registerRequest{
+			Username: username,
+			Email:    email,
+			Password: "correct horse battery staple",
+		})
+		r := httptest.NewRequest(http.MethodPost, "/v1/register", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, r)
+		return w
+	}
+
+	created := register("AbCdE_9", "mixed@example.com")
+	if created.Code != http.StatusCreated {
+		t.Fatalf("register mixed-case username: %d %s", created.Code, created.Body.String())
+	}
+	var got userResponse
+	if err := json.Unmarshal(created.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Username != "AbCdE_9" {
+		t.Errorf("stored username = %q, want original capitalisation %q", got.Username, "AbCdE_9")
+	}
+	loginBody, _ := json.Marshal(loginRequest{
+		Login:    "abcde_9",
+		Password: "correct horse battery staple",
+	})
+	request := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewReader(loginBody))
+	loginResponse := httptest.NewRecorder()
+	mux.ServeHTTP(loginResponse, request)
+	if loginResponse.Code != http.StatusOK {
+		t.Fatalf("case-insensitive login: %d %s", loginResponse.Code, loginResponse.Body.String())
+	}
+	if err := json.Unmarshal(loginResponse.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Username != "AbCdE_9" {
+		t.Errorf("username after case-insensitive login = %q, want %q", got.Username, "AbCdE_9")
+	}
+
+	// The original spelling is presentation, not identity: changing only its
+	// ASCII letter case cannot create a second account.
+	duplicate := register("abcde_9", "other@example.com")
+	if duplicate.Code != http.StatusConflict {
+		t.Errorf("case-only duplicate: got %d, want %d (%s)", duplicate.Code, http.StatusConflict, duplicate.Body.String())
+	}
+
+	for _, username := range []string{"dot.name", "dash-name", "two words", "café", "name!"} {
+		w := register(username, username+"@example.com")
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("register %q: got %d, want %d", username, w.Code, http.StatusBadRequest)
+		}
+	}
+
+	for i, username := range []string{
+		"administrator",
+		"the_bureaucrat",
+		"Steward123",
+		"CHECKUSER_1",
+		"oversight_team",
+		"SuperAdmin",
+		"wiki_sysop",
+		"MyModeratorName",
+	} {
+		w := register(username, fmt.Sprintf("reserved%d@example.com", i))
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("register reserved name %q: got %d, want %d", username, w.Code, http.StatusBadRequest)
+		}
+		if !strings.Contains(w.Body.String(), "reserved role or permission") {
+			t.Errorf("register reserved name %q: unhelpful response %s", username, w.Body.String())
+		}
 	}
 }
 
