@@ -386,6 +386,19 @@ body {
     display: inline-block;
 }
 
+/* An initial is set as a capital whatever case the name was typed in.
+   Partly it is what a monogram is; mostly it is what makes the tile above
+   honest. The trim centres the band between the baseline and the cap line,
+   so a lowercase letter — which only reaches the x-height, and which is what
+   a name like "soupskin" hands us — would be centred by a box half a
+   cap-height taller than the letter, and sit visibly low in the circle.
+   Uppercasing makes every initial fill the band the tile is centring. */
+.avatar:not(:has(img)),
+.profile-avatar:not(:has(img)),
+.edit-avatar:not(:has(img)) {
+    text-transform: uppercase;
+}
+
 /* ----------------------------------------------------------------- panels */
 
 /* One box style for every panel on the page, replacing Blueprint's shadowed
