@@ -9,12 +9,12 @@ piece has its own documentation, and where this file and those disagree, they ar
 A language learning application that anyone can edit — Duolingo's learner experience over
 Wikipedia's authoring model. Courses are not shipped as code or data files; they are wiki
 pages that anybody can edit, and the learner site rebuilds itself from them. AGPLv3, in
-the `LICENSE` at this level, which covers all four repositories.
+the `LICENSE` at this level, which covers all four components.
 
-## This directory is not a repository
+## Repository layout
 
-There is no git repository here. The four subdirectories are four *independent* clones,
-each with its own remote under `github.com/thooton`:
+This directory is a single repository. The four subdirectories are components of the
+same clone and share its `github.com/thooton/mimi` remote:
 
 | directory       | what it is                          | language                      |
 | --------------- | ----------------------------------- | ----------------------------- |
@@ -23,12 +23,13 @@ each with its own remote under `github.com/thooton`:
 | `mimi_editor`   | the wiki authors write courses in   | MediaWiki 1.46 in Docker, PHP + Vue |
 | `mimi_frontend` | the learner site                    | Astro + React + TypeScript    |
 
-**Commit in the subdirectory, never here.** A change spanning two services is two commits
-in two repositories, and there is no atomic way to land them — so land the tolerant side
-first (a backend that serves a new field before any client reads it, a wiki that accepts
-new content before the backend requires it) and the demanding side second.
+Run Git commands from this directory and keep a change spanning multiple components in a
+coherent commit when that is the clearest unit of work. Runtime compatibility still
+matters when components deploy separately: deploy the tolerant side first (a backend
+that serves a new field before any client reads it, a wiki that accepts new content
+before the backend requires it) and the demanding side second.
 
-The root `MODULE.bazel` and each repository's `BUILD.bazel` make Bazel a thin dependency
+The root `MODULE.bazel` and each component's `BUILD.bazel` make Bazel a thin dependency
 graph over those native toolchains. This is deliberately not a conventional Bazel setup:
 the targets are local `genrule`s which run `cargo`, `go`, `npm`, Tailwind, and Docker
 Compose in their own source directories. Do not replace them with language rules,
@@ -129,14 +130,14 @@ changes, delete and re-seed. The wiki seeds itself with the demo Spanish course,
 backend has no profile and no leaderboard entry to look at until somebody registers and
 finishes a lesson. Nothing in the learner record is invented.
 
-## Working across the repositories
+## Working across the components
 
-- **Test with the native tool, per repository:** `cargo test`, `go test ./...`,
+- **Test with the native tool, per component:** `cargo test`, `go test ./...`,
   `npm test` (node's runner over `src/**/*.test.ts`). There is nothing that runs them all.
 - **Check the whole path for a user-visible change.** A new field is not done when the
   backend serves it; it is done when a wiki page can express it, the backend validates it,
   and the frontend renders it. Say which of the four you actually exercised.
-- **Match the house comment style.** All three documented repositories explain *intent* at
+- **Match the house comment style.** All three documented components explain *intent* at
   length — why a constant has its value, why an approach was rejected. Terse code that
   merely restates itself reads as foreign here. The same applies to these documents: when
   the code and an AGENTS.md diverge, fix the document rather than leaving it.
