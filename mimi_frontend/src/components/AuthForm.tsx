@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Button } from "@blueprintjs/core";
 import { useAuth } from "../data/auth";
 import { safeNext, withNext } from "../data/next";
+import { usernameContainsReservedTerm } from "../data/username";
 
 type Mode = "login" | "signup";
 
@@ -36,6 +37,12 @@ export default function AuthForm({ mode }: { mode: Mode }) {
     async function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError(null);
+        if (mode === "signup" && usernameContainsReservedTerm(username)) {
+            setError(
+                "That username contains a reserved role or permission name.",
+            );
+            return;
+        }
         if (mode === "signup" && password !== confirmedPassword) {
             setError("The passwords do not match.");
             return;
@@ -90,10 +97,14 @@ export default function AuthForm({ mode }: { mode: Mode }) {
                                     autoComplete="username"
                                     minLength={3}
                                     maxLength={64}
-                                    pattern="[A-Za-z0-9._-]+"
+                                    pattern="[A-Za-z0-9_]+"
+                                    title="Use 3–64 ASCII letters, numbers, or underscores."
                                     required
                                     autoFocus
                                 />
+                                <small>
+                                    Use 3–64 ASCII letters, numbers, or underscores.
+                                </small>
                             </label>
                             <label>
                                 <span>Email</span>

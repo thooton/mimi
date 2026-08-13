@@ -39,6 +39,9 @@ func Open(path string) (*Store, error) {
 	commonPasswords()
 	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		-- NOCASE compares the ASCII alphabet case-insensitively, which is
+		-- exactly the alphabet registration permits. SQLite still stores the
+		-- spelling supplied here, so a name keeps its chosen capitalisation.
 		username TEXT NOT NULL COLLATE NOCASE UNIQUE,
 		email TEXT NOT NULL COLLATE NOCASE UNIQUE,
 		password_hash TEXT NOT NULL,

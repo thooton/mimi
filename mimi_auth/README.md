@@ -12,6 +12,20 @@ go run ./cmd/mimi-auth
 
 The service listens on `127.0.0.1:4770` and writes `mimi-auth.db` by default. In a multi-host deployment, set `MIMI_AUTH_ADDR` to a private interface and allow only the backend to reach it; do not publish this port through the public proxy.
 
+## Usernames
+
+A username is 3 to 64 ASCII letters, digits, or underscores (`[A-Za-z0-9_]`).
+Its capitalisation is kept exactly as registered and returned that way anywhere
+the name is displayed. Identity is case-insensitive, though: `AbCdE` and
+`abcde` name the same account, so after either spelling is registered the other
+cannot be registered separately. The same case-insensitive comparison applies
+when signing in by username.
+
+Names also cannot contain role or permission terms that could make an account
+look more privileged than it is. This check is case-insensitive and applies to
+substrings; the reserved terms are `administrator`, `bureaucrat`, `steward`,
+`checkuser`, `oversight`, `admin`, `sysop`, and `moderator`.
+
 ## Passwords
 
 A password must be 8 to 1024 characters and must not be one of the 100,000 most

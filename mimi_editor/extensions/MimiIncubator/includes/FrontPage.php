@@ -111,7 +111,7 @@ final class FrontPage implements ParserFirstCallInitHook {
 			$parser->getOutput()->addLink( $example['skill'] );
 			$items .= Html::rawElement( 'li', [],
 				Html::element( 'span', [ 'class' => 'mimi-sentence' ], $example['text'] ) .
-				' — ' .
+				' ' .
 				Html::element( 'span', [ 'class' => 'mimi-translation' ], $example['translation'] ) .
 				' ' .
 				Html::rawElement( 'span', [ 'class' => 'mimi-source' ],

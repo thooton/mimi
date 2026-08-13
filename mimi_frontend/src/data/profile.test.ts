@@ -15,8 +15,8 @@ test('a profile path yields the name in it', () => {
 });
 
 test('the names mimi_auth actually permits survive the trip', () => {
-  // validUsername allows letters, digits and . _ -
-  assert.equal(usernameFromPath('/u/a.b_c-d9'), 'a.b_c-d9');
+  // Registration preserves case and permits letters, digits and underscores.
+  assert.equal(usernameFromPath('/u/Ab_cD9'), 'Ab_cD9');
 });
 
 test('an escaped name is decoded once', () => {
