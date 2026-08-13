@@ -224,6 +224,14 @@
   line-height: 1;
 }
 
+/* Trimmed to the cap height and the baseline, the way the navbar's streak
+   count is: the flame sits beside these digits, and a line box carries
+   descender space the digits never use, which would leave the icon looking
+   low against them. */
+.counter-number {
+  text-box: trim-both cap alphabetic;
+}
+
 /* the one figure that can break tomorrow, so it keeps the flame accent */
 .counter--streak .counter-value {
   color: var(--mimi-flame);

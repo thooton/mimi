@@ -45,7 +45,10 @@ function Counter({
         <div className={tone ? `counter counter--${tone}` : "counter"}>
             <span className="counter-value">
                 {tone === "streak" && <Flame size={16} />}
-                {formatXp(value)}
+                {/* the figure carries its own box so the row can centre the
+                    digits rather than the line they sit on — see
+                    .counter-number */}
+                <span className="counter-number">{formatXp(value)}</span>
             </span>
             <span className="eyebrow counter-label">{label}</span>
         </div>

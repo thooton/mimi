@@ -224,6 +224,11 @@ button.topnav-link::after {
      an 800 the trial does not load. */
   font-weight: 900;
   line-height: 1;
+  /* The row centres two boxes, and the digits' box is taller than the digits
+     — the descender space the count never uses pushed the number up and left
+     the flame looking like it had slipped a pixel. Trimmed to the cap and the
+     baseline, the box is the number, so what the row centres is the ink. */
+  text-box: trim-both cap alphabetic;
 }
 
 /* --- account --- */

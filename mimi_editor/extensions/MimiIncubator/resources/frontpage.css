@@ -131,10 +131,22 @@
 	background-color: #eee;
 }
 
+/*
+ * The footer links run in columns. The indent belongs on the items rather than
+ * the list, so every bullet is drawn inside its own column instead of hanging
+ * back into the gap, and no item is allowed to break across a column boundary
+ * and leave its bullet stranded at the foot of one.
+ */
 #mimi-bottom ul {
 	margin: 0.3em 0;
-	padding-inline-start: 1.5em;
+	padding-inline-start: 0;
 	columns: 18em;
+	column-gap: 2em;
+}
+
+#mimi-bottom ul li {
+	margin-inline-start: 1.5em;
+	break-inside: avoid;
 }
 
 /* Course list. Each course is a card of its own, flagged with its pair. */

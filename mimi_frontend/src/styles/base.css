@@ -331,6 +331,12 @@ body {
     text-transform: uppercase;
     color: var(--mimi-ink-muted);
     line-height: 1.4;
+    /* Caps set at label size need air between them: the counters of an
+       uppercase face are drawn to be spaced, and at 10px bold with none the
+       words pack into a single dark block ("INDIVIDUAL LEADERBOARD" read as
+       one word rather than two). Tracking is the fifth invariant, not a
+       decoration — every use of this rule is uppercase. */
+    letter-spacing: 0.07em;
 }
 
 /* the panel head's caption: a step up in size, a step down in contrast */
@@ -338,6 +344,46 @@ body {
     font-size: 11px;
     color: var(--mimi-ink-soft);
     margin: 0;
+}
+
+/* --------------------------------------------------- lettered round tiles */
+
+/* A single glyph centred in a disc or a rounded square — a rank on the board,
+   an initial where somebody has no picture.
+
+   Centring the *text* is not the same as centring what you can see. A line
+   box is as tall as the font's ascent plus its descent, and DINish Next
+   spends far more of its em above the baseline (800) than below it (224);
+   digits and capitals have no descender to fill the bottom half, so a
+   perfectly centred line box leaves the ink itself sitting high — about
+   1.4px above the middle of an 18px rank disc, and 1.7px on the 76px
+   profile tile. Trimming the box to the cap height and the alphabetic
+   baseline makes the ink what gets centred, and because both edges are read
+   from whichever face is actually rendering, it stays centred in the
+   fallback face too while the webfont is still loading.
+
+   The trim needs the tile to be the block container holding the text, so
+   these centre by `align-content` rather than as a grid — a grid puts the
+   text in an anonymous item the property can't reach.
+
+   `:not(:has(img))` keeps the picture case on its own rule: a linked avatar
+   fills the tile and has no cap height to trim to. It also lifts these over
+   the tiles' own `display` in the partials below, which land later in the
+   cascade. */
+.rank:not(:has(img)),
+.avatar:not(:has(img)),
+.profile-avatar:not(:has(img)),
+.edit-avatar:not(:has(img)) {
+    display: block;
+    align-content: center;
+    text-align: center;
+    text-box: trim-both cap alphabetic;
+}
+
+/* the one that sits in a table cell stays inline-level, or the disc would
+   stretch to the width of the column */
+.rank:not(:has(img)) {
+    display: inline-block;
 }
 
 /* ----------------------------------------------------------------- panels */
