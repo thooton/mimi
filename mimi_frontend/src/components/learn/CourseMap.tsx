@@ -39,6 +39,41 @@ function iconOf(skill: SkillNode) {
     );
 }
 
+/* Where a skill's card can go.
+ *
+ * Beside the stone is the right answer on a desktop — the tree is a column
+ * down the middle of a wide page and the card fills the margin next to it.
+ * On a phone there is no margin: the tree *is* the page, the stone sits at
+ * its centre, and a 265px card asked for at `right` has nowhere to be. It
+ * used to be placed there anyway and hang off the edge of the screen with
+ * its Start button past the fold — which is the bug this answers.
+ *
+ * So under this width the card goes *under* the stone instead, where the
+ * full width of the screen is available to it.
+ *
+ * 720px is the navbar's breakpoint (chrome.css), reused deliberately: it is
+ * already the width at which this site says "this is a phone".
+ */
+const BESIDE_MIN = "(min-width: 721px)";
+
+/** true when there is room beside a stone for its card */
+function useBeside(): boolean {
+    /* Starts false on both sides of hydration and corrects in the effect.
+       The server has no viewport to measure, so anything else here would be
+       a guess that React would have to reconcile — and guessing "desktop"
+       is the guess that renders wrong on the phones this is for. Nothing
+       moves when it corrects: every popover is closed at mount. */
+    const [beside, setBeside] = useState(false);
+    useEffect(() => {
+        const query = window.matchMedia(BESIDE_MIN);
+        const sync = () => setBeside(query.matches);
+        sync();
+        query.addEventListener("change", sync);
+        return () => query.removeEventListener("change", sync);
+    }, []);
+    return beside;
+}
+
 function CrownIcon({ level }: { level: number }) {
     return (
         <svg className="level-crown" viewBox="0 0 30 28" aria-hidden="true">
@@ -123,6 +158,7 @@ function SkillMedallion({
      here rather than in the card because the popover unmounts its content
      when it closes, which would take an open dialog down with it */
     const [tipsFor, setTipsFor] = useState<ApiPosition | null>(null);
+    const beside = useBeside();
     const button = (
         <button
             className="skill-button"
@@ -168,8 +204,21 @@ function SkillMedallion({
                 </Tooltip>
             ) : (
                 <Popover
-                    placement="right"
+                    placement={beside ? "right" : "bottom"}
                     popoverClassName="node-popover bp6-popover-minimal-animation"
+                    /* Placement is where the card would *like* to be; this is
+                       what stops it leaving the screen when it can't. Popper
+                       shifts an overflowing popover back along its axis, and
+                       the padding keeps a margin of paper between the card and
+                       the edge instead of letting it sit flush against it —
+                       which on the outermost stone of a row is the difference
+                       between a card and a card with a corner cut off. */
+                    modifiers={{
+                        preventOverflow: {
+                            enabled: true,
+                            options: { padding: 8 },
+                        },
+                    }}
                     content={
                         <SkillCard
                             skill={skill}

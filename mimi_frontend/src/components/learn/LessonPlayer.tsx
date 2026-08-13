@@ -5,7 +5,7 @@ import type { Verdict } from '../../data/grading';
 import { attachGlosses } from '../../data/glosses';
 import { grade, gradeWordBank } from '../../data/grading';
 import { languageName } from '../../data/languages';
-import { advanceQueue, queueOf } from '../../data/lessonQueue';
+import { advanceQueue, clearedCount, queueOf } from '../../data/lessonQueue';
 import { DEFAULT_NEXT } from '../../data/next';
 import { shuffledBank } from '../../data/wordBank';
 import { playTriumph, playVerdict } from '../../data/sounds';
@@ -23,11 +23,16 @@ import { markdown } from './markdown';
 
    A wrongly-answered exercise isn't done, though: a retry of it joins the end
    of the queue and keeps reappearing until it's answered right (see
-   lessonQueue.ts) — so a mistake makes the lesson one task longer, which the
-   count and the progress strip both show, and the returning question wears a
-   "previous mistake" tag so it isn't mistaken for the lesson repeating
-   itself. Only the first attempt is reported — the backend still hears the
-   answer was wrong; the retries are just the user practicing. */
+   lessonQueue.ts), and the returning question wears a "previous mistake" tag
+   so it isn't mistaken for the lesson repeating itself. Only the first
+   attempt is reported — the backend still hears the answer was wrong; the
+   retries are just the user practicing.
+
+   The lesson's length is what the backend served and nothing the user does
+   changes it, so the count and the strip are read off `cleared` and
+   `total` rather than off the queue, which does grow. A miss holds both
+   where they are — the finish line stays put, the user is just not at it
+   yet — and the strip fills exactly as the last retry is answered. */
 
 /* Between tasks the old one shifts out to the left and the next shifts in
    from the right (both keyframes live in styles/motion.css).
@@ -83,7 +88,11 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
 
   useEffect(() => () => clearTimeout(leaveTimer.current), []);
 
-  const total = queue.length;
+  /* The lesson as served: the denominator of everything on the progress
+     line, fixed for the life of the player. `queue.length` is a different
+     number the moment anything is missed — it is the run, not the lesson. */
+  const total = lesson.tasks.length;
+  const cleared = clearedCount(queue, index, total);
   const entry = queue[index];
   const current = entry.task;
   const answered = verdict !== null;
@@ -233,8 +242,17 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
   }
 
   /* a wrong answer re-queues this exercise, so the apparent last task isn't
-     the end after all — don't promise a finish that isn't coming */
-  const last = index + 1 === total && (!answered || verdict.correct);
+     the end after all — don't promise a finish that isn't coming. The run is
+     what has to be at its end here, not the lesson: with a retry outstanding
+     there is still something to answer after this. */
+  const last = index + 1 === queue.length && (!answered || verdict.correct);
+
+  /* A correct answer counts as soon as it's checked rather than when Continue
+     is pressed, so the strip and the count move with the green feedback
+     instead of a beat after it. Both read this one number, so they cannot
+     disagree — and neither can pass `total`, since the only thing that
+     advances it is a task being cleared for good. */
+  const scored = cleared + (verdict?.correct ? 1 : 0);
   return (
     <div className={`lesson-shell${quitting ? ' is-quitting' : ''}`}>
       <div className="lesson-top">
@@ -244,11 +262,11 @@ export default function LessonPlayer({ lesson, targetLang, guest, onFinish, onEx
         <div className="lesson-progress">
           <div
             className="lesson-progress-fill"
-            style={{ width: `${((index + (verdict?.correct ? 1 : 0)) / total) * 100}%` }}
+            style={{ width: `${(scored / total) * 100}%` }}
           />
         </div>
         <span className="lesson-count tnum">
-          {index + 1} / {total}
+          {scored} / {total}
         </span>
       </div>
 

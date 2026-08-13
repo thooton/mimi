@@ -28,7 +28,10 @@
 .level-crown text { fill: #cf8500; font-size: 10px; font-weight: 900; font-family: inherit; }
 .skill-label { max-width: 132px; margin-top: 9px; text-align: center; font-weight: 700; line-height: 1.2; color: var(--mimi-ink-soft); }
 .skill-locked .skill-label { color: var(--mimi-ink-faint); }
-.skill-card { width: 265px; padding: 15px; }
+/* 265px where the screen has it. `min` rather than a media query because the
+   card is placed by Popper and can end up anywhere: 16px of paper each side
+   is what it must never spend, whatever width it is asked to fit. */
+.skill-card { width: min(265px, calc(100vw - 32px)); padding: 15px; }
 .skill-card-top { display: flex; justify-content: space-between; color: var(--skill); }
 .skill-card-count { font-size: 12px; font-weight: 700; color: var(--mimi-ink-muted); }
 .skill-card h3 { margin: 8px 0 5px; font-size: 17px; color: var(--mimi-ink); }

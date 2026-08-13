@@ -6,13 +6,28 @@
    mimi_backend AGENTS.md, "Grading (the client's job)").
 
    The retry is *appended*, and the task it retries stays retired where it
-   was, so the queue grows by one for every mistake. The player reads its
-   position and its total straight off this queue, and that is the point: a
-   mistake really does mean one more task to answer, and both the count and
-   the progress strip say so. (Rotating the wrong task into the end of a
-   fixed-length queue — the older arrangement — left the player answering
-   more tasks than the total it was showing, so the count could reach "5 / 5"
-   with questions still to come and the strip stuck short of the end.) */
+   was, so the queue itself grows by one for every mistake. What the queue
+   must not do is *say* so. A lesson is the set of tasks the backend served;
+   a mistake is not a longer lesson, it is the same lesson not finished yet —
+   which is the promise Duolingo's fixed bar makes, and the one to keep.
+
+   So progress is measured in `cleared` (below) rather than in queue
+   positions: how many of the served tasks are behind the user for good.
+   A wrong answer clears nothing, so the count and the strip simply hold
+   where they are until its retry comes round and is answered right. The
+   three readings this has to keep honest, all at once:
+
+     - the total never moves — it is `lesson.tasks.length`, start to finish;
+     - the strip only ever advances on real progress, and is full exactly
+       when the lesson ends;
+     - the count can never read "5 / 5" with questions still to come, which
+       is the failure that made an earlier arrangement (rotating the wrong
+       task into a fixed-length queue) unworkable.
+
+   The arrangement in between those two — growing the displayed total with
+   the queue — kept all three honest and was still wrong: it answered a
+   mistake by moving the finish line, so the lesson got longer the worse it
+   went and the end never came closer. */
 
 import type { ApiResponse, ApiTask } from './api';
 import type { Verdict } from './grading';
@@ -29,14 +44,38 @@ export function queueOf(tasks: ApiTask[]): QueueEntry[] {
   return tasks.map((task) => ({ task, retry: false }));
 }
 
+/**
+ * How many of the lesson's `total` served tasks are behind the user for
+ * good, with `index` tasks retired from `queue` so far. This is the numerator
+ * of both the count and the progress strip; `total` is the denominator and
+ * never changes.
+ *
+ * Every entry past the first `total` is a retry, and a retry exists exactly
+ * because the task it copies was missed — so the appended retries *are* the
+ * tally of what is still outstanding, and
+ *
+ *     cleared = tasks retired − retries appended
+ *
+ * with no need to look at any entry. Worked through, on a lesson of 12 where
+ * the first answer is wrong: index 1, queue 13, so cleared 0 — the strip
+ * doesn't move for a miss. Answer the next right and it is 2 − 1 = 1. Reach
+ * the retry at the end and it reads 11 of 12, with one question to go; get it
+ * right and index 13 − 1 retry = 12, full and finished. Get it wrong again
+ * and a second retry joins the queue, holding the reading at 11 rather than
+ * pushing the total to 14.
+ */
+export function clearedCount(queue: QueueEntry[], index: number, total: number): number {
+  return index - (queue.length - total);
+}
+
 export interface Advance {
   /** the queue with the finished task behind us — plus, on a wrong answer, a
       retry of it on the end (the exercise isn't done until it's right) */
   queue: QueueEntry[];
   /** the verdicts to report so far — grows only on first attempts */
   responses: ApiResponse[];
-  /** the answer was wrong, so a retry was added to the end: the lesson is one
-      task longer than it was */
+  /** the answer was wrong, so a retry was added to the end: one of the
+      lesson's tasks is still outstanding, and `cleared` holds where it is */
   requeued: boolean;
   /** nothing left in the queue: submit */
   done: boolean;

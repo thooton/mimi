@@ -547,12 +547,34 @@ export default function AppNavbar({ active = "" }: Props) {
                         );
                     })}
 
+                    {/* The bar's Discord icon, folded in as a row of the nav it now
+              sits under. It is a link out like the editor above it, so it
+              behaves like one — new tab, and it closes the panel on the way
+              since nothing else will. (The bar hides its own copy at this
+              breakpoint; see .mobilenav-discord in chrome.css.) */}
+                    <a
+                        className="mobilenav-link mobilenav-discord"
+                        href={DISCORD_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setMenuOpen(false)}
+                    >
+                        <DiscordMark size={16} />
+                        Discord
+                        <ShareIcon
+                            className="topnav-external"
+                            size={11}
+                            aria-hidden
+                        />
+                    </a>
+
                     {/* The bar's auth pair, folded into the foot of the panel — the
               bar hides it at the same breakpoint (two buttons never fit a
               phone next to the flag). Same split as the bar: a guest's
               links remember where they were, a signed-out visitor's don't
-              need to. The flag stays in the bar: it answers "what am I
-              learning", a question the panel can't. */}
+              need to. The streak, flag and avatar stay in the bar: they
+              answer "how am I doing", "what am I learning" and "who am I",
+              questions the panel can't. */}
                     {guest && settled && (
                         <div className="mobilenav-auth">
                             <a

@@ -207,7 +207,14 @@ button.topnav-link::after {
 }
 
 /* streak — the lone counter up top: flame glyph with the count right
-   beside it, in the manner of Duolingo, in ember */
+   beside it, in the manner of Duolingo, in ember.
+
+   It survives every breakpoint. Days in a row is the one number a learner
+   checks without being asked, and a phone is where most of that checking
+   happens — hiding it there (which the 720px block used to do) took the
+   counter away from exactly the screen it is for. It is cheap to keep: a
+   glyph and one or two digits, ~55px, and the breakpoints below trim its
+   padding rather than dropping it. */
 .streak {
     display: flex;
     align-items: center;
@@ -233,7 +240,14 @@ button.topnav-link::after {
 
 /* discord — a square target beside the streak, sized and lit like the
    hamburger so the bar's two icon buttons behave alike. The mark is wider
-   than it is tall, so the box is what's square, not the glyph. */
+   than it is tall, so the box is what's square, not the glyph.
+
+   This one *does* leave the bar on a phone, but it doesn't leave the page:
+   the 720px block hands it to the hamburger panel as a labelled row. It is
+   the only thing on the right that is a link to somewhere else rather than
+   a fact about the learner, so it is the one that belongs with the nav when
+   space runs out — and a row saying "Discord" is a better target on a touch
+   screen than a 34px glyph squeezed between the streak and the flag. */
 .discord-link {
     display: flex;
     align-items: center;
@@ -308,9 +322,10 @@ button.topnav-link::after {
 }
 
 /* …and below this the labels crowd each other: the inline nav folds into
-   the hamburger's panel, and the sign-in/create-account pair goes with it
-   (the flag and avatar stay — they're compact, and the flag answers "what
-   am I learning", which the panel can't). The panel hangs off the bottom
+   the hamburger's panel, and the sign-in/create-account pair goes with it,
+   as does the Discord link (the streak, flag and avatar stay — they are
+   compact, and they answer "how am I doing", "what am I learning" and "who
+   am I", which the panel can't). The panel hangs off the bottom
    of the sticky bar, over the page rather than pushing it down (the bar's
    sticky positioning is what `top: 100%` anchors to). The display:none is
    a base rule and the query overrides it, so resizing wide can't strand
@@ -319,12 +334,31 @@ button.topnav-link::after {
     display: none;
 }
 
+/* the panel's copy of the Discord link, hidden while the bar carries its
+   own — the two are the same destination and only one is ever on screen */
+.mobilenav-discord {
+    display: none;
+}
+
 @media (max-width: 720px) {
     .topnav,
     .topbar-auth,
-    .discord-link,
-    .streak {
+    .discord-link {
         display: none;
+    }
+
+    /* the gutter is 20px of paper on each side that the bar cannot spend on
+     the five things it is now carrying; on a phone the content is what the
+     width is for */
+    :root {
+        --mimi-gutter: 12px;
+    }
+
+    /* the counters lose their desktop breathing room rather than their
+     place — see .streak above */
+    .streak {
+        padding: 0 4px;
+        margin-right: 2px;
     }
 
     .menu-btn {
@@ -388,6 +422,20 @@ button.topnav-link::after {
         padding-left: 24px;
     }
 
+    /* the bar's Discord icon, arriving here as a row like the ones above it.
+     Spacing by margin rather than a flex `gap`: the trailing "opens a new
+     tab" arrow brings its own margin-left (.topnav-external), and a gap
+     would stack on top of it and set that icon further out than the same
+     arrow on the editor row directly above. */
+    .mobilenav-discord {
+        display: flex;
+    }
+
+    .mobilenav-discord > svg {
+        flex: none;
+        margin-right: 10px;
+    }
+
     /* the auth pair at the panel's foot: full width, stacked, set off from
      the navigation by a hairline */
     .mobilenav-auth {
@@ -422,6 +470,30 @@ button.topnav-link::after {
     .account-name,
     .account-btn .caret {
         display: none;
+    }
+}
+
+/* The narrowest phones still in circulation are 320px wide, and the bar has
+   five things to seat in them: wordmark, streak, flag, avatar, hamburger.
+   Measured at 320 the row came to five pixels over, so the two items with
+   slack give it up — here the wordmark drops a size (the photo mark beside
+   it is what identifies the site anyway), and down in the picker's own
+   section the flag takes the smaller of its two cuts. Nothing is dropped:
+   every one of the five answers a question the panel behind the hamburger
+   can't.
+
+   The picker's half of this has to live beside .flag-btn rather than here,
+   because a media query adds no specificity and .flag-btn is declared
+   further down the file — written here it would lose to it on source order
+   and silently do nothing, which is exactly what it did first time. */
+@media (max-width: 360px) {
+    .brand {
+        padding-right: 8px;
+        margin-right: 4px;
+    }
+
+    .brand-name {
+        font-size: 20px;
     }
 }
 
@@ -533,6 +605,19 @@ button.topnav-link::after {
 .lang-endonym {
     color: var(--mimi-ink-faint);
     font-size: 12px;
+}
+
+/* the picker's half of the 360px squeeze — see the matching block up in the
+   topbar section, which explains why the two are apart */
+@media (max-width: 360px) {
+    .lang-btn {
+        padding: 0 5px;
+    }
+
+    .flag-btn {
+        width: 26px;
+        height: 19px;
+    }
 }
 
 /* --- the first-run chooser --- */
