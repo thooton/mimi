@@ -1,0 +1,162 @@
+/* ==========================================================================
+   blueprint — the generic refinements over Blueprint 6's chrome: the
+   raised-button recipe and the lighter popover/dialog.
+
+   IMPORTED BEFORE chrome.css: the navigation menu squares its popover off
+   there at equal specificity, so it needs to land later than the generic
+   .bp6-popover rules below (see styles/global.css).
+   ========================================================================== */
+
+/* Blueprint's Popover and Dialog keep a heavier shadow than our flat boxes. */
+.bp6-popover .bp6-popover-content {
+  border-radius: 8px;
+}
+
+.bp6-popover {
+  box-shadow:
+    0 0 0 1px var(--mimi-border),
+    0 4px 14px rgba(29, 27, 22, 0.14);
+  border-radius: 8px;
+}
+
+.bp6-dialog {
+  background: var(--mimi-surface);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px var(--mimi-border),
+    0 4px 14px rgba(29, 27, 22, 0.14);
+}
+
+.bp6-dialog-header {
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 1px 0 var(--mimi-border);
+}
+
+/* =============================================================== buttons ==
+
+   Blueprint 6 draws buttons flat — a solid fill with a hairline inset ring.
+   The reference UI uses the older raised treatment, which reads as a real
+   pressable object: a top-lit gradient, a hard bottom edge where the face
+   meets the shadow, and a small drop shadow lifting it off the page.
+
+   Rebuilt here as three stacked layers, so the recipe works for any fill:
+     1. a translucent white sheen, brightest at the top   (the top light)
+     2. inset 0 -1px           — the darkened bottom lip  (the thickness)
+     3. inset 0 0 0 1px + drop — the ring and the lift
+
+   Selectors mirror Blueprint's own specificity (notably its
+   :not([class*=bp6-intent-]) for the no-intent button) so these win on
+   source order rather than on !important.
+   ========================================================================= */
+
+.bp6-button {
+  /* the top-light sheen, shared by every fill */
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.13),
+    rgba(255, 255, 255, 0) 55%
+  );
+  background-repeat: no-repeat;
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 13.5px;
+
+  min-height: 32px;
+  padding: 5px 14px;
+  /* no `gap` here: Blueprint already spaces button children apart with
+     margin-right, and a flex gap would stack on top of it */
+}
+
+/* ...but Blueprint's 8px margin spreads an icon and its label wider than
+   this design wants; 3px plus the icon SVG's own internal padding seats
+   them right next to each other. Equal specificity to Blueprint's own
+   rule, so it wins on source order; its :last-child zeroing still stands. */
+.bp6-button::before,
+.bp6-button > * {
+  margin-right: 3px;
+}
+
+/* --- default: a warm off-white face, matching the paper shell --- */
+
+.bp6-button:not([class*='bp6-intent-']) {
+  background-color: #fbfaf8;
+  background-image: linear-gradient(to bottom, #ffffff, #f2efe9);
+  color: var(--mimi-ink);
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 27, 22, 0.19),
+    inset 0 -1px 0 0 rgba(29, 27, 22, 0.09),
+    0 1px 1.5px rgba(29, 27, 22, 0.07);
+}
+
+.bp6-button:not([class*='bp6-intent-']):hover {
+  background-image: linear-gradient(to bottom, #fbfaf8, #eae6de);
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 27, 22, 0.24),
+    inset 0 -1px 0 0 rgba(29, 27, 22, 0.11),
+    0 1px 2px rgba(29, 27, 22, 0.1);
+}
+
+/* pressed: kill the sheen and the lift, sink the face inward */
+.bp6-button:not([class*='bp6-intent-']):active,
+.bp6-button:not([class*='bp6-intent-']).bp6-active {
+  background-image: none;
+  background-color: #e6e2d9;
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 27, 22, 0.26),
+    inset 0 2px 3px rgba(29, 27, 22, 0.14);
+}
+
+/* --- primary: the same recipe over the accent fill --- */
+
+.bp6-button.bp6-intent-primary {
+  background-color: var(--mimi-accent);
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.17),
+    rgba(255, 255, 255, 0) 60%
+  );
+  color: #fff;
+  /* seats the label on the fill instead of floating over it */
+  text-shadow: 0 -1px 0 rgba(12, 30, 60, 0.22);
+  box-shadow:
+    inset 0 0 0 1px rgba(12, 30, 60, 0.26),
+    inset 0 -1px 0 0 rgba(12, 30, 60, 0.24),
+    0 1px 2px rgba(12, 30, 60, 0.18);
+}
+
+.bp6-button.bp6-intent-primary:hover {
+  background-color: var(--mimi-accent-deep);
+  box-shadow:
+    inset 0 0 0 1px rgba(12, 30, 60, 0.3),
+    inset 0 -1px 0 0 rgba(12, 30, 60, 0.26),
+    0 2px 4px rgba(12, 30, 60, 0.22);
+}
+
+.bp6-button.bp6-intent-primary:active,
+.bp6-button.bp6-intent-primary.bp6-active {
+  background-image: none;
+  background-color: #1d4a90;
+  box-shadow:
+    inset 0 0 0 1px rgba(12, 30, 60, 0.34),
+    inset 0 2px 4px rgba(12, 30, 60, 0.3);
+}
+
+/* --- shared --- */
+
+.bp6-button:focus-visible {
+  outline: var(--mimi-focus-ring);
+  outline-offset: 2px;
+}
+
+.bp6-button:disabled,
+.bp6-button.bp6-disabled {
+  background-image: none;
+  text-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Blueprint sizes the icon to the 14px body text; 15px balances DIN's
+   larger apparent x-height. */
+.bp6-button .bp6-icon {
+  opacity: 0.92;
+}

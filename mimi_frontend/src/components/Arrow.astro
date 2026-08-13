@@ -1,0 +1,24 @@
+---
+/* The "go on then" arrow that trails every call to action on the landing
+   page. Inline rather than an icon font: it is one path, and it has to take
+   its colour from the text it sits in. */
+interface Props {
+  size?: number;
+}
+
+const { size = 15 } = Astro.props;
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 16 16"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  <path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"></path>
+</svg>

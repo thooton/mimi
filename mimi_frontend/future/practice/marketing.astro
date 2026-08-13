@@ -1,0 +1,40 @@
+---
+import PracticeIcon from './components/PracticeIcon.astro';
+import StoryMock from './components/StoryMock.astro';
+import AudioMock from './components/AudioMock.astro';
+
+/* Removed from src/pages/about.astro while these modes are deferred. */
+---
+
+<div class="concept-row">
+  <div class="concept-copy">
+    <div class="practice-row-top">
+      <PracticeIcon name="stories" />
+      <span class="eyebrow lang-soon">Soon</span>
+    </div>
+    <h3 class="concept-title">Short stories</h3>
+    <p>
+      Read short stories in your target language written by community members
+      like you. Filter to find content at your own level, and tap any word to
+      see what it means.
+    </p>
+  </div>
+  <div class="concept-art"><StoryMock /></div>
+</div>
+
+<div class="concept-row concept-row--flip">
+  <div class="concept-copy">
+    <div class="practice-row-top">
+      <PracticeIcon name="audio" />
+      <span class="eyebrow lang-soon">Soon</span>
+    </div>
+    <h3 class="concept-title">Podcasts &amp; audio clips</h3>
+    <p>
+      Short recordings of natural speech — slow enough to follow, real enough
+      to train your ear. Every clip comes with a transcript, so you can check
+      what you heard.
+    </p>
+  </div>
+  <div class="concept-art"><AudioMock /></div>
+</div>
+

@@ -1,0 +1,29 @@
+.profile-clubs-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.club {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mimi-ink-soft);
+  text-decoration: none;
+  background-color: var(--mimi-surface-sunken);
+  border: 1px solid var(--mimi-border);
+  border-radius: 7px;
+}
+
+.club:hover {
+  color: var(--mimi-accent);
+  border-color: var(--mimi-border-strong);
+}
+
+.club .bp6-icon { color: var(--mimi-ink-faint); }
+.club:hover .bp6-icon { color: var(--mimi-accent); }
+

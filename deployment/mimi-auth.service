@@ -1,0 +1,29 @@
+[Unit]
+Description=Mimi shared credential service
+PartOf=mimi.target
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=mimi
+Group=mimi
+WorkingDirectory=/home/mimi/mimi_auth
+EnvironmentFile=/home/mimi/mimi_auth/mimi-auth.env
+ExecStart=/home/mimi/mimi_auth/mimi-auth
+Restart=on-failure
+RestartSec=5s
+UMask=0077
+
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/home/mimi/mimi_auth
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=true
+LockPersonality=true
+

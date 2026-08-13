@@ -1,0 +1,7 @@
+common --enable_bzlmod
+# These local genrules deliberately use the native Cargo, Go, npm, and Docker
+# installations. Bazel 9 enables the strict action environment by default, so
+# forward the caller's tool search path instead of limiting actions to /bin and
+# /usr/bin.
+build --action_env=PATH
+build --action_env=HOME

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mimi skill",
+  "type": "object",
+  "required": ["schemaVersion", "grammarFocus", "words"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 5 },
+    "grammarFocus": { "type": "string", "minLength": 1, "maxLength": 1000 },
+    "words": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["word", "sentences"],
+        "additionalProperties": false,
+        "properties": {
+          "word": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "sentences": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["text"],
+              "additionalProperties": false,
+              "properties": {
+                "text": { "type": "string", "minLength": 1, "maxLength": 2000 },
+                "notes": { "type": "string", "maxLength": 2000 },
+                "disabled": { "type": "boolean" },
+                "alternativeSentences": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+                },
+                "translation": { "type": "string", "maxLength": 2000 },
+                "alternativeTranslations": {
+                  "type": "array",
+                  "items": { "type": "string", "minLength": 1, "maxLength": 2000 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

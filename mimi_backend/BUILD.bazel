@@ -1,0 +1,41 @@
+genrule(
+    name = "build",
+    srcs = glob(["src/**/*.rs"]) + [
+        "Cargo.toml",
+        "Cargo.lock",
+    ],
+    local = True,
+    cmd = """
+        ROOT_DIR=$$(pwd)
+        cd $$(dirname $(location Cargo.toml))
+        cargo build --release
+        cp ./target/release/mimi_backend $$ROOT_DIR/$@
+    """,
+    outs = ["mimi_backend"],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "dev",
+    srcs = [":build", "Cargo.toml"],
+    local = True,
+    cmd = """
+        EXEC_DIR=$$(pwd)/$$(dirname $(location Cargo.toml))
+
+        cat > "$@" << EOF
+#!/bin/sh
+
+# Go to execution directory
+cd $${EXEC_DIR}
+
+# Run the backend service
+exec ./target/release/mimi_backend "\\$$@"
+
+EOF
+        # Make the created script executable
+        chmod +x "$@"
+    """,
+    outs = ["dev.sh"],
+    executable = True,
+    tags = ["manual"],
+)

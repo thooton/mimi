@@ -1,0 +1,63 @@
+genrule(
+    name = "npm_install",
+    srcs = [
+        "package.json",
+        "package-lock.json",
+    ],
+    local = True,
+    cmd = """
+        ROOT_DIR=$$(pwd)
+        cd $$(dirname $(location package.json))
+        npm install
+        date +%s.%N > $$ROOT_DIR/$@
+    """,
+    outs = ["npm_install.marker"],
+)
+
+genrule(
+    name = "build",
+    srcs = glob([
+        "public/**/*",
+        "src/**/*",
+    ]) + [
+        "astro.config.mjs",
+        "package.json",
+        "tsconfig.json",
+        ":npm_install",
+    ],
+    local = True,
+    cmd = """
+        ROOT_DIR=$$(pwd)
+        cd $$(dirname $(location package.json))
+        PUBLIC_MIMI_API=/api npm run build
+        cd dist
+        zip -r $$ROOT_DIR/$@ .
+    """,
+    outs = ["mimi_frontend.zip"],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "dev",
+    srcs = [":build", "package.json"],
+    local = True,
+    cmd = """
+        EXEC_DIR=$$(pwd)/$$(dirname $(location package.json))
+
+        cat > "$@" << EOF
+#!/bin/sh
+
+# Go to execution directory
+cd $${EXEC_DIR}
+
+# Run the Astro development server
+exec npm run dev -- "\\$$@"
+
+EOF
+        # Make the created script executable
+        chmod +x "$@"
+    """,
+    outs = ["dev.sh"],
+    executable = True,
+    tags = ["manual"],
+)

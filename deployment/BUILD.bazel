@@ -1,0 +1,49 @@
+genrule(
+    name = "deploy",
+    srcs = [
+        "//mimi_auth:build",
+        "//mimi_backend:build",
+        "//mimi_editor:deploy",
+        "//mimi_frontend:build",
+        "README.md",
+        "mimi-auth.env.example",
+        "mimi-auth.service",
+        "mimi-backend.env.example",
+        "mimi-backend.service",
+        "mimi-editor.env.example",
+        "mimi-editor.service",
+        "mimi.target",
+        "nginx.conf",
+    ],
+    local = True,
+    cmd = """
+        ROOT_DIR=$$(pwd)
+        STAGE=$$(mktemp -d)
+        trap 'rm -rf "$$STAGE"' EXIT
+        chmod 0755 $$STAGE
+
+        install -D -m 0755 $(location //mimi_auth:build) $$STAGE/mimi_auth/mimi-auth
+        install -D -m 0755 $(location //mimi_backend:build) $$STAGE/mimi_backend/mimi_backend
+
+        mkdir -p $$STAGE/mimi_editor $$STAGE/mimi_frontend $$STAGE/deployment
+        tar -xzf $(location //mimi_editor:deploy) -C $$STAGE/mimi_editor
+        unzip -q $(location //mimi_frontend:build) -d $$STAGE/mimi_frontend
+
+        DEPLOYMENT_DIR=$$(dirname $(location README.md))
+        install -m 0644 \
+            $$DEPLOYMENT_DIR/README.md \
+            $$DEPLOYMENT_DIR/mimi-auth.env.example \
+            $$DEPLOYMENT_DIR/mimi-auth.service \
+            $$DEPLOYMENT_DIR/mimi-backend.env.example \
+            $$DEPLOYMENT_DIR/mimi-backend.service \
+            $$DEPLOYMENT_DIR/mimi-editor.env.example \
+            $$DEPLOYMENT_DIR/mimi-editor.service \
+            $$DEPLOYMENT_DIR/mimi.target \
+            $$DEPLOYMENT_DIR/nginx.conf \
+            $$STAGE/deployment/
+
+        tar -C $$STAGE -czf $$ROOT_DIR/$@ .
+    """,
+    outs = ["mimi-deployment.tar.gz"],
+    visibility = ["//visibility:public"],
+)

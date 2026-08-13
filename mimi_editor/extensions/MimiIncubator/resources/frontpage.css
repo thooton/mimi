@@ -1,0 +1,307 @@
+/*
+ * Mimi's front page.
+ *
+ * Laid out the way MediaWiki main pages have always been: bordered boxes with
+ * tinted heading bars, composed from the page's own wikitext so the shape of
+ * the page can be rearranged on-wiki. Tailwind only scans this repository, so
+ * the classes wikitext needs are written by hand here; the Skill, Course and
+ * Glossary views keep using Tailwind.
+ *
+ * The colours are the English Wikipedia main page's: mint down the left column,
+ * blue down the right, neutral grey for the banner and the footer.
+ */
+
+/* The banner names the wiki, so MediaWiki's own "Main Page" title is noise. */
+.page-Main_Page #firstHeading {
+	display: none;
+}
+
+.mimi-box {
+	margin-bottom: 8px;
+	padding: 0.5em;
+	border: 1px solid #aaa;
+}
+
+.mimi-box .mimi-h2 {
+	margin: 0.5em 0;
+	padding: 0.2em 0.4em;
+	border: 1px solid #a3bfb1;
+	color: inherit;
+	font-family: inherit;
+	font-size: 120%;
+	font-weight: bold;
+}
+
+.mimi-box .mimi-h2:first-child {
+	margin-top: 0;
+}
+
+/* Banner */
+
+#mimi-topbanner {
+	border-color: #ddd;
+	background-color: #f9f9f9;
+	text-align: center;
+}
+
+#mimi-welcome {
+	padding: 0.1em;
+	font-size: 162%;
+}
+
+/*
+ * MediaWiki wraps a heading written as HTML in a block of its own, which would
+ * otherwise push the comma after "Welcome to Mimi" onto the next line.
+ */
+#mimi-welcome .mw-heading,
+#mimi-welcome h1 {
+	display: inline;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-family: inherit;
+	font-size: 100%;
+	font-weight: normal;
+}
+
+#mimi-free {
+	font-size: 95%;
+}
+
+.mimi-stats {
+	margin: 0.4em 0 0;
+	padding: 0;
+	font-size: 85%;
+	list-style: none;
+}
+
+.mimi-stats li {
+	display: inline;
+}
+
+.mimi-stats li + li::before {
+	content: " \00b7 ";
+	color: #72777d;
+}
+
+/* Columns */
+
+@media screen and (min-width: 875px) {
+	#mimi-upper {
+		display: flex;
+		gap: 8px;
+	}
+
+	#mimi-left {
+		flex: 1 1 55%;
+	}
+
+	#mimi-right {
+		flex: 1 1 45%;
+	}
+}
+
+#mimi-left {
+	border-color: #cef2e0;
+	background-color: #f5fffa;
+}
+
+#mimi-left .mimi-h2 {
+	border-color: #a3bfb1;
+	background-color: #cef2e0;
+}
+
+#mimi-right {
+	border-color: #cedff2;
+	background-color: #f5faff;
+}
+
+#mimi-right .mimi-h2 {
+	border-color: #a3b0bf;
+	background-color: #cedff2;
+}
+
+#mimi-bottom {
+	border-color: #ddd;
+	background-color: #f9f9f9;
+}
+
+#mimi-bottom .mimi-h2 {
+	border-color: #ddd;
+	background-color: #eee;
+}
+
+#mimi-bottom ul {
+	margin: 0.3em 0;
+	padding-inline-start: 1.5em;
+	columns: 18em;
+}
+
+/* Course list. Each course is a card of its own, flagged with its pair. */
+
+.mimi-courses {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mimi-courses li {
+	margin-bottom: 0.5em;
+	padding: 0.4em 0.6em;
+	border: 1px solid #a3bfb1;
+	border-radius: 4px;
+	background-color: #fff;
+	line-height: 1.5;
+}
+
+.mimi-courses li:last-child {
+	margin-bottom: 0.2em;
+}
+
+.mimi-course-title {
+	font-weight: bold;
+}
+
+.mimi-course-meta {
+	font-size: 90%;
+	color: #54595d;
+}
+
+/*
+ * A flag is drawn at 30×20 and shown about the height of a capital letter.
+ * The hairline keeps a white field — England's, or the blank that stands in
+ * for a language with no flag — reading as a flag against the white card.
+ */
+.mimi-flag {
+	width: 1.5em;
+	height: 1em;
+	margin: 0 0.15em;
+	border: 1px solid #c8ccd1;
+	border-radius: 2px;
+	vertical-align: text-bottom;
+}
+
+/*
+ * Start a course. The boxes are the gaps in a course's name, so the line reads
+ * as the sentence a course is titled after and wraps like one on a narrow
+ * screen. It is also Special:NewCourse's own form, which is why the rule does
+ * not hang off the front page's ids.
+ */
+
+.mimi-newcourse {
+	margin: 0.3em 0;
+}
+
+.mimi-newcourse-name {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4em;
+	line-height: 1.6;
+}
+
+.mimi-newcourse-language {
+	flex: 1 1 7em;
+	min-width: 5em;
+	max-width: 14em;
+	padding: 0.25em 0.5em;
+	border: 1px solid #a2a9b1;
+	border-radius: 2px;
+	background-color: #fff;
+	font-family: inherit;
+	font-size: inherit;
+}
+
+.mimi-newcourse-language:focus {
+	border-color: #36c;
+	outline: 1px solid #36c;
+}
+
+.mimi-newcourse-go {
+	padding: 0.25em 0.9em;
+	border: 1px solid #36c;
+	border-radius: 2px;
+	background-color: #36c;
+	color: #fff;
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: bold;
+	cursor: pointer;
+}
+
+.mimi-newcourse-go:hover {
+	border-color: #447ff5;
+	background-color: #447ff5;
+}
+
+.mimi-newcourse-go:active {
+	border-color: #2a4b8d;
+	background-color: #2a4b8d;
+}
+
+.mimi-newcourse-error {
+	margin: 0.4em 0 0;
+	color: #bf3c2c;
+}
+
+/* Example sentences. Bulleted, the way "Did you know" is. */
+
+.mimi-sentences {
+	margin: 0.3em 0;
+	padding-inline-start: 1.5em;
+}
+
+.mimi-sentences li {
+	margin-bottom: 0.4em;
+	line-height: 1.5;
+}
+
+.mimi-sentence {
+	font-weight: bold;
+}
+
+.mimi-translation {
+	font-style: italic;
+}
+
+.mimi-source {
+	font-size: 90%;
+	color: #54595d;
+}
+
+/* Recently updated */
+
+.mimi-activity {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mimi-activity li {
+	margin-bottom: 0.5em;
+	line-height: 1.4;
+}
+
+.mimi-activity li:last-child {
+	margin-bottom: 0.2em;
+}
+
+.mimi-activity-icon {
+	width: 1.1em;
+	height: 1.1em;
+	margin-right: 0.35em;
+	color: #72777d;
+	vertical-align: text-bottom;
+}
+
+.mimi-activity-meta {
+	display: block;
+	font-size: 90%;
+	color: #54595d;
+}
+
+.mimi-empty {
+	margin: 0.3em 0;
+	color: #54595d;
+	font-style: italic;
+}

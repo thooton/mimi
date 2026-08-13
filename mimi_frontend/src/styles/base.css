@@ -1,0 +1,372 @@
+/* ==========================================================================
+   base — the sheet everything else stands on: the webfont, the design
+   tokens (including the Blueprint token overrides), the reset Blueprint 6
+   doesn't ship, and the primitives every page shares — the shell, the panel
+   box, and the two shared micro-labels.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- webfont */
+
+/* DINish Next, self-hosted as WOFF2 from the open-source faces in /next. The
+   family supplies 400, 500, 700 and 800; requests for 900 resolve to the
+   heaviest available face. */
+
+@font-face {
+    font-family: "DINish Next";
+    src: url("/fonts/dinish-next-400.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "DINish Next";
+    src: url("/fonts/dinish-next-400-italic.woff2") format("woff2");
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "DINish Next";
+    src: url("/fonts/dinish-next-500.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "DINish Next";
+    src: url("/fonts/dinish-next-700.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "DINish Next";
+    src: url("/fonts/dinish-next-800.woff2") format("woff2");
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* --------------------------------------------------------------- tokens */
+
+:root {
+    /* --- our palette --- */
+
+    /* warm paper shell */
+    --mimi-page: #efeae3;
+    --mimi-page-edge: #e4dfd5;
+    --mimi-surface: #ffffff;
+    --mimi-surface-sunken: #f7f5f0;
+    --mimi-surface-raised: #fbfaf7;
+
+    --mimi-border: #dfd9cd;
+    --mimi-border-strong: #cbc2b1;
+
+    --mimi-ink: #1d1b16;
+    --mimi-ink-soft: #4b463c;
+    --mimi-ink-muted: #7d766a;
+    --mimi-ink-faint: #a49c8d;
+
+    --mimi-accent: #2f6fd0;
+    --mimi-accent-deep: #22539e;
+    --mimi-accent-tint: #eaf1fc;
+    /* the solid colour under a raised accent face — its "thickness" */
+    --mimi-accent-base: #1d4a90;
+
+    /* a fourth line colour, so a fourth language on the profile graph is still
+     told apart from the three above it */
+    --mimi-violet: #7a4fa8;
+    /* its tint and deep, for the badges it colours (the leaderboard's
+     night-owl / perfect-week honours) */
+    --mimi-violet-deep: #5f3c86;
+    --mimi-violet-tint: #f1eaf8;
+
+    /* things gone wrong: a missed answer, a level that fell */
+    --mimi-miss: #b23c2b;
+    --mimi-miss-deep: #8c2f23;
+    --mimi-miss-tint: #fbe9e7;
+
+    --mimi-done: #2f8557;
+    --mimi-done-deep: #266d47;
+    --mimi-done-tint: #e8f3ec;
+    --mimi-done-base: #1d5637;
+
+    --mimi-gold: #b5822a;
+    --mimi-gold-deep: #9a6d20;
+    --mimi-gold-tint: #f8f0dd;
+    --mimi-gold-base: #7d5615;
+
+    /* --- the raised-face recipe, for pressable things only ---
+     A top-lit sheen over the fill, a darkened lip where the face turns
+     under, then the ring and the drop that lift it off the page.
+
+     The sheen is what says "push me", so it is spent only where that is
+     true: the buttons and the lesson stones. Everything else — panel
+     heads, chips, badges, meters, medals — is a flat fill with a border,
+     and reads as information rather than as a control. */
+    --mimi-sheen: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0) 60%
+    );
+
+    /* the shallow drop that floats a flat surface off the paper. Six places
+     had written it out; two of them had drifted to 0.05 alpha, which is not
+     a difference anyone can see, so they are all this now. */
+    --mimi-lift: 0 1px 2px rgba(29, 27, 22, 0.06);
+
+    /* the keyboard focus ring. Only the width and colour are shared — the
+     offset stays at the call site, because how far the ring should stand
+     off depends on the corner radius of the thing it is drawn around
+     (1px on a badge, 3px on a lesson stone). */
+    --mimi-focus-ring: 2px solid var(--mimi-accent);
+
+    /* the streak accent — ember: an honest flame orange, muted one notch so
+     it warms the parchment chrome instead of shouting over it */
+    --mimi-flame: #c2611f;
+    --mimi-flame-tint: #fae8dc;
+    --mimi-flame-border: #eecdae;
+
+    /* shell metrics */
+    --mimi-shell-max: 1160px;
+    --mimi-gutter: 20px;
+    --mimi-topbar-h: 52px;
+    /* the nav tab's pill, inset inside the bar's full height. The practice
+     menu's offset is measured off the gap this leaves — see the popover in
+     AppNavbar.tsx. */
+    --mimi-topnav-h: 36px;
+
+    /* --- Blueprint token overrides --- */
+
+    /* DINish Next carries the Latin UI. Noto Sans JP sits behind it to pick up
+       Japanese lesson copy. blueprint-icons-16 must stay in the stack —
+       Blueprint's CSS-only icons are glyphs from that family. */
+    --bp-typography-family-default:
+        "DINish Next", "Noto Sans JP", -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Helvetica Neue", blueprint-icons-16, sans-serif;
+
+    --bp-typography-color-default-rest: var(--mimi-ink);
+    --bp-typography-color-muted: var(--mimi-ink-muted);
+    --bp-typography-color-primary-rest: var(--mimi-accent);
+
+    --bp-surface-border-color-default: var(--mimi-border);
+    --bp-surface-border-color-strong: var(--mimi-border-strong);
+    --bp-surface-background-color-default-rest: var(--mimi-surface);
+    --bp-surface-border-radius: 6px;
+
+    --bp-intent-primary-rest: var(--mimi-accent);
+    --bp-intent-primary-hover: var(--mimi-accent-deep);
+    --bp-intent-primary-active: var(--mimi-accent-deep);
+    --bp-intent-success-rest: var(--mimi-done);
+    --bp-intent-success-hover: var(--mimi-done-deep);
+    --bp-intent-success-active: var(--mimi-done-deep);
+
+    --bp-emphasis-focus-color: var(--mimi-accent);
+}
+
+/* ----------------------------------------------------------------- reset */
+
+/* Blueprint 6 has no body reset of its own, so without this the browser's
+   default 8px body margin floats the navbar away from the top of the page. */
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scrollbar-gutter: stable;
+    -webkit-text-size-adjust: 100%;
+    /* kills the grey/blue flash painted over a tapped link on touch */
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Blueprint paints a blue outline on *every* :focus and relies on its
+   FocusStyleManager JS to strip it for mouse users — that JS never runs
+   here, so a click left the ring stuck on the clicked control. Keep the
+   ring only where the browser asks for it (keyboard focus), which is also
+   where the :focus-visible rules across these sheets draw their own. */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Chrome is furniture, not prose: clicking a nav link, a stone or a table
+   header shouldn't smear it in selection blue. Real content — lesson copy,
+   names, numbers — stays selectable. (These classes live all over the
+   partials; the rule lives here because it's reset, not component.) */
+.topbar,
+.panel-head,
+.board-table th,
+.unit-chip,
+.node-btn,
+.node-label,
+.site-footer,
+.lang-card,
+.chart-ranges,
+.chart-readout,
+.act-streak,
+.bp6-button,
+.eyebrow {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Form controls don't inherit type from their parent — the UA stylesheet
+   pins them to a system face. Without this, every <button> label (Blueprint
+   never sets font-family itself) renders in the platform default instead of
+   DINish Next. */
+button,
+input,
+select,
+textarea,
+optgroup {
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--mimi-page);
+    color: var(--mimi-ink);
+    font-family: var(--bp-typography-family-default);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* The source photo is slightly wider than it is tall. Its two logo uses are
+   deliberately square, so crop the small excess instead of distorting Mimi. */
+.mimi-logo {
+    display: block;
+    object-fit: cover;
+}
+
+/* Numbers line up in columns wherever they're compared. DINish Next ships both
+   tnum and lnum, so ask for lining figures too — the default set is
+   proportional and would jitter in the board tables. (The classes named here
+   are scattered across the partials; this is reset-like, so it stays.) */
+.tnum,
+.streak-count,
+.board-table td,
+.unit-count,
+.quest-count,
+.metric-value,
+.node-xp,
+.lang-score,
+.counter-value,
+.act-score,
+.chart-readout-item,
+.chart-readout-date,
+.lang-foot,
+.delta {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings:
+        "tnum" 1,
+        "lnum" 1;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.shell {
+    width: 100%;
+    max-width: var(--mimi-shell-max);
+    margin: 0 auto;
+    padding: 0 var(--mimi-gutter);
+    box-sizing: border-box;
+}
+
+.app-main {
+    flex: 1;
+}
+
+/* Present to a screen reader, absent to everyone else — for headings that
+   structure a view whose own labelling is positional rather than written. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ------------------------------------------------------- micro-typography */
+
+/* The small uppercase label used all over the Blueprint mockups to head a
+   panel, name a value, or tag a row.
+
+   Fifteen places wanted this shape and each spelled it out in full. The four
+   invariants live here; a variant that needs a different size, colour or box
+   sets only those and composes in the markup, the way .panel does:
+
+     <span class="eyebrow node-kind">
+
+   The two element selectors join the rule instead of composing, because
+   their markup is repetitive and generated — a board table's <th>, a facts
+   list's <dt>. Tagging every cell by hand would be noise, and a row added
+   later should pick the treatment up on its own.
+
+   Uppercase is this rule's alone. .topnav-link used to be the exception —
+   uppercase at 14px/500, a nav control rather than a label — and the size
+   was exactly the problem: at body size the caps read as shouting rather
+   than as a tag, and the bar became the loudest thing on every page. It is
+   sentence case now, like the wordmark and the buttons beside it. If
+   something wants uppercase, it wants to be small and bold too, which
+   means it wants this rule. */
+.eyebrow,
+.board-table th,
+.profile-facts dt {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--mimi-ink-muted);
+    line-height: 1.4;
+}
+
+/* the panel head's caption: a step up in size, a step down in contrast */
+.panel-title {
+    font-size: 11px;
+    color: var(--mimi-ink-soft);
+    margin: 0;
+}
+
+/* ----------------------------------------------------------------- panels */
+
+/* One box style for every panel on the page, replacing Blueprint's shadowed
+   Card so the surfaces read as a set. */
+.panel {
+    background-color: var(--mimi-surface);
+    border: 1px solid var(--mimi-border);
+    border-radius: 8px;
+    /* a shallow lift so the panels float above the paper rather than being
+     drawn onto it */
+    box-shadow: var(--mimi-lift);
+}
+
+/* The head is a flat tinted strip closed by the body's own border. It is a
+   caption, not a control, so it takes its separation from the hairline
+   underneath rather than from any lighting. */
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--mimi-border);
+    background-color: var(--mimi-surface-sunken);
+    border-radius: 7px 7px 0 0;
+}
+
+.panel-body {
+    padding: 6px 14px 10px;
+}

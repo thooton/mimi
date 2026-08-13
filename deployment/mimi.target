@@ -1,0 +1,9 @@
+[Unit]
+Description=Mimi application stack
+Requires=mimi-auth.service mimi-editor.service
+Wants=mimi-backend.service
+After=network-online.target docker.service
+
+[Install]
+WantedBy=multi-user.target
+

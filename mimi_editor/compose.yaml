@@ -1,0 +1,51 @@
+services:
+  database:
+    image: mariadb:11.8
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: mediawiki
+      MARIADB_USER: mediawiki
+      MARIADB_PASSWORD: "${MIMI_DB_PASSWORD:-mediawiki}"
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+    volumes:
+      - "${MIMI_DATABASE_STORAGE:-database}:/var/lib/mysql"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mediawiki:
+    image: mediawiki:1.46.0
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "${MIMI_PORT:-4771}:80"
+    environment:
+      MEDIAWIKI_ADMIN_PASSWORD: "${MIMI_ADMIN_PASSWORD:-mimi-editor-admin}"
+      MIMI_DB_PASSWORD: "${MIMI_DB_PASSWORD:-mediawiki}"
+      MIMI_SERVER: "${MIMI_SERVER:-http://mimi.localhost:4771}"
+      MIMI_LEARNER_URL: "${MIMI_LEARNER_URL:-http://localhost:4773}"
+      MIMI_AUTH_URL: "${MIMI_AUTH_URL:-http://host.docker.internal:4770}"
+      MIMI_FORCE_HTTPS: "${MIMI_FORCE_HTTPS:-false}"
+      MIMI_SECRET_KEY: "${MIMI_SECRET_KEY:-0000000000000000000000000000000000000000000000000000000000000000}"
+      MIMI_UPGRADE_KEY: "${MIMI_UPGRADE_KEY:-0000000000000000}"
+    # mimi_auth listens on the host's loopback, which inside the container means
+    # the container itself. host-gateway is what makes the host reachable by a
+    # name that resolves on Linux as well as Docker Desktop.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./docker/entrypoint.sh:/usr/local/bin/mimi-entrypoint:ro
+      - ./config/LocalSettings.php:/var/www/html/LocalSettings.php:ro
+      - ./assets/favicon.png:/var/www/html/favicon.png:ro
+      - ./assets/mimi.jpg:/var/www/html/mimi.jpg:ro
+      - ./extensions/MimiIncubator:/var/www/html/extensions/MimiIncubator:ro
+      - "${MIMI_UPLOADS_STORAGE:-uploads}:/var/www/html/images"
+    entrypoint: ["mimi-entrypoint"]
+
+volumes:
+  database:
+  uploads:

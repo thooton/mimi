@@ -1,0 +1,58 @@
+[
+	{
+		"terms": [ "greeting", "welcome", "introduction", "conversation", "question", "phrase", "basic" ],
+		"icon": "cdxIconSpeechBubbles"
+	},
+	{
+		"terms": [ "family", "people", "person", "friend" ],
+		"icon": "cdxIconUserGroup"
+	},
+	{
+		"terms": [ "home", "house", "room" ],
+		"icon": "cdxIconHome"
+	},
+	{
+		"terms": [ "travel", "transport", "vehicle", "train", "airport", "direction" ],
+		"icon": "cdxIconMapTrail"
+	},
+	{
+		"terms": [ "place", "city", "country", "geography", "world" ],
+		"icon": "cdxIconGlobe"
+	},
+	{
+		"terms": [ "number", "count", "math" ],
+		"icon": "cdxIconMathematics"
+	},
+	{
+		"terms": [ "time", "date", "day", "calendar" ],
+		"icon": "cdxIconClock"
+	},
+	{
+		"terms": [ "food", "meal", "restaurant", "fruit", "vegetable", "breakfast", "lunch", "dinner", "drink", "coffee", "tea" ],
+		"icon": "cdxIconHeart"
+	},
+	{
+		"terms": [ "school", "education", "study", "book" ],
+		"icon": "cdxIconBook"
+	},
+	{
+		"terms": [ "weather", "season" ],
+		"icon": "cdxIconBright"
+	},
+	{
+		"terms": [ "music", "song" ],
+		"icon": "cdxIconMusicalScore"
+	},
+	{
+		"terms": [ "color", "colour", "art" ],
+		"icon": "cdxIconPalette"
+	},
+	{
+		"terms": [ "game", "gaming", "play" ],
+		"icon": "cdxIconDie"
+	},
+	{
+		"terms": [ "verb", "grammar", "adjective", "adverb", "pronoun", "plural", "conjunction", "language" ],
+		"icon": "cdxIconLanguage"
+	}
+]

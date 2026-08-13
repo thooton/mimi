@@ -1,0 +1,77 @@
+---
+import { Button } from '@blueprintjs/core';
+import AppLayout from '../../layouts/AppLayout.astro';
+import ClubBoard from '../../components/ClubBoard';
+import Flag from '../../components/Flag';
+import { CLUBS, VIEWER_CLUB } from '../../data/community';
+import { languageByCode } from '../../data/languages';
+import { formatXp } from '../../data/social';
+
+/* The club directory, a subsection of the community tab (so the navbar stays
+   lit on Community). The directory is where you find a club; the rail beside
+   it is the same ClubBoard the leaderboard tab shows — how they're doing on
+   it. The viewer is taken to be in VIEWER_CLUB, the club the weekly board
+   shows "You" wearing. */
+---
+
+<AppLayout title="Clubs" active="community">
+  <div class="shell community-page">
+    <header class="hub-head">
+      <span class="eyebrow">Community / Clubs</span>
+      <h1 class="hub-title">Clubs</h1>
+      <p class="hub-lede">
+        A club is a small crew with a tag in front of your name and a weekly
+        total to defend. Everyone in it pulls your average up — or lets it
+        slide.
+      </p>
+    </header>
+
+    <div class="board-grid board-grid--clubs">
+      <div class="club-grid">
+        {
+          CLUBS.map((club) => {
+            const focus = club.focus ? languageByCode(club.focus) : undefined;
+            const mine = club.tag === VIEWER_CLUB;
+            return (
+              <article class={mine ? 'panel club-card is-mine' : 'panel club-card'}>
+                <div class="club-card-top">
+                  <span class="tag-chip tag-chip--big">{club.tag}</span>
+                  <h2 class="club-card-name">{club.name}</h2>
+                  <Button
+                    className="club-card-join"
+                    small
+                    intent={mine ? 'none' : 'primary'}
+                    disabled={mine}
+                    text={mine ? 'Joined' : 'Join'}
+                  />
+                </div>
+                <p class="club-card-focus">
+                  {focus ? (
+                    <>
+                      <Flag region={focus.region} size={14} /> A {focus.name} club
+                    </>
+                  ) : (
+                    'Open to every language'
+                  )}
+                </p>
+                <p class="club-card-about">{club.about}</p>
+                <div class="club-card-stats">
+                  <span>
+                    <strong>{formatXp(club.members)}</strong> members
+                  </span>
+                  <span>
+                    <strong>{formatXp(club.avgXp)}</strong> avg XP this week
+                  </span>
+                </div>
+              </article>
+            );
+          })
+        }
+      </div>
+
+      <aside class="board-rail">
+        <ClubBoard client:load />
+      </aside>
+    </div>
+  </div>
+</AppLayout>

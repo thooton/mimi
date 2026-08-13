@@ -1,0 +1,46 @@
+genrule(
+    name = "build",
+    srcs = glob([
+        "cmd/**/*.go",
+        "internal/**/*",
+    ]) + [
+        "go.mod",
+        "go.sum",
+    ],
+    local = True,
+    cmd = """
+        ROOT_DIR=$$(pwd)
+        cd $$(dirname $(location go.mod))
+        go build -o ./mimi-auth ./cmd/mimi-auth
+        cp ./mimi-auth $$ROOT_DIR/$@
+    """,
+    outs = ["mimi-auth"],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "dev",
+    srcs = [":build", "go.mod"],
+    local = True,
+    cmd = """
+        EXEC_DIR=$$(pwd)/$$(dirname $(location go.mod))
+
+        cat > "$@" << EOF
+#!/bin/sh
+
+# Go to execution directory
+cd $${EXEC_DIR}
+
+# The wiki runs in a container, so the shared development command must expose
+# authentication beyond the host's loopback interface. Keep an explicit caller
+# override available for developers whose local port or bind address differs.
+MIMI_AUTH_ADDR="\\$${MIMI_AUTH_ADDR:-0.0.0.0:4770}" exec ./mimi-auth "\\$$@"
+
+EOF
+        # Make the created script executable
+        chmod +x "$@"
+    """,
+    outs = ["dev.sh"],
+    executable = True,
+    tags = ["manual"],
+)

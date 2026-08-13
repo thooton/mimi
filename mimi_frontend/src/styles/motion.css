@@ -1,0 +1,132 @@
+/* ==========================================================================
+   motion — the site's motion, gathered in one place: keyframes beside the
+   classes that run them. House rules — transform and opacity only (both are
+   cheap for the compositor and neither pushes layout), exits shorter than
+   entrances, and nothing over a quarter second.
+
+   The classes below are only the animation half of their rules; their
+   layout lives with their feature (.lesson-shell in lesson-player.css, and
+   so on).
+   Two JS timers are coupled to the durations here and must stay in step:
+   LearnApp.tsx's QUIT_MS with #2 and LessonPlayer.tsx's EXIT_MS with #3
+   (FlashcardApp.tsx reuses #3). */
+
+/* 1. The lesson card pops out of its stone — a 160ms fade with a small
+   settle into place. Blueprint sets transform-origin inline from the
+   placement, so the card grows out of the arrow side; Popper's own
+   positioning lives on the transition container (its 100ms fade
+   composes with this), so animating transform here is safe. */
+@keyframes node-popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(4px);
+  }
+}
+
+.node-popover {
+  animation: node-popover-in 160ms cubic-bezier(0.3, 0.9, 0.4, 1.1);
+}
+
+/* 2. The lesson player rises into place as it mounts, so the map → lesson
+   swap reads as one motion (press, spin, settle) instead of a hard cut.
+   The summary reuses the shell, so the end of a lesson settles the same
+   way.
+
+   Leaving (the X, or the summary's Continue) is a crossfade, not a
+   fade-out: LearnApp mounts the map immediately and holds the player's
+   unmount for the fade's run, and is-quitting lifts the shell out of
+   the flow as an opaque overlay — so it fades to transparency over the
+   page it's returning to rather than to bare paper. Opaque because the
+   fade would otherwise let the map bleed through at mid-strength; the
+   overlay paints the page colour and its alpha carries the blend.
+   Pointer events drop for the ride out, and the z-index keeps it under
+   the pinned chrome (the dock sits at 19). */
+@keyframes lesson-shell-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.lesson-shell {
+  animation: lesson-shell-in 240ms ease-out;
+}
+
+@keyframes lesson-shell-out {
+  to {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.lesson-shell.is-quitting {
+  position: fixed;
+  top: var(--mimi-topbar-h);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  background-color: var(--mimi-page);
+  animation: lesson-shell-out 180ms ease-in both;
+  pointer-events: none;
+}
+
+/* 3. Within a lesson, the working area turns over like a carousel: the
+   finished task shifts out to the left, its replacement shifts in from
+   the right. Only .lesson-body moves — the progress strip and the action
+   button stay put so the chrome doesn't bounce. The exit runs first
+   (LessonPlayer holds the swap for EXIT_MS, kept in step with the 140ms
+   here), then the fresh task's own mount plays the entrance. */
+@keyframes lesson-task-out {
+  to {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@keyframes lesson-task-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+.lesson-body.is-out {
+  animation: lesson-task-out 140ms ease-in both;
+}
+
+.lesson-body.is-in {
+  animation: lesson-task-in 200ms ease-out both;
+}
+
+/* 4. A correct answer pops the verdict strip — quick, with a small
+   overshoot before it lands. A wrong answer wants a look, not applause,
+   so those stay still. The progress fill glides to match (see
+   .lesson-progress-fill in lesson-player.css). */
+@keyframes lesson-correct-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.lesson-feedback.is-correct {
+  animation: lesson-correct-pop 240ms ease-out both;
+}
+
+/* 5. The flashcard's answer rises into place on the reveal. The card itself
+   doesn't move — the stage is tall enough for both states — so this is the
+   whole motion. (The class running it is .flash-reveal in practice.css.) */
+@keyframes flash-answer-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

@@ -1,0 +1,73 @@
+/* Old-Duolingo-inspired skill tree: rows of tactile skill medallions. */
+.skill-tree { max-width: 620px; margin: 0 auto; padding: 0 12px 70px; }
+.castle-group { position: relative; }
+.skill-row { position: relative; display: flex; justify-content: center; align-items: flex-start; gap: clamp(42px, 10vw, 92px); min-height: 150px; }
+.skill-node { --skill: #9c5bd6; --skill-dark: #7740ad; width: 116px; display: flex; flex-direction: column; align-items: center; scroll-margin-block: 220px; }
+.skill-level-0 { --skill: #9c5bd6; --skill-dark: #7740ad; }
+.skill-level-1 { --skill: #25a8df; --skill-dark: #1680b2; }
+.skill-level-2 { --skill: #67c800; --skill-dark: #4b9900; }
+.skill-level-3 { --skill: #e64b4b; --skill-dark: #b83232; }
+.skill-level-4 { --skill: #f29432; --skill-dark: #c56b16; }
+.skill-level-5 { --skill: #f6c515; --skill-dark: #cc9900; }
+.skill-button { position: relative; width: 92px; height: 92px; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.skill-button:focus-visible { outline: var(--mimi-focus-ring); outline-offset: 4px; }
+.skill-ring { position: absolute; inset: 0; transform: rotate(-90deg); overflow: visible; }
+.skill-ring-track, .skill-ring-fill { fill: none; stroke-width: 7; }
+.skill-ring-track { stroke: #dfdfdf; }
+.skill-ring-fill { stroke: #ffd719; stroke-linecap: round; }
+.skill-face { position: absolute; inset: 11px; display: grid; place-items: center; border-radius: 50%; color: white; background: var(--skill); background-image: linear-gradient(155deg, rgba(255,255,255,.26), transparent 42%); box-shadow: 0 4px 0 var(--skill-dark), 0 6px 11px rgba(35,31,25,.18); }
+.skill-button:not(:disabled):hover .skill-face { filter: brightness(1.05); transform: translateY(-1px); }
+.skill-button:not(:disabled):active .skill-face { transform: translateY(3px); box-shadow: inset 0 2px 4px rgba(0,0,0,.2), 0 1px 0 var(--skill-dark); }
+.skill-locked { --skill: #c9c9c9; --skill-dark: #aaa; }
+.skill-locked .skill-button { cursor: not-allowed; }
+.skill-locked .skill-ring-track { stroke: #dedede; }
+.skill-locked .skill-face { color: #898989; background: #c9c9c9; box-shadow: 0 3px 0 #aaa; }
+.level-badge { position: absolute; right: -2px; bottom: 1px; width: 32px; height: 30px; }
+.level-crown { display: block; width: 100%; height: 100%; overflow: visible; }
+.level-crown path { fill: #ffc800; stroke: #fff; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.level-crown text { fill: #cf8500; font-size: 10px; font-weight: 900; font-family: inherit; }
+.skill-label { max-width: 132px; margin-top: 9px; text-align: center; font-weight: 700; line-height: 1.2; color: var(--mimi-ink-soft); }
+.skill-locked .skill-label { color: var(--mimi-ink-faint); }
+.skill-card { width: 265px; padding: 15px; }
+.skill-card-top { display: flex; justify-content: space-between; color: var(--skill); }
+.skill-card-count { font-size: 12px; font-weight: 700; color: var(--mimi-ink-muted); }
+.skill-card h3 { margin: 8px 0 5px; font-size: 17px; color: var(--mimi-ink); }
+.skill-card p { margin: 0 0 13px; color: var(--mimi-ink-muted); line-height: 1.45; font-size: 13px; }
+.skill-card .meter { margin-bottom: 14px; }
+/* the two stacked actions: Tips above Start, one card-width apart */
+.skill-card > .bp6-button + .bp6-button { margin-top: 8px; }
+
+/* Blueprint's original SVG speech-bubble pointer. */
+.node-popover .bp6-popover-arrow-border { fill: var(--mimi-border); fill-opacity: 1; }
+.node-popover .bp6-popover-arrow::before { box-shadow: 2px 2px 8px rgba(29, 27, 22, 0.12); }
+
+/* ---- the tips dialog (the skill card's "Tips" button) ---- */
+.tips-dialog { width: min(430px, calc(100vw - 48px)); }
+.tips-body { display: flex; flex-direction: column; gap: 12px; max-height: 55vh; overflow-y: auto; padding: 18px 20px 6px; }
+.tips-text { margin: 0; font-size: 15px; line-height: 1.5; color: var(--mimi-ink); }
+.tips-empty { color: var(--mimi-ink-muted); }
+.tips-spinner { align-self: center; margin: 16px 0; }
+.tips-foot { padding: 12px 20px 18px; }
+.castle-node { position: relative; min-height: 170px; display: flex; flex-direction: column; align-items: center; gap: 8px; scroll-margin-block: 220px; }
+/* the castle is a drawn silhouette now, not a box with an icon: the button
+   is just the hit area, the glyph wears the state colours the box used to */
+.castle-button { width: 64px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.castle-button:disabled { cursor: default; }
+.castle-button:focus-visible { outline: var(--mimi-focus-ring); outline-offset: 3px; border-radius: 8px; }
+.castle-glyph { display: block; width: 100%; height: auto; filter: drop-shadow(0 3px 4px rgba(35,31,25,.18)); }
+.castle-glyph-edge { fill: #b87d0d; }
+.castle-glyph-body { fill: #f0b51b; }
+.castle-glyph-door { fill: #b87d0d; }
+.castle-glyph-mark { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.castle-locked .castle-glyph-edge { fill: #aaa7a0; }
+.castle-locked .castle-glyph-body { fill: #cfcdc7; }
+.castle-locked .castle-glyph-mark { stroke: #8d8b86; }
+.castle-passed .castle-glyph-edge { fill: #4b9900; }
+.castle-passed .castle-glyph-body { fill: #67c800; }
+.castle-available .castle-button { animation: castle-pulse 2.2s ease-in-out infinite; }
+.castle-available .castle-button:hover .castle-glyph { filter: brightness(1.05) drop-shadow(0 3px 4px rgba(35,31,25,.18)); }
+.castle-available .castle-button:active .castle-glyph { transform: translateY(2px); }
+.castle-label { font-size: 12px; font-weight: 800; color: var(--mimi-ink-muted); text-transform: uppercase; }
+@keyframes castle-pulse { 50% { transform: translateY(-2px); filter: brightness(1.08); } }
+@media (prefers-reduced-motion: reduce) { .castle-available .castle-button { animation: none; } }
+@media (max-width: 520px) { .skill-row { gap: 22px; } .skill-node { width: 104px; } .skill-button { transform: scale(.92); } }

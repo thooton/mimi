@@ -1,0 +1,80 @@
+/* ========================================================================== 
+   terms and privacy — deliberately quiet reading pages: one comfortable
+   column, the shared paper-and-panel treatment, and ordinary selectable text.
+   ========================================================================== */
+
+.legal-page {
+  max-width: 800px;
+  padding-top: 40px;
+  padding-bottom: 64px;
+}
+
+.legal-card {
+  padding: 34px 38px 40px;
+}
+
+.legal-card h1 {
+  margin: 0 0 4px;
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.legal-updated {
+  margin: 0 0 30px;
+  color: var(--mimi-ink-muted);
+  font-size: 13px;
+}
+
+.legal-card section + section {
+  margin-top: 28px;
+}
+
+.legal-card h2 {
+  margin: 0 0 8px;
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.legal-card p,
+.legal-card li {
+  color: var(--mimi-ink-soft);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.legal-card p {
+  margin: 0;
+}
+
+.legal-card p + p {
+  margin-top: 10px;
+}
+
+.legal-card ul {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.legal-card li + li {
+  margin-top: 6px;
+}
+
+.legal-card a {
+  color: var(--mimi-accent-deep);
+}
+
+@media (max-width: 640px) {
+  .legal-page {
+    padding-top: 20px;
+    padding-bottom: 36px;
+  }
+
+  .legal-card {
+    padding: 26px 22px 30px;
+  }
+
+  .legal-card h1 {
+    font-size: 27px;
+  }
+}

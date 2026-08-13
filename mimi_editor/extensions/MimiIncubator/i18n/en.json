@@ -1,0 +1,18 @@
+{
+  "@metadata": { "authors": ["Mimi contributors"] },
+  "mimiincubator-desc": "Structured course-tree and skill editing for Mimi",
+  "mimi-invalid-schema": "The structured page is invalid: $1",
+  "newcourse": "Start a course",
+  "newcourse-summary": "Name the pair of languages a course bridges. If somebody has started it, you will be taken to it; if nobody has, you will be taken to a blank course to write.",
+  "mimiincubator-auth-email-required": "An email address is required: your Mimi account is the same one you use on the rest of Mimi, and it is registered by address as well as by username.",
+  "mimiincubator-auth-rejected": "Mimi could not create the account: $1",
+  "mimiincubator-auth-unavailable": "Mimi's account service cannot be reached right now, so the account was not created. Try again in a moment.",
+  "mimiincubator-auth-unavailable-change": "Mimi's account service cannot be reached right now, so your password was not changed. Try again in a moment.",
+  "mimiincubator-auth-currentpassword-help": "The password you use for Mimi now. Changing it here changes it everywhere you sign in to Mimi.",
+  "mimiincubator-auth-newpassword-help": "At least 8 characters.",
+  "mimiincubator-auth-retype-help": "Type the new password again, to catch a typo in it.",
+  "mimiincubator-auth-credential-provider": "Mimi account",
+  "mimiincubator-auth-credential-account": "$1",
+  "mimiincubator-auth-change-wrongpassword": "That is not your current Mimi password. Your password has not been changed.",
+  "mimiincubator-auth-change-elsewhere": "This account's password is held by Mimi, not by the wiki, so it cannot be changed here. Use [[Special:ChangeCredentials/MimiPassword|Change your Mimi password]] instead — the new password will work on every Mimi site."
+}

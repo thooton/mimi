@@ -1,0 +1,117 @@
+{
+  "name": "MimiIncubator",
+  "version": "0.1.0",
+  "author": ["Mimi contributors"],
+  "descriptionmsg": "mimiincubator-desc",
+  "license-name": "GPL-2.0-or-later",
+  "type": "other",
+  "requires": { "MediaWiki": ">= 1.46" },
+  "config": {
+    "MimiLearnerUrl": {
+      "value": "http://localhost:4773",
+      "description": "URL of the learner-facing Mimi site"
+    },
+    "MimiAuthUrl": {
+      "value": "http://host.docker.internal:4770",
+      "description": "Base URL of mimi_auth, the credential service every Mimi site verifies against. The default reaches a mimi_auth on the Docker host; compose.yaml maps host.docker.internal to it."
+    }
+  },
+  "AutoloadNamespaces": { "MediaWiki\\Extension\\MimiIncubator\\": "includes/" },
+  "ContentHandlers": {
+    "mimi-skill": "MediaWiki\\Extension\\MimiIncubator\\Content\\SkillContentHandler",
+    "mimi-course-layout": "MediaWiki\\Extension\\MimiIncubator\\Content\\CourseLayoutContentHandler",
+    "mimi-glossary": "MediaWiki\\Extension\\MimiIncubator\\Content\\GlossaryContentHandler",
+    "mimi-tips": "MediaWiki\\Extension\\MimiIncubator\\Content\\TipsContentHandler"
+  },
+  "namespaces": [
+    { "id": 3000, "constant": "NS_MIMI_SKILL", "name": "Skill", "content": true, "defaultcontentmodel": "mimi-skill" },
+    { "id": 3001, "constant": "NS_MIMI_SKILL_TALK", "name": "Skill_talk", "subpages": true },
+    { "id": 3002, "constant": "NS_MIMI_COURSE", "name": "Course", "content": true, "defaultcontentmodel": "mimi-course-layout" },
+    { "id": 3003, "constant": "NS_MIMI_COURSE_TALK", "name": "Course_talk", "subpages": true },
+    { "id": 3004, "constant": "NS_MIMI_GLOSSARY", "name": "Glossary", "content": true, "defaultcontentmodel": "mimi-glossary" },
+    { "id": 3005, "constant": "NS_MIMI_GLOSSARY_TALK", "name": "Glossary_talk", "subpages": true },
+    { "id": 3006, "constant": "NS_MIMI_TIPS", "name": "Tips", "content": true, "defaultcontentmodel": "mimi-tips" },
+    { "id": 3007, "constant": "NS_MIMI_TIPS_TALK", "name": "Tips_talk", "subpages": true }
+  ],
+  "SpecialPages": {
+    "NewCourse": { "class": "MediaWiki\\Extension\\MimiIncubator\\Special\\NewCourse" }
+  },
+  "AuthManagerAutoConfig": {
+    "primaryauth": {
+      "MediaWiki\\Extension\\MimiIncubator\\Auth\\MimiAuthPrimaryAuthenticationProvider": {
+        "class": "MediaWiki\\Extension\\MimiIncubator\\Auth\\MimiAuthPrimaryAuthenticationProvider",
+        "services": ["HttpRequestFactory", "DBLoadBalancerFactory"],
+        "args": [{ "authoritative": false }],
+        "sort": 50
+      }
+    }
+  },
+  "HookHandlers": {
+    "frontpage": { "class": "MediaWiki\\Extension\\MimiIncubator\\FrontPage" },
+    "changepassword": {
+      "class": "MediaWiki\\Extension\\MimiIncubator\\Auth\\ChangePasswordRedirect",
+      "services": ["AuthManager"]
+    }
+  },
+  "Hooks": {
+    "ParserFirstCallInit": "frontpage",
+    "SpecialPageBeforeExecute": "changepassword"
+  },
+  "MessagesDirs": { "MimiIncubator": ["i18n"] },
+  "ResourceFileModulePaths": {
+    "localBasePath": "resources",
+    "remoteExtPath": "MimiIncubator/resources"
+  },
+  "ResourceModules": {
+	"ext.mimiIncubator.editor": {
+	  "class": "MediaWiki\\ResourceLoader\\CodexModule",
+	  "packageFiles": [
+		"editor.js",
+		"skill-icons.json",
+		{
+		  "name": "icons.json",
+		  "callback": "MediaWiki\\ResourceLoader\\CodexModule::getIcons",
+		  "callbackParam": [
+			"cdxIconArrowDown",
+			"cdxIconArrowNext",
+			"cdxIconArrowUp",
+			"cdxIconBold",
+			"cdxIconBook",
+			"cdxIconBright",
+			"cdxIconClock",
+			"cdxIconClose",
+			"cdxIconDie",
+			"cdxIconFlag",
+			"cdxIconGlobe",
+			"cdxIconHeart",
+			"cdxIconHome",
+			"cdxIconItalic",
+			"cdxIconLanguage",
+			"cdxIconLargerText",
+			"cdxIconLightbulb",
+			"cdxIconLink",
+			"cdxIconListBullet",
+			"cdxIconListNumbered",
+			"cdxIconMapTrail",
+			"cdxIconMathematics",
+			"cdxIconMusicalScore",
+			"cdxIconPalette",
+			"cdxIconPuzzle",
+			"cdxIconSpeechBubbles",
+			"cdxIconTrash",
+			"cdxIconUnderline",
+			"cdxIconUserGroup"
+		  ]
+		}
+	  ],
+	  "styles": ["tailwind.css"],
+	  "dependencies": ["vue", "mediawiki.api", "mediawiki.util"],
+	  "codexComponents": ["CdxButton", "CdxIcon", "CdxMessage", "CdxTextArea", "CdxTextInput"]
+	},
+	"ext.mimiIncubator.styles": { "styles": ["tailwind.css"] },
+	"ext.mimiIncubator.frontpage": { "styles": ["frontpage.css"] },
+	"ext.mimiIncubator.view": { "scripts": ["view.js"] },
+	"ext.mimiIncubator.diff": { "styles": ["tailwind.css"] }
+  },
+  "manifest_version": 2
+}

@@ -1,0 +1,586 @@
+/* ==========================================================================
+   chrome — the furniture around every page: the topbar with its brand, nav
+   and counters, the footer, and the language picker in the navbar and
+   first-run chooser.
+
+   IMPORTED AFTER blueprint.css: .nav-menu squares its popover's
+   content off with the same specificity Blueprint.css's generic popover
+   rule uses, so it has to win on source order. (Before the split both
+   landed in one file in the wrong order and the menu kept rounded content
+   corners despite the comment below.)
+   ========================================================================== */
+
+/* ------------------------------------------------------------------ topbar */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--mimi-surface);
+  border-bottom: 1px solid var(--mimi-border);
+  /* lifts the bar over the page it scrolls above */
+  box-shadow: 0 1px 3px rgba(29, 27, 22, 0.07);
+}
+
+.topbar-inner {
+  height: var(--mimi-topbar-h);
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+/* --- brand --- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-right: 18px;
+  margin-right: 6px;
+  color: var(--mimi-ink);
+  text-decoration: none;
+  border-right: 1px solid var(--mimi-border);
+}
+
+.brand-name {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.brand:hover .brand-name {
+  color: var(--mimi-accent);
+}
+
+/* --- primary nav: text only, no icons --- */
+
+.topnav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Sentence case, like every other piece of type at this size: the wordmark,
+   the buttons, the account name, the footer links. Uppercase belongs to
+   .eyebrow's 10px/700 micro-labels — spending it on a 14px/500 nav made the
+   bar the loudest thing on the page and cost ~15% more width per label,
+   which is what crowded the tabs into the auth buttons.
+
+   The tab is a pill inset inside the bar rather than a full-height column,
+   so hovering lights something the size of the label instead of painting a
+   52px rectangle. Full-height columns with a filled hover read as a
+   segmented button bar; these are links. */
+.topnav-link {
+  display: flex;
+  align-items: center;
+  height: var(--mimi-topnav-h);
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  /* Practice is a button while its siblings are anchors. Form controls use
+     their own `normal` line height unless it is reset explicitly, which put
+     Practice's glyphs one pixel below the links despite identical flex
+     geometry. Keep every tab on the bar's line box. */
+  line-height: inherit;
+  color: var(--mimi-ink-soft);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* While its menu is open, the practice tab stays lit exactly as it does on
+   hover — it and the panel hanging off the bar read as one piece. Both sit
+   above .is-active in the cascade at equal specificity, so the tab you're
+   actually on keeps its tint when you hover or open it. */
+.topnav-link:hover,
+.topnav-link.is-open {
+  color: var(--mimi-accent);
+  background-color: var(--mimi-surface-sunken);
+}
+
+/* The page you're on. The underline this replaces was tied to the
+   full-height tab — it drew on the bar's bottom edge, which a pill has no
+   claim to. The tint is the one the mobile panel's active row already
+   wears, so the two navs now say "here" the same way. */
+.topnav-link.is-active {
+  color: var(--mimi-accent);
+  background-color: var(--mimi-accent-tint);
+}
+
+.topnav-external {
+  margin-left: 5px;
+  color: currentColor;
+}
+
+/* Practice's tab is a button — it opens a menu of subsections rather than
+   navigating, so it wears the link look wholesale and drops the button
+   chrome */
+button.topnav-link {
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  /* anchors the strip below */
+  position: relative;
+}
+
+/* The menu hangs off the bar's bottom edge rather than off the pill, which
+   leaves 7px of bar between the two (the popover's own offset). That gap
+   belonged to neither, so with no hover-close delay the menu shut the
+   moment the pointer set out for it, and Flashcards couldn't be reached.
+
+   This invisible strip spans it. It's part of the tab's box, so crossing
+   the gap still counts as hovering the tab and the menu stays open — the
+   pointer passes from tab to menu without ever being on neither. It's the
+   width of the pill and sits inside the bar, so the only thing it covers
+   is the tab's own column. */
+button.topnav-link::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 7px;
+}
+
+/* A nav menu is an extension of its tab, not a floating card: as wide as
+   the button, flush under it (the width and the 1px overlap are the
+   popover's own matchTargetWidth and offset), and square on every corner. */
+.nav-menu.bp6-popover {
+  border-radius: 0;
+  box-shadow:
+    0 0 0 1px var(--mimi-border),
+    0 6px 12px 2px rgba(29, 27, 22, 0.1);
+}
+
+.nav-menu .bp6-popover-content,
+.nav-menu .bp6-menu,
+.nav-menu .bp6-menu-item {
+  border-radius: 0;
+}
+
+/* Blueprint holds menus at 180px minimum — narrower than this and the menu
+   would outgrow the tab it must stay flush with */
+.nav-menu .bp6-menu {
+  min-width: 0;
+}
+
+/* …but the practice tab is narrower than its items' names ("Flashcards" is
+   ten characters), so its popover gets a floor that the matchTargetWidth
+   inline width can't go below. */
+.nav-menu--wide.bp6-popover {
+  min-width: 168px;
+}
+
+/* --- the hamburger: the nav's whole presence under the breakpoint --- */
+
+/* Hidden while the horizontal nav has room; the 720px block at the bottom
+   of this section swaps the two over. It borrows the account button's
+   shape, just square — one more quiet icon on the right edge. */
+.menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-left: 4px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--mimi-ink-soft);
+}
+
+.menu-btn:hover,
+.menu-btn[aria-expanded='true'] {
+  background-color: var(--mimi-surface-sunken);
+  color: var(--mimi-accent);
+}
+
+/* --- right side --- */
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* streak — the lone counter up top: flame glyph with the count right
+   beside it, in the manner of Duolingo, in ember */
+.streak {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  margin-right: 6px;
+  cursor: default;
+  color: var(--mimi-flame);
+}
+
+.streak-count {
+  font-size: 17px;
+  /* The loaded UI faces jump 700 → 900; ask for the real weight rather than
+     an 800 the trial does not load. */
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* --- account --- */
+
+.account-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--mimi-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.account-btn:hover {
+  background-color: var(--mimi-surface-sunken);
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: var(--mimi-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: inset 0 0 0 1px rgba(12, 30, 60, 0.22);
+}
+
+/* the picture where they have linked one, cropped square into the circle */
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.caret {
+  color: var(--mimi-ink-faint);
+}
+
+/* Signed out, the right side carries the same pair of Blueprint buttons the
+   learn page's signed-out panel uses — the bar owns only their spacing. */
+.topbar-auth {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 6px;
+}
+
+/* below this the nav labels crowd the streak out */
+@media (max-width: 860px) {
+  .streak {
+    display: none;
+  }
+}
+
+/* …and below this the labels crowd each other: the inline nav folds into
+   the hamburger's panel, and the sign-in/create-account pair goes with it
+   (the flag and avatar stay — they're compact, and the flag answers "what
+   am I learning", which the panel can't). The panel hangs off the bottom
+   of the sticky bar, over the page rather than pushing it down (the bar's
+   sticky positioning is what `top: 100%` anchors to). The display:none is
+   a base rule and the query overrides it, so resizing wide can't strand
+   the panel open and unstyled. */
+.mobilenav {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .topnav,
+  .topbar-auth {
+    display: none;
+  }
+
+  .menu-btn {
+    display: flex;
+  }
+
+  .mobilenav {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    /* 8px + the link's own 12px puts the labels on the shell gutter, in a
+       column with the brand above them */
+    padding: 6px 8px 10px;
+    background-color: var(--mimi-surface);
+    border-bottom: 1px solid var(--mimi-border);
+    box-shadow: 0 8px 16px rgba(29, 27, 22, 0.12);
+  }
+
+  /* the same labels as the bar — same case, same weight — scaled up to
+     fingertip size */
+  .mobilenav-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--mimi-ink-soft);
+    text-decoration: none;
+    border-radius: 6px;
+    box-shadow: inset 2px 0 0 0 transparent;
+  }
+
+  .mobilenav-link:hover {
+    color: var(--mimi-accent);
+    background-color: var(--mimi-surface-sunken);
+  }
+
+  /* the active underline becomes a leading bar in a vertical list */
+  .mobilenav-link.is-active {
+    color: var(--mimi-accent);
+    background-color: var(--mimi-accent-tint);
+    box-shadow: inset 2px 0 0 0 var(--mimi-accent);
+  }
+
+  .mobilenav-heading {
+    display: block;
+    margin-top: 6px;
+    padding: 8px 12px 2px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--mimi-ink-faint);
+  }
+
+  .mobilenav-sublink {
+    padding-left: 24px;
+  }
+
+  /* the auth pair at the panel's foot: full width, stacked, set off from
+     the navigation by a hairline */
+  .mobilenav-auth {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--mimi-border);
+  }
+
+  /* a Blueprint button only left-aligns its label once it's stretched */
+  .mobilenav-auth .bp6-button {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand {
+    padding-right: 12px;
+  }
+}
+
+/* small phones: the account button shrinks to its avatar — the menu it
+   opens still names who's signed in, and the space buys room for the
+   hamburger beside it */
+@media (max-width: 520px) {
+  .account-btn {
+    padding: 0 6px;
+  }
+
+  .account-name,
+  .account-btn .caret {
+    display: none;
+  }
+}
+
+/* ----------------------------------------------------------------- footer */
+
+.site-footer {
+  border-top: 1px solid var(--mimi-border);
+  background-color: var(--mimi-surface);
+}
+
+.site-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px 0;
+  font-size: 12px;
+  color: var(--mimi-ink-muted);
+}
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.footer-link {
+  color: var(--mimi-ink-muted);
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  color: var(--mimi-accent);
+}
+
+.footer-link:focus-visible {
+  color: var(--mimi-accent);
+  outline: var(--mimi-focus-ring);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ================================================================ language */
+
+/* What the user is learning, everywhere it's asked or answered: the navbar
+   dropdown, the first-run chooser, and the screen a language without a
+   course lands on.
+
+   Flags are circles where they sit beside language names. The navbar picker
+   is the exception: there the flag is the whole label, so its familiar
+   rectangular silhouette makes the control easier to recognize. */
+
+.flag {
+  border-radius: 50%;
+  object-fit: cover;
+  /* the ring does the work for the flags that end in white — Japan and
+     Poland would otherwise dissolve into the menu behind them */
+  box-shadow: inset 0 0 0 1px rgba(12, 30, 60, 0.22);
+  flex: none;
+  user-select: none;
+}
+
+/* --- the navbar dropdown --- */
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 7px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.lang-btn:hover {
+  background-color: var(--mimi-surface-sunken);
+}
+
+/* The picker gets a compact 4:3 flag rather than the round language badges
+   used elsewhere, drawn from the 4x3 artwork — the square cut cropped to
+   this shape would leave a three-bar flag's middle stripe taller than the
+   other two. */
+.flag-btn {
+  width: 30px;
+  height: 22px;
+  border-radius: 4px;
+}
+
+/* nothing picked yet — a hollow slot with the same footprint as the flag */
+.lang-empty {
+  width: 30px;
+  height: 22px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--mimi-border-strong);
+  color: var(--mimi-ink-faint);
+}
+
+/* Course menus stay bounded as the available catalog grows. */
+.lang-menu {
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  min-width: 232px;
+}
+
+.lang-endonym {
+  color: var(--mimi-ink-faint);
+  font-size: 12px;
+}
+
+/* --- the first-run chooser --- */
+
+.chooser {
+  max-width: 880px;
+  padding: 56px var(--mimi-gutter) 72px;
+}
+
+.chooser-title {
+  font-size: 27px;
+  font-weight: 700;
+
+  color: var(--mimi-ink);
+  text-align: center;
+}
+
+.chooser-sub {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--mimi-ink-muted);
+  text-align: center;
+}
+
+.lang-grid {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 180px));
+  justify-content: center;
+  gap: 12px;
+}
+
+.lang-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 20px 12px 16px;
+  background-color: var(--mimi-surface);
+  border: 1px solid var(--mimi-border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+}
+
+.lang-tile:hover {
+  border-color: var(--mimi-accent);
+  background-color: var(--mimi-accent-tint);
+}
+
+.lang-tile-name {
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.lang-tile-endonym {
+  font-size: 12px;
+  color: var(--mimi-ink-muted);
+}
+
+@media (max-width: 640px) {
+  .lang-tile {
+    padding: 16px 10px 12px;
+  }
+}

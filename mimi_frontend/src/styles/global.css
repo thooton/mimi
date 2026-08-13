@@ -1,0 +1,60 @@
+/* ==========================================================================
+   mimi — a design layer over Blueprint.js 6.
+
+   Blueprint ships a neutral grey/blue theme on a white page. We retheme it
+   through its own custom properties into a warm "parchment" shell (borrowed
+   from Lichess: a tinted page, white content boxes, hairline borders, dense
+   text-first chrome) and then add the geometry Blueprint has no component
+   for — the winding lesson path.
+
+   This file is only the index: the rules live in the partials below, one
+   per concern. The import order is load-bearing in exactly one place —
+   chrome.css follows blueprint.css so the nav menu's square-corner
+   override lands after Blueprint's popover defaults (both hit
+   .bp6-popover-content at the same specificity, so source order decides).
+   Every other pair of partials is order-independent: where their selectors
+   overlap, they win on specificity instead.
+   ========================================================================== */
+
+/* the webfont, the tokens, the reset, and the shared shell/panel/labels */
+@import './base.css';
+
+/* the raised-button recipe and the lighter popover/dialog over Blueprint 6 */
+@import './blueprint.css';
+
+/* topbar, course bar, footer, and the language picker/chooser */
+@import './chrome.css';
+
+/* account registration and sign-in — and the field recipe the settings
+   page's forms borrow */
+@import './auth.css';
+
+/* /settings: the account page (email, password) */
+@import './settings.css';
+
+/* /: the learn page frame and side rail, then its two big pieces */
+@import './learn.css';
+@import './course-map.css';
+@import './lesson-player.css';
+
+/* /u/[username]: identity band, language cards, chart, activity */
+@import './profile.css';
+
+/* the landing page */
+@import './landing.css';
+
+/* the practice modes' screen mockups (on the landing) and the working
+   flashcard practice */
+@import './practice.css';
+
+/* individual weekly leaderboard */
+@import './leaderboard.css';
+
+/* /inbox: the thread list and the conversation open beside it */
+@import './inbox.css';
+
+/* the two plain-language legal pages linked from the footer */
+@import './legal.css';
+
+/* every keyframe and the animation half of the classes that run them */
+@import './motion.css';

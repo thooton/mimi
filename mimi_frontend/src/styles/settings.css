@@ -1,0 +1,143 @@
+/* ==========================================================================
+   settings — the account page: what the learner may change about the
+   account itself, one panel per thing.
+
+   The fields themselves are auth.css's: a settings form asks for a password
+   and an email in the same shapes the sign-up form does, and they are the
+   same family of form rather than two that happen to look alike. So the
+   markup wears .auth-form and .auth-error, and this sheet only lays the
+   page out around them.
+   ========================================================================== */
+
+.settings-page {
+    width: 100%;
+    box-sizing: border-box;
+    display: grid;
+    place-items: start center;
+    padding: 40px var(--mimi-gutter) 72px;
+}
+
+/* One column, not a grid: each panel is a separate errand and reading them
+   top to bottom is the order they are done in. */
+.settings-column {
+    width: min(100%, 560px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.settings-title {
+    /* the page title stands a little further off its first card than the
+       cards do from each other, so it reads as heading the page */
+    margin: 0 0 2px;
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+.settings-card {
+    box-sizing: border-box;
+    padding: 26px 28px;
+}
+
+/* Each card is a head (the title, and a caption when it has one) and then a
+   body. The heading owns no space of its own, and the gap belongs to
+   whatever follows the head — so a card with a caption and a card without
+   one open at the same distance, and removing a caption can't leave a
+   heading sitting on top of a field label. */
+.settings-card h2 {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.25;
+}
+
+.settings-intro {
+    /* close under its heading: a caption, not a paragraph after it */
+    margin: 7px 0 0;
+    color: var(--mimi-ink-muted);
+    line-height: 1.45;
+    font-size: 14px;
+}
+
+.settings-card h2 + .auth-form,
+.settings-card h2 + .settings-facts,
+.settings-intro + .auth-form,
+.settings-intro + .settings-facts {
+    margin-top: 22px;
+}
+
+/* The read-only half of the page: the two facts the account is identified
+   by. A pair per row, label above value, so a long address wraps under its
+   own label rather than into the next one. */
+.settings-facts {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    /* the row gap is the one that shows on a narrow screen, where the pairs
+       stack — it wants to be a band apart, not the label-to-value step */
+    gap: 16px 44px;
+}
+
+.settings-facts dt {
+    margin: 0 0 5px;
+}
+
+.settings-facts dd {
+    margin: 0;
+    color: var(--mimi-ink);
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+
+.settings-note {
+    margin: 24px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid var(--mimi-border);
+    color: var(--mimi-ink-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+/* A success reads as the counterpart of .auth-error and sits in the same
+   slot, so the two can never stack up and disagree. */
+.settings-done {
+    margin: 0;
+    padding: 9px 11px;
+    border: 1px solid var(--mimi-done);
+    border-radius: 5px;
+    color: var(--mimi-done-deep);
+    background: var(--mimi-done-tint);
+    font-size: 13px;
+}
+
+/* The button sits at the end of its form rather than filling the width: on
+   this page it commits one section, not the page, and a full-width primary
+   button repeated three times would read as three ways out of it. */
+.settings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+    /* the form's own 17px between fields, and a little more: the button
+       ends the card rather than continuing the list of boxes */
+    margin-top: 5px;
+}
+
+@media (max-width: 520px) {
+    .settings-page {
+        padding-top: 24px;
+    }
+
+    .settings-card {
+        padding: 20px;
+    }
+
+    /* nothing else fits beside a button at this width, so let it own the row */
+    .settings-actions {
+        justify-content: stretch;
+    }
+
+    .settings-actions > * {
+        flex: 1;
+        justify-content: center;
+    }
+}

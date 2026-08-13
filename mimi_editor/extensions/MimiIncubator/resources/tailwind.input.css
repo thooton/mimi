@@ -1,0 +1,119 @@
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Tailwind's border utilities only set a width; the "border: 0 solid" that gives
+ * them a style comes from preflight, which is off so that Tailwind does not
+ * fight MediaWiki's own styles. Without it a div's border-style stays "none" and
+ * every border collapses to 0px, so preflight's reset is reproduced here for the
+ * editor alone. :where() keeps the specificity at zero, leaving the borders that
+ * Codex components draw for themselves untouched.
+ */
+:where( #mimi-editor-root ) *,
+:where( #mimi-editor-root ) ::before,
+:where( #mimi-editor-root ) ::after {
+	border-width: 0;
+	border-style: solid;
+}
+
+/*
+ * MediaWiki places action output in #mw-content-text, whose article spacing
+ * would otherwise leave a gap between the page tabs and the editor toolbar.
+ */
+.mimi-structured-edit #mw-content-text {
+	margin-top: 0 !important;
+}
+
+/*
+ * Vector reserves room above the content for the indicators and the subtitle,
+ * both empty on an edit action. Zeroing it lets the toolbar sit against the page
+ * tabs the way the wikitext and visual editors do.
+ */
+.mimi-structured-edit .vector-body-before-content .mw-indicators,
+.mimi-structured-edit #contentSub,
+.mimi-structured-edit #contentSub2 {
+	margin-top: 0 !important;
+}
+
+/*
+ * A phone cannot show any of these editors' columns side by side. Each Vue view
+ * turns its columns into a sequence of screens — words -> sentences -> sentence,
+ * entries -> entry, tips -> tip — and this shell lets that sequence behave like
+ * an app and use the dynamic viewport. The course tree has only one screen, but
+ * it takes the same shell so that every editor gets the same compact toolbar and
+ * the same edge-to-edge room. Above the breakpoint every rule here is inert and
+ * the editors go back to being ordinary page content inside the wiki chrome.
+ */
+@media ( max-width: 1023px ) {
+	/* The edit action adds this before ResourceLoader paints, so the page never
+	 * scrolls behind the app while the editor is still loading. */
+	body.mimi-structured-edit {
+		overflow: hidden;
+		overscroll-behavior: none;
+	}
+
+	/*
+	 * Target the root itself as well as marking the body. MediaWiki skins can
+	 * rearrange the content wrapper, but the Vue mount point is always ours.
+	 */
+	#mimi-editor-root.mimi-editor-root {
+		position: fixed;
+		z-index: 1000;
+		inset: 0;
+		height: 100vh;
+		height: 100dvh;
+		background: #fff;
+		overflow: hidden;
+	}
+
+	.mimi-editor-app .mimi-editor-toolbar {
+		margin-bottom: 0 !important;
+		padding-top: max( 0.5rem, env( safe-area-inset-top ) ) !important;
+		padding-right: max( 1rem, env( safe-area-inset-right ) ) !important;
+		padding-left: max( 1rem, env( safe-area-inset-left ) ) !important;
+	}
+
+	.mimi-editor-app .mimi-editor-screen {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		visibility: hidden;
+		pointer-events: none;
+		padding-bottom: env( safe-area-inset-bottom );
+		transition:
+			transform 250ms cubic-bezier( 0.32, 0.72, 0, 1 ),
+			visibility 0s linear 250ms;
+		will-change: transform;
+	}
+
+	.mimi-editor-app .mimi-editor-screen-current {
+		visibility: visible;
+		pointer-events: auto;
+		transform: translateX( 0 );
+		transition-delay: 0s;
+	}
+
+	.mimi-editor-app .mimi-editor-screen-left {
+		transform: translateX( -100% );
+	}
+
+	.mimi-editor-app .mimi-editor-screen-right {
+		transform: translateX( 100% );
+	}
+
+	@media ( prefers-reduced-motion: reduce ) {
+		.mimi-editor-app .mimi-editor-screen {
+			transition: none;
+		}
+	}
+}
+
+@media ( min-width: 1024px ) {
+	.mimi-editor-screen {
+		position: static;
+		visibility: visible;
+		pointer-events: auto;
+		transform: none;
+		transition: none;
+	}
+}

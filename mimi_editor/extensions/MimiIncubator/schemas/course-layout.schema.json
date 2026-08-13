@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mimi course layout",
+  "type": "object",
+  "required": ["schemaVersion", "skills", "rows", "castles"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 5 },
+    "skills": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^Skill:.+", "maxLength": 255 } },
+    "rows": { "type": "array", "items": { "type": "array", "minItems": 0, "maxItems": 4, "uniqueItems": true, "items": { "type": "string", "pattern": "^Skill:.+", "maxLength": 255 } } },
+    "castles": { "type": "array", "items": {
+      "type": "object", "required": ["afterRow"], "additionalProperties": false,
+      "properties": { "afterRow": { "type": "integer", "minimum": 1 } }
+    } }
+  }
+}

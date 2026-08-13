@@ -1,0 +1,657 @@
+/* ==========================================================================
+   community & leaderboard — the two social tabs
+
+   One table style serves the weekly leaderboard, the club board beside it
+   and the club preview on the community tab; the tag chip and the page
+   header are shared as well. Each tab then has its own section below.
+   ========================================================================== */
+
+/* ------------------------------------------------------------ board tables */
+
+.board-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.board-table th {
+  font-size: 9.5px;
+  color: var(--mimi-ink-faint);
+  text-align: left;
+  padding: 0 6px 6px;
+  border-bottom: 1px solid var(--mimi-border);
+}
+
+.board-table td {
+  padding: 6px;
+  border-bottom: 1px solid var(--mimi-surface-sunken);
+  color: var(--mimi-ink-soft);
+}
+
+.board-table tr:last-child td {
+  border-bottom: none;
+}
+
+.board-table .col-rank {
+  width: 26px;
+  text-align: center;
+}
+
+.board-table .col-xp,
+.board-table th.col-xp,
+.board-table .col-num,
+.board-table th.col-num {
+  text-align: right;
+  font-weight: 500;
+  color: var(--mimi-ink);
+}
+
+.rank {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mimi-ink-muted);
+}
+
+/* podium — flat discs of colour, held together by a shared rim */
+.rank--1,
+.rank--2,
+.rank--3 {
+  box-shadow: inset 0 0 0 1px rgba(29, 27, 22, 0.14);
+}
+
+.rank--1 {
+  background-color: #eccf87;
+  color: #61420c;
+}
+
+.rank--2 {
+  background-color: #d9d6ce;
+  color: #4d4a43;
+}
+
+.rank--3 {
+  background-color: #e0bf9f;
+  color: #633f22;
+}
+
+.board-row-you td {
+  background-color: var(--mimi-accent-tint);
+  color: var(--mimi-ink);
+  font-weight: 500;
+}
+
+.board-row-you td:first-child {
+  box-shadow: inset 2px 0 0 0 var(--mimi-accent);
+}
+
+.you-badge {
+  font-size: 9px;
+  color: var(--mimi-accent);
+}
+
+/* ------------------------------------------------------------ page header */
+
+/* A page head: eyebrow, big title, lede (born as the old practice hub's
+   head, generalised). The two shells set only their vertical padding, so as
+   not to eat the shell's gutter. */
+.community-page,
+.board-page {
+  padding-top: 40px;
+  padding-bottom: 84px;
+}
+
+.hub-head {
+  margin-bottom: 32px;
+}
+
+.hub-title {
+  margin: 4px 0 8px;
+  font-size: 27px;
+  font-weight: 900;
+
+  color: var(--mimi-ink);
+}
+
+.hub-lede {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--mimi-ink-soft);
+}
+
+/* --------------------------------------------------------------- tag chip */
+
+/* A club's tag as worn before a member's name — [IVY] Clover. Flat fill and
+   an inset hairline: it reports an affiliation, it isn't pressed. Carries
+   no margin of its own; the flex gap of whatever row it joins sets the
+   spacing, so it lands the same distance from the name everywhere. */
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--mimi-gold-tint);
+  box-shadow: inset 0 0 0 1px rgba(125, 86, 21, 0.3);
+  font-size: 10px;
+  font-weight: 700;
+
+  color: var(--mimi-gold-deep);
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.tag-chip--big {
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+/* --------------------------------------------------------------- threads */
+
+.threads {
+  padding-top: 4px;
+}
+
+.thread {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 2px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.thread + .thread {
+  border-top: 1px solid var(--mimi-surface-sunken);
+}
+
+a.thread:hover .thread-title {
+  color: var(--mimi-accent);
+}
+
+.thread-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.thread-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--mimi-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thread-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--mimi-ink-muted);
+}
+
+.thread-stats {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  color: var(--mimi-ink-faint);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------- forum boards, the directory */
+
+.boards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.fb-card {
+  padding: 14px 16px;
+}
+
+.fb-name {
+  margin: 0 0 5px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.fb-blurb {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--mimi-ink-muted);
+}
+
+.fb-count {
+  font-size: 11px;
+  color: var(--mimi-ink-faint);
+}
+
+@media (max-width: 940px) {
+  .boards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .boards-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* -------------------------------------------------------------- chat match */
+
+.match-body {
+  padding: 14px 16px 16px;
+}
+
+/* speak / swap / learning / kind / go, in one row on a wide shell; the
+   labels ride on top of their controls so everything aligns at the bottom */
+.match-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1.5fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.match-field,
+.match-kind {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.match-label {
+  padding-left: 2px;
+}
+
+.match-swap {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--mimi-border);
+  border-radius: 6px;
+  background-color: var(--mimi-surface);
+  color: var(--mimi-ink-muted);
+  cursor: pointer;
+}
+
+.match-swap:hover {
+  color: var(--mimi-accent);
+  border-color: var(--mimi-border-strong);
+}
+
+/* Blueprint lets its button text shrink (and then wrap) under pressure; the
+   two controls with words in them are pinned to one line instead */
+.match-kind .bp6-segmented-control,
+.match-go {
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .match-controls {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .match-kind {
+    grid-column: 1 / 3;
+  }
+}
+
+@media (max-width: 480px) {
+  .match-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .match-swap {
+    justify-self: center;
+  }
+
+  .match-kind {
+    grid-column: auto;
+  }
+}
+
+.match-results {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.match-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 11px;
+  background-color: var(--mimi-surface-sunken);
+  border: 1px solid var(--mimi-border);
+  border-radius: 7px;
+}
+
+.match-avatar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  font-size: 12.5px;
+}
+
+.match-id {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.match-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.match-langs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--mimi-ink-muted);
+}
+
+.match-arrow {
+  color: var(--mimi-ink-faint);
+}
+
+.match-side {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* the CEFR the partner has reached in the language they're learning */
+.level-chip {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: var(--mimi-accent-tint);
+  box-shadow: inset 0 0 0 1px rgba(47, 111, 208, 0.25);
+  font-size: 10px;
+  font-weight: 700;
+
+  color: var(--mimi-accent-deep);
+}
+
+.match-empty {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--mimi-border-strong);
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--mimi-ink-muted);
+}
+
+.match-empty a {
+  color: var(--mimi-accent);
+}
+
+@media (max-width: 480px) {
+  .match-card {
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------------------------------------------------------- club directory */
+
+.club-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 14px;
+}
+
+.club-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 13px;
+}
+
+/* your own club, marked the way the board tables mark "you" */
+.club-card.is-mine {
+  box-shadow:
+    inset 3px 0 0 0 var(--mimi-accent),
+    0 1px 2px rgba(29, 27, 22, 0.06);
+}
+
+.club-card-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.club-card-name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.club-card-join {
+  flex-shrink: 0;
+}
+
+.club-card-focus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--mimi-ink-muted);
+}
+
+.club-card-about {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--mimi-ink-soft);
+}
+
+.club-card-stats {
+  display: flex;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 9px;
+  border-top: 1px solid var(--mimi-surface-sunken);
+  font-size: 11.5px;
+  color: var(--mimi-ink-muted);
+}
+
+.club-card-stats strong {
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+/* ==========================================================================
+   leaderboard tab
+   ========================================================================== */
+
+.board-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 396px;
+  gap: 20px;
+  align-items: start;
+}
+
+.board-rail {
+  min-width: 0;
+}
+
+@media (max-width: 940px) {
+  .board-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* the clubs page's directory is long, so once the rail stacks, the
+     leaderboard leads — the same way the learn page's rail pops above the
+     lesson map */
+  .board-grid--clubs .board-rail {
+    order: -1;
+  }
+}
+
+/* chat match is a single working panel with nothing beside it, so it gets
+   its own measure instead of the rail layout's full width — the site's
+   major breakpoint, wide enough for the controls row to lie flat */
+.chat-page {
+  max-width: 940px;
+}
+
+.board-body {
+  padding: 8px 14px 12px;
+}
+
+/* the main board breathes more than the tables in rails and previews do */
+.board-table--weekly {
+  font-size: 14px;
+}
+
+.board-table--weekly td {
+  padding: 8px;
+}
+
+.board-table--weekly .col-rank {
+  width: 34px;
+}
+
+/* one ranked member: [TAG] name, then whatever honours the week gave them —
+   the tag chip, the you badge and the honour chips all space off this gap */
+.player {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.player-name {
+  font-weight: 500;
+  color: var(--mimi-ink);
+}
+
+.player-badges {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* a club's focus language, murmured after its name on the club board */
+.club-focus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--mimi-ink-faint);
+}
+
+/* the column the club board is currently ranked by */
+.club-table th.is-sorted {
+  color: var(--mimi-accent);
+}
+
+/* ------------------------------------------------------------------ badges */
+
+/* A weekly honour besides its holder's name: the icon, then the catchy
+   label. Flat and tinted like every other reporting element — five tones,
+   one per achievement family. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px 2px 5px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.badge--gold {
+  background-color: var(--mimi-gold-tint);
+  box-shadow: inset 0 0 0 1px rgba(125, 86, 21, 0.3);
+  color: var(--mimi-gold-deep);
+}
+
+.badge--accent {
+  background-color: var(--mimi-accent-tint);
+  box-shadow: inset 0 0 0 1px rgba(34, 83, 158, 0.28);
+  color: var(--mimi-accent-deep);
+}
+
+.badge--violet {
+  background-color: var(--mimi-violet-tint);
+  box-shadow: inset 0 0 0 1px rgba(95, 60, 134, 0.3);
+  color: var(--mimi-violet-deep);
+}
+
+.badge--flame {
+  background-color: var(--mimi-flame-tint);
+  box-shadow: inset 0 0 0 1px rgba(194, 97, 31, 0.32);
+  color: var(--mimi-flame);
+}
+
+.badge--done {
+  background-color: var(--mimi-done-tint);
+  box-shadow: inset 0 0 0 1px rgba(38, 109, 71, 0.3);
+  color: var(--mimi-done-deep);
+}
+
+.badge:focus-visible {
+  outline: var(--mimi-focus-ring);
+  outline-offset: 1px;
+}
+
+/* the hover card: the badge's name as the header, the achievement below it
+   (Blueprint paints the tooltip dark, so the ink here stays light) */
+.badge-pop {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 230px;
+}
+
+.badge-pop-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-pop-desc {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.85);
+}

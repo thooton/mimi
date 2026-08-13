@@ -1,0 +1,89 @@
+genrule(
+    name = "build",
+    srcs = glob(
+        [
+            "extensions/MimiIncubator/**/*.php",
+            "extensions/MimiIncubator/**/*.js",
+            "extensions/MimiIncubator/**/*.json",
+        ],
+    ) + [
+        "build-tailwind.sh",
+        "extensions/MimiIncubator/resources/tailwind.input.css",
+        "tailwind.config.js",
+    ],
+    local = True,
+    cmd = """
+        ROOT_DIR=$$(pwd)
+        cd $$(dirname $(location build-tailwind.sh))
+        ./build-tailwind.sh
+        date +%s.%N > $$ROOT_DIR/$@
+    """,
+    outs = ["build.marker"],
+)
+
+# The editor is the one service whose runtime is source-shaped: the stock
+# MediaWiki container bind-mounts this Compose file, configuration, extension,
+# and assets. Package exactly that set so a production host does not need a
+# checkout or have to guess which development references belong there.
+genrule(
+    name = "deploy",
+    srcs = [
+        ":build",
+        "compose.yaml",
+        "config/LocalSettings.example.php",
+        "docker/entrypoint.sh",
+        "assets/favicon.png",
+        "assets/mimi.jpg",
+    ] + glob(["extensions/MimiIncubator/**/*"]),
+    local = True,
+    cmd = """
+        ROOT_DIR=$$(pwd)
+        cd $$(dirname $(location compose.yaml))
+        tar -chzf $$ROOT_DIR/$@ \
+            compose.yaml \
+            config/LocalSettings.example.php \
+            docker/entrypoint.sh \
+            assets/favicon.png \
+            assets/mimi.jpg \
+            extensions/MimiIncubator
+    """,
+    outs = ["mimi_editor.tar.gz"],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "dev",
+    srcs = [
+        ":build",
+        "compose.yaml",
+        "config/LocalSettings.example.php",
+        "docker/entrypoint.sh",
+    ],
+    local = True,
+    cmd = """
+        EXEC_DIR=$$(pwd)/$$(dirname $(location compose.yaml))
+
+        cat > "$@" << EOF
+#!/bin/sh
+
+# Go to execution directory
+cd $${EXEC_DIR}
+
+# Docker turns a missing bind-mount source into a root-owned directory, so fail
+# before Compose gets a chance to do that.
+if [ ! -f ./config/LocalSettings.php ]; then
+    echo "Copy config/LocalSettings.example.php to config/LocalSettings.php first." >&2
+    exit 1
+fi
+
+# Run the editor and its database
+exec docker compose up "\\$$@"
+
+EOF
+        # Make the created script executable
+        chmod +x "$@"
+    """,
+    outs = ["dev.sh"],
+    executable = True,
+    tags = ["manual"],
+)

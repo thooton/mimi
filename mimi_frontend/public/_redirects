@@ -1,0 +1,6 @@
+# Public profiles are one prerendered page serving every name: /u/<name> is
+# rewritten onto /u/ with a 200, and the page reads the name out of the URL.
+# See astro.config.mjs, which holds the dev-server and nginx forms of the same
+# rule. This file is the Netlify / Cloudflare Pages form; it is copied into
+# dist/ verbatim and ignored by hosts that don't read it.
+/u/*  /u/index.html  200

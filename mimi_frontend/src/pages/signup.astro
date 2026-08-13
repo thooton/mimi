@@ -1,0 +1,8 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import AuthForm from '../components/AuthForm';
+---
+
+<AppLayout title="Create account">
+  <AuthForm mode="signup" client:load />
+</AppLayout>

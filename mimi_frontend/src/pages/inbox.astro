@@ -1,0 +1,16 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import InboxApp from "../components/inbox/InboxApp";
+
+/* Private messages, between accounts. One page, and everything on it arrives
+   over a websocket (mimi_backend/src/messages.rs) — there is nothing to
+   prerender but the frame, because an inbox is nobody's but the reader's and
+   it changes while they are looking at it.
+
+   `/inbox?with=<name>` opens that conversation, which is where a profile's
+   "Message" button goes. */
+---
+
+<AppLayout title="Inbox">
+    <InboxApp client:load />
+</AppLayout>

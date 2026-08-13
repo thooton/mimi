@@ -1,0 +1,4 @@
+/target
+# the SQLite database and its sidecar files
+/mimi.db
+/mimi.db-*

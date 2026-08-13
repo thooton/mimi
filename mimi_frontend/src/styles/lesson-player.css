@@ -1,0 +1,475 @@
+/* ==========================================================================
+   lesson player — the view that takes the whole screen over from the course
+   map once a stone is tapped: the prompt column, the word bank, the reading
+   material and the end-of-lesson summary.
+
+   The mount and exit animations are motion.css's; the actions are
+   blueprint.css's buttons.
+   ========================================================================== */
+
+/* The lesson abandons the map's paper texture for a single centred column;
+   the only chrome is the progress strip on top and the action on the
+   bottom. (The mount/exit animations are motion.css's.) */
+.lesson-shell {
+  max-width: 600px;
+  min-height: calc(100vh - var(--mimi-topbar-h));
+  margin: 0 auto;
+  padding: 18px 20px 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+.lesson-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lesson-quit {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--mimi-ink-muted);
+  cursor: pointer;
+}
+
+.lesson-quit:hover {
+  background-color: var(--mimi-page-edge);
+  color: var(--mimi-ink);
+}
+
+/* the same recessed channel as .meter, taller so it carries the page */
+.lesson-progress {
+  flex: 1;
+  height: 10px;
+  border-radius: 5px;
+  background-color: var(--mimi-page-edge);
+  box-shadow:
+    inset 0 1px 2px rgba(29, 27, 22, 0.15),
+    inset 0 0 0 1px rgba(29, 27, 22, 0.05);
+  overflow: hidden;
+}
+
+.lesson-progress-fill {
+  height: 100%;
+  border-radius: 5px;
+  background-color: var(--mimi-done);
+  /* the strip glides to each new width — an answered task's slice, the next
+     task's count — instead of jumping */
+  transition: width 220ms ease-out;
+}
+
+.lesson-count {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mimi-ink-faint);
+}
+
+.lesson-body {
+  flex: 1;
+  padding-top: 40px;
+}
+
+/* the largest of the shared labels */
+.lesson-kind {
+  font-size: 13px;
+  color: var(--mimi-accent);
+  margin-bottom: 10px;
+}
+
+/* the line to translate. Its words carry their own hints (below), so it is
+   leaded a little looser than a heading needs: enough room under each word
+   for the dotted rule, and for the line beneath it to clear it when the
+   sentence wraps */
+.lesson-prompt {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--mimi-ink);
+  margin-bottom: 28px;
+}
+
+.lesson-input {
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 17px;
+  font-family: inherit;
+  color: var(--mimi-ink);
+  background-color: var(--mimi-surface);
+  border: 1px solid var(--mimi-border-strong);
+  border-radius: 8px;
+  outline: none;
+}
+
+.lesson-input:focus {
+  border-color: var(--mimi-accent);
+  box-shadow: 0 0 0 2px var(--mimi-accent-tint);
+}
+
+.lesson-input:disabled {
+  background-color: var(--mimi-surface-sunken);
+  color: var(--mimi-ink-soft);
+}
+
+/* ---- word bank ---- */
+
+/* The assembly line plays the part of the text input — same box — but fills
+   with the tokens the user taps instead of typed text. */
+.lesson-bank-answer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  /* about the input's height, so the box doesn't grow on the first tap */
+  min-height: 52px;
+  padding: 8px 12px;
+  background-color: var(--mimi-surface);
+  border: 1px solid var(--mimi-border-strong);
+  border-radius: 8px;
+}
+
+.lesson-bank-placeholder {
+  padding: 0 4px;
+  font-size: 17px;
+  color: var(--mimi-ink-faint);
+}
+
+/* one token, both on the assembly line and in the bank */
+.lesson-bank-token {
+  padding: 7px 13px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--mimi-ink);
+  background-color: var(--mimi-surface-raised);
+  border: 1px solid var(--mimi-border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.lesson-bank-token:hover:not(:disabled) {
+  border-color: var(--mimi-accent);
+  box-shadow: 0 0 0 2px var(--mimi-accent-tint);
+}
+
+.lesson-bank-token:disabled {
+  cursor: default;
+}
+
+/* the bank proper, below the assembly line */
+.lesson-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* a spent token keeps its slot — the bank doesn't reflow mid-exercise — but
+   leaves only a hole */
+.lesson-bank-token.is-spent {
+  visibility: hidden;
+}
+
+/* ---- material ---- */
+
+/* A teaching task has nothing to answer, so it is set as reading: the
+   author's prose at body size, and the lines of the target language raised
+   out of it as the things worth saying aloud. */
+.lesson-material {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lesson-material-text {
+  font-size: 19px;
+  line-height: 1.5;
+  color: var(--mimi-ink);
+}
+
+/* pressable, because tapping it speaks the line */
+.lesson-material-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 15px 18px;
+  font-family: inherit;
+  font-size: 22px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--mimi-accent-deep);
+  background-color: var(--mimi-accent-tint);
+  background-image: var(--mimi-sheen);
+  border: 1px solid var(--mimi-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.lesson-material-line:hover:not(:disabled) {
+  border-color: var(--mimi-accent);
+}
+
+/* no speech synthesiser here: the line still reads, it just can't be heard */
+.lesson-material-line:disabled {
+  color: var(--mimi-ink);
+  background-color: var(--mimi-surface-sunken);
+  background-image: none;
+  cursor: default;
+}
+
+.lesson-material-line:disabled .bp6-icon {
+  color: var(--mimi-ink-faint);
+}
+
+/* The verdict strip: green when right, red when wrong, with the canonical
+   answer attached in the latter case. Flat tints, like the map's states. */
+.lesson-feedback {
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 14.5px;
+}
+
+.lesson-feedback-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+}
+
+.lesson-feedback.is-correct {
+  background-color: var(--mimi-done-tint);
+  color: var(--mimi-done-base);
+}
+
+.lesson-feedback.is-wrong {
+  background-color: var(--mimi-miss-tint);
+  color: var(--mimi-miss-deep);
+}
+
+.lesson-feedback-answer {
+  margin-top: 6px;
+  padding-left: 29px;
+}
+
+.lesson-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 22px;
+  border-top: 1px solid var(--mimi-border);
+}
+
+.lesson-submit-error {
+  margin: 0 auto 0 0;
+  color: var(--mimi-miss-deep);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+/* ---- summary ---- */
+
+.lesson-summary {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.lesson-summary-mark {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background-color: var(--mimi-done-tint);
+  color: var(--mimi-done);
+  margin-bottom: 6px;
+}
+
+.lesson-summary-mark.is-perfect {
+  background-color: var(--mimi-gold-tint);
+  color: var(--mimi-gold);
+}
+
+.lesson-summary-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.lesson-summary-score {
+  font-size: 15px;
+  color: var(--mimi-ink-soft);
+  margin-bottom: 14px;
+}
+
+.lesson-new-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 8px;
+  color: var(--mimi-violet);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+
+}
+
+/* The backend points at this exact run independently of dictionary hints and
+   grading marks. A tint reads as a highlight even when the same word also has
+   the dotted hint underline; no padding means the sentence's spacing and
+   wrapping stay unchanged. */
+.lesson-new-word-highlight {
+  color: var(--mimi-violet-deep);
+  background-color: var(--mimi-violet-tint);
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* ---- word hints ---- */
+
+/* A word the lesson can explain, set in the prompt: the dotted rule is the
+   whole invitation — it says "this one has a hint" without spending a
+   colour or a box on it. Underline rather than a border, so it follows the
+   word across a line break instead of boxing it. */
+.lesson-hint-word {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted var(--mimi-ink-faint);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+/* open or merely pointed at, the word takes the accent — the hint below it
+   is the one being read */
+.lesson-hint-word:hover,
+.bp6-popover-open > .lesson-hint-word {
+  color: var(--mimi-accent);
+  text-decoration-color: var(--mimi-accent);
+}
+
+/* A first-contact word keeps the lesson's violet vocabulary cue while its
+   gloss is hovered or open. The ordinary blue remains right for every other
+   dictionary hint. */
+.lesson-hint-word.is-new:hover,
+.bp6-popover-open > .lesson-hint-word.is-new {
+  color: var(--mimi-violet-deep);
+  text-decoration-color: var(--mimi-violet);
+}
+
+.lesson-hint-word:focus-visible {
+  outline: var(--mimi-focus-ring);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* The hint appears, it doesn't arrive: Blueprint scales and fades its
+   popovers in, which on a word you only pointed at reads as a delay. Killed
+   here rather than with the `minimal` prop, which would take the arrow with
+   it — and the arrow is what ties the card to the word it explains. */
+.lesson-hint-portal .bp6-popover-transition-container {
+  opacity: 1;
+  transition: none;
+}
+
+.lesson-hint-portal .bp6-popover {
+  transform: scale(1);
+  transition: none;
+}
+
+/* the hint itself: the word's meanings stacked, ruled apart, because they are
+   alternatives to choose between and not a phrase to read straight through.
+   (The card around them is blueprint.css's popover.) */
+.lesson-hint {
+  display: flex;
+  flex-direction: column;
+  min-width: 96px;
+  max-width: 260px;
+  /* keeps the first and last rows off the card's rounded corners */
+  padding: 5px 0;
+  text-align: center;
+}
+
+.lesson-hint-meaning {
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--mimi-ink);
+}
+
+.lesson-hint-meaning + .lesson-hint-meaning {
+  border-top: 1px solid var(--mimi-border);
+}
+
+/* the chip row: the answer's hints, and any of the prompt's that had no word
+   in the sentence to sit under */
+.lesson-glosses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: -4px 0 20px;
+}
+
+.lesson-gloss {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--mimi-border);
+  border-radius: 5px;
+  background: var(--mimi-surface-sunken);
+  color: var(--mimi-ink-muted);
+  font-size: 12px;
+}
+
+.lesson-gloss b { color: var(--mimi-ink); }
+.lesson-summary-note { max-width: 430px; color: var(--mimi-ink-muted); }
+
+/* The offer to keep what a guest has just done. A card rather than another
+   line of the summary: it is a second thing being asked, after the result
+   has been read, and the rule above it is where one ends and the other
+   begins. */
+.lesson-save {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 430px;
+  margin-top: 6px;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--mimi-border);
+  border-radius: 10px;
+  background: var(--mimi-surface-sunken);
+}
+
+.lesson-save-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--mimi-ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+
+}
+
+.lesson-save-detail {
+  color: var(--mimi-ink-soft);
+  font-size: 14px;
+  margin-bottom: 6px;
+}

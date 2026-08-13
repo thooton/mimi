@@ -1,0 +1,56 @@
+---
+/* The line drawings that head the practice cards. Same pen as
+   FeatureIcon.astro — 24px box, round caps, no fill, colour from the card
+   they sit in, and no JavaScript. */
+interface Props {
+  name: 'flashcards' | 'stories' | 'audio';
+  size?: number;
+}
+
+const { name, size = 26 } = Astro.props;
+---
+
+<svg
+  class="practice-mode-icon"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.7"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  {/* one card dealt off the top of the deck */}
+  {
+    name === 'flashcards' && (
+      <Fragment>
+        <rect x="4" y="7.5" width="12.5" height="13" rx="2"></rect>
+        <path d="M7.5 4h10a2 2 0 0 1 2 2v11.5"></path>
+      </Fragment>
+    )
+  }
+
+  {/* an open book, spine down the middle */}
+  {
+    name === 'stories' && (
+      <Fragment>
+        <path d="M12 6.6c-2-1.8-4.7-2.4-8.5-2.1v14c3.8-.3 6.5.3 8.5 2.1 2-1.8 4.7-2.4 8.5-2.1v-14c-3.8-.3-6.5.3-8.5 2.1z"></path>
+        <path d="M12 6.6v14"></path>
+      </Fragment>
+    )
+  }
+
+  {/* a microphone, for the podcasts */}
+  {
+    name === 'audio' && (
+      <Fragment>
+        <rect x="9" y="3" width="6" height="10.5" rx="3"></rect>
+        <path d="M5.8 11.5a6.2 6.2 0 0 0 12.4 0"></path>
+        <path d="M12 17.7V21"></path>
+        <path d="M8.8 21h6.4"></path>
+      </Fragment>
+    )
+  }
+</svg>

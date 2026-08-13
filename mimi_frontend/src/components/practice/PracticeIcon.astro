@@ -1,0 +1,24 @@
+---
+interface Props {
+  name: 'flashcards';
+  size?: number;
+}
+
+const { size = 26 } = Astro.props;
+---
+
+<svg
+  class="practice-mode-icon"
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.7"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+>
+  <rect x="4" y="7.5" width="12.5" height="13" rx="2"></rect>
+  <path d="M7.5 4h10a2 2 0 0 1 2 2v11.5"></path>
+</svg>

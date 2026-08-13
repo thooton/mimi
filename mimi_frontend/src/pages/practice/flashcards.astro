@@ -1,0 +1,11 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import FlashcardApp from '../../components/practice/FlashcardApp';
+
+/* Standalone vocabulary practice over the signed-in learner's real FSRS
+   cards. The backend deals only words they have encountered in lessons. */
+---
+
+<AppLayout title="Flashcards" active="practice">
+  <FlashcardApp client:load />
+</AppLayout>

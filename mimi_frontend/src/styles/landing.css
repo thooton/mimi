@@ -1,0 +1,557 @@
+/* ==========================================================================
+   the landing page
+
+   The front door: what Mimi does, what it is built out of, and how to start.
+   An open-source course still being written has nothing to boast about, so
+   the page tries to be useful instead of loud — it explains the scheduling
+   honestly, hands the reader a real exercise rather than a screenshot of
+   one, and says plainly which parts aren't finished. Everything is set in
+   the same parchment and hairlines as the thing it introduces.
+   ========================================================================== */
+
+/* One headline, the dog, and the two things a stranger might want to do.
+   Centred and alone: there is one sentence to read here, and anything set
+   beside it would only be competing with it.
+
+   Vertical padding is set one side at a time here and in the sections below.
+   These elements are .shell as well, and the shorthand would take its
+   horizontal gutter down to zero with it — which on a narrow phone runs the
+   headline into the edge of the glass. */
+.land-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    padding-top: 60px;
+    padding-bottom: 12px;
+}
+
+.land-h1 {
+    margin: 0;
+    max-width: 22ch;
+    font-size: clamp(30px, 3.6vw, 48px);
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--mimi-ink);
+}
+
+.land-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+@media (max-width: 940px) {
+    .land-hero {
+        padding-top: 40px;
+    }
+}
+
+/* --- the landing button --- */
+
+/* The app's pressable recipe again (see blueprint.css): a top-lit sheen, a
+   darkened lip, the ring and the drop. Rebuilt here rather than borrowed
+   from .bp6-button, because a marketing anchor tag shouldn't have to pose
+   as Blueprint markup. */
+.land-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 8px;
+    color: #fff;
+    background-color: var(--mimi-accent);
+    background-image: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.17),
+        rgba(255, 255, 255, 0) 60%
+    );
+    text-shadow: 0 -1px 0 rgba(12, 30, 60, 0.22);
+    box-shadow:
+        inset 0 0 0 1px rgba(12, 30, 60, 0.26),
+        inset 0 -2px 0 0 rgba(12, 30, 60, 0.24),
+        0 2px 3px rgba(12, 30, 60, 0.18);
+}
+
+/* The colour and the underline have to be restated on the hover rule:
+   Blueprint's global a:hover (colour #215db0, underlined) outranks the
+   plain .land-btn class, and on this deepened fill that blue is all but
+   invisible. */
+.land-btn:hover {
+    color: #fff;
+    text-decoration: none;
+    background-color: var(--mimi-accent-deep);
+}
+
+.land-btn:active {
+    background-image: none;
+    background-color: var(--mimi-accent-base);
+    box-shadow:
+        inset 0 0 0 1px rgba(12, 30, 60, 0.34),
+        inset 0 2px 4px rgba(12, 30, 60, 0.3);
+}
+
+.land-btn:focus-visible {
+    outline: var(--mimi-focus-ring);
+    outline-offset: 2px;
+}
+
+.land-btn--regular {
+    font-weight: 500;
+}
+
+/* the same face as a default Blueprint button, for secondary actions */
+.land-btn--quiet {
+    color: var(--mimi-ink);
+    text-shadow: none;
+    background-color: #fbfaf8;
+    background-image: linear-gradient(to bottom, #ffffff, #f2efe9);
+    box-shadow:
+        inset 0 0 0 1px rgba(29, 27, 22, 0.19),
+        inset 0 -1px 0 0 rgba(29, 27, 22, 0.09),
+        0 1px 1.5px rgba(29, 27, 22, 0.07);
+}
+
+/* ...and here again, so the shared hover rule above doesn't paint the
+   quiet button's ink white. Later source order at equal specificity, so
+   this is the colour that lands. */
+.land-btn--quiet:hover {
+    color: var(--mimi-ink);
+    text-decoration: none;
+    background-image: linear-gradient(to bottom, #fbfaf8, #eae6de);
+}
+
+.land-btn--quiet:active {
+    background-image: none;
+    background-color: #e6e2d9;
+    box-shadow:
+        inset 0 0 0 1px rgba(29, 27, 22, 0.26),
+        inset 0 2px 3px rgba(29, 27, 22, 0.14);
+}
+
+/* --- the playable exercise --- */
+
+/* Dressed as a lesson card rather than a marketing panel, because it is one:
+   the tiles, the verdict strip and the grader inside it are the lesson
+   player's (see TryIt.tsx, and lesson-* in lesson-player.css); only the
+   frame is local. */
+.tryit {
+    padding: 20px 22px 18px;
+    background-color: var(--mimi-surface);
+    border: 1px solid var(--mimi-border);
+    border-radius: 10px;
+    box-shadow: var(--mimi-lift);
+}
+
+.tryit-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* the widest of the shared labels */
+.tryit-kind {
+    font-size: 12px;
+    color: var(--mimi-accent);
+}
+
+.tryit-count {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--mimi-ink-faint);
+}
+
+.tryit-prompt {
+    margin: 10px 0 18px;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--mimi-ink);
+}
+
+/* the verdict strip carries a speaker button here, so its answer line has to
+   lay out as a row rather than a paragraph */
+.tryit .lesson-feedback-answer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+}
+
+/* quiet, and coloured by the strip it sits in — green when right, red when
+   wrong, which is exactly the colour the word being spoken deserves */
+.tryit-say {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: inherit;
+    background: none;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    cursor: pointer;
+}
+
+.tryit-foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--mimi-border);
+}
+
+/* what's left when both exercises are done: the one place on the page that
+   asks for anything */
+.tryit--done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 40px 26px;
+    text-align: center;
+    color: var(--mimi-done);
+}
+
+.tryit-done-text {
+    margin: 0;
+    max-width: 34ch;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--mimi-ink-soft);
+}
+
+.tryit-again {
+    padding: 0;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--mimi-ink-muted);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.tryit-again:hover {
+    color: var(--mimi-ink);
+}
+
+/* --- section scaffolding --- */
+
+.land-section {
+    padding-top: 52px;
+    /* clear the sticky topbar when a footer/nav anchor lands here */
+    scroll-margin-top: calc(var(--mimi-topbar-h) + 12px);
+}
+
+/* The final concept and the two closing sections need a little more separation
+   than the ordinary page rhythm: unlike the earlier sections, no large grid
+   naturally creates that breathing room for them. */
+.land-section--spaced {
+    padding-top: 76px;
+}
+
+/* Left-aligned and unaccompanied. A centred heading with a second line of
+   prose restating it under it is two sentences where one would do. The
+   hairline running the section's width under the word is what makes it a
+   section heading rather than a large sentence: the heading sits on the
+   rule and everything below the rule is its. */
+.land-h2 {
+    margin: 0 0 26px;
+    padding-bottom: 12px;
+    font-size: 30px;
+    font-weight: 700;
+
+    color: var(--mimi-ink);
+    border-bottom: 1px solid var(--mimi-border);
+}
+
+/* a line of prose introducing a section, under its heading */
+.land-lede {
+    margin: -6px 0 26px;
+    max-width: 60ch;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--mimi-ink-soft);
+}
+
+/* --- the five features --- */
+
+/* Two by two rather than a row of five: these are paragraphs, not slogans,
+   and five columns would set them a dozen words wide. Carded in the same
+   surface-and-hairline as the exercise, so the page has one panel and not
+   two different ideas of one. */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.feature {
+    padding: 22px 24px 24px;
+    background-color: var(--mimi-surface);
+    border: 1px solid var(--mimi-border);
+    border-radius: 10px;
+    box-shadow: var(--mimi-lift);
+}
+
+.feature-icon {
+    display: block;
+    color: var(--mimi-accent);
+}
+
+.feature-title {
+    margin: 13px 0 8px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--mimi-ink);
+}
+
+.feature-text {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--mimi-ink-muted);
+}
+
+.feature-text a {
+    color: var(--mimi-accent);
+    font-weight: 700;
+}
+
+@media (max-width: 860px) {
+    .feature-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* --- the concepts --- */
+
+/* Copy on one side, the thing itself on the other, alternating: the skill
+   tree is a shape and the exercise is a thing you press, and neither one
+   survives being described in a sentence. Flashcards use the same scaffolding;
+   their mockup drawing is styled in practice.css. */
+.concept-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 48px;
+}
+
+/* nearly a section's worth of air between rows: each row is a panel of
+   content, not a line of text, and at the sections' own 52px the mockup
+   above and the mockup below read as one stack */
+.concept-row + .concept-row {
+    margin-top: 96px;
+}
+
+/* the rows alternate which side leads with the picture, so the page doesn't
+   read as identical slabs stacked on each other. The first row leads with
+   its picture on purpose: the tree drawing is much taller than its copy, so
+   art-first puts something reaching the section heading at once, where
+   copy-first left a gap of centring nothing under it */
+.concept-row--flip .concept-copy {
+    order: 2;
+}
+
+.concept-title {
+    margin: 0 0 10px;
+    font-size: 24px;
+    font-weight: 700;
+
+    color: var(--mimi-ink);
+}
+
+.concept-copy p {
+    margin: 0;
+    max-width: 48ch;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--mimi-ink-soft);
+}
+
+.concept-art {
+    min-width: 0;
+}
+
+/* --- the skill tree drawing --- */
+
+/* A miniature of the real course map (course-map.css): the same colours,
+   the same gold ring and crown, drawn small enough to sit in half a
+   column. The level colours are the real map's own. */
+.tree-art {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    margin: 0 auto;
+}
+
+/* the medallion: gold progress ring on a grey track, face in the level's
+   colour standing on its own dark rim */
+.tree-art-ring {
+    fill: none;
+    stroke-width: 5.5;
+}
+
+.tree-art-ring-track {
+    stroke: #dfdfdf;
+}
+
+.tree-art-ring-fill {
+    stroke: #ffd719;
+    stroke-linecap: round;
+}
+
+.tree-art-l1 {
+    --skill: #25a8df;
+    --skill-dark: #1680b2;
+}
+
+.tree-art-l2 {
+    --skill: #67c800;
+    --skill-dark: #4b9900;
+}
+
+.tree-art-node.is-locked {
+    --skill: #c9c9c9;
+    --skill-dark: #aaaaaa;
+}
+
+.tree-art-edge {
+    fill: var(--skill-dark);
+}
+
+.tree-art-face {
+    fill: var(--skill);
+}
+
+.tree-art-glyph {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tree-art-node.is-locked .tree-art-glyph {
+    stroke: #898989;
+}
+
+/* the crown badge, straight off the real medallion */
+.tree-art-crown path {
+    fill: #ffc800;
+    stroke: #fff;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tree-art-crown text {
+    fill: #cf8500;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.tree-art-label {
+    fill: var(--mimi-ink-soft);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.tree-art-node.is-locked .tree-art-label {
+    fill: var(--mimi-ink-faint);
+}
+
+/* the locked castle between stretches, in the real one's greys */
+.tree-art-castle-edge {
+    fill: #aaa7a0;
+}
+
+.tree-art-castle-body {
+    fill: #cfcdc7;
+}
+
+.tree-art-castle-door {
+    fill: #aaa7a0;
+}
+
+.tree-art-castle-label {
+    fill: var(--mimi-ink-muted);
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+}
+
+@media (max-width: 940px) {
+    .concept-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 26px;
+    }
+
+    /* stacked, the words come first every time — a picture with nothing said
+     about it yet is just a picture */
+    .concept-row--flip .concept-copy {
+        order: 0;
+    }
+}
+
+/* --- the two ways to help --- */
+
+/* Set as reading rather than as cards: an offer to join in shouldn't arrive
+   dressed as a product feature. */
+.contrib-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 48px;
+}
+
+.contrib-title {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--mimi-ink);
+}
+
+.contrib-block p {
+    margin: 0;
+    max-width: 48ch;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--mimi-ink-soft);
+}
+
+.contrib-block a {
+    color: var(--mimi-accent);
+    font-weight: 700;
+}
+
+@media (max-width: 860px) {
+    .contrib-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* the last section on the page owes the footer some air */
+.land-section--last {
+    padding-bottom: 84px;
+}

@@ -1,0 +1,475 @@
+/* ==========================================================================
+   /inbox — private messages: the thread list, and the conversation open
+   beside it.
+
+   One panel holding two columns, because they are one thing: a list you
+   choose from and the thing you chose. The column rule is the only piece of
+   the page that changes on a phone — there the two are stacked in the same
+   grid cell and `.is-open` decides which of them is on screen, so going back
+   to the list is a class rather than a page.
+
+   The panel is a fixed height rather than a growing one (`--inbox-h`): a
+   conversation scrolls inside its own column, and the compose box sits at the
+   bottom of the pane where somebody typing expects it, not at the bottom of
+   however long the day's messages happen to be.
+   ========================================================================== */
+
+.inbox-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding-top: 32px;
+    padding-bottom: 64px;
+}
+
+.inbox {
+    /* the viewport, less the bar, the page padding and a little air */
+    --inbox-h: min(720px, calc(100vh - var(--mimi-topbar-h) - 150px));
+    display: grid;
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+    height: var(--inbox-h);
+    overflow: hidden;
+}
+
+/* ------------------------------------------------------------- the list */
+
+.inbox-list {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid var(--mimi-border);
+    background-color: var(--mimi-surface-sunken);
+    border-radius: 7px 0 0 7px;
+}
+
+.inbox-search {
+    position: relative;
+    padding: 10px;
+    border-bottom: 1px solid var(--mimi-border);
+}
+
+.inbox-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--mimi-ink);
+    background-color: var(--mimi-surface);
+    border: 1px solid var(--mimi-border-strong);
+    border-radius: 999px;
+}
+
+.inbox-search-input::placeholder {
+    color: var(--mimi-ink-faint);
+}
+
+.inbox-search-input:focus-visible {
+    outline: var(--mimi-focus-ring);
+    outline-offset: 1px;
+}
+
+/* The matches hang over the list rather than pushing it down: the box is a
+   shortcut somebody is passing through, and the conversations underneath
+   should still be where they were when it closes. */
+.inbox-results {
+    position: absolute;
+    z-index: 2;
+    left: 10px;
+    right: 10px;
+    top: calc(100% - 4px);
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background-color: var(--mimi-surface);
+    border: 1px solid var(--mimi-border);
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(29, 27, 22, 0.12);
+}
+
+.inbox-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 8px;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.inbox-result:hover {
+    background-color: var(--mimi-surface-sunken);
+}
+
+.inbox-result:focus-visible {
+    outline: var(--mimi-focus-ring);
+    outline-offset: -2px;
+}
+
+.inbox-result-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mimi-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* the account the name belongs to, since two people may call themselves the
+   same thing and only one of them is who you meant */
+.inbox-result-handle {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--mimi-ink-faint);
+}
+
+.inbox-result-empty {
+    padding: 8px;
+    font-size: 12.5px;
+    color: var(--mimi-ink-muted);
+}
+
+.thread-list {
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-y: auto;
+}
+
+.thread {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--mimi-border);
+    text-align: left;
+    cursor: pointer;
+}
+
+.thread:hover {
+    background-color: var(--mimi-surface-raised);
+}
+
+.thread:focus-visible {
+    outline: var(--mimi-focus-ring);
+    outline-offset: -2px;
+}
+
+/* the open one, marked the way the course bar marks the page you are on */
+.thread.is-active {
+    background-color: var(--mimi-accent-tint);
+    box-shadow: inset 2px 0 0 var(--mimi-accent);
+}
+
+/* Only unread conversations carry a dot. Once read it disappears completely
+   and the text takes its place, matching the familiar iMessage list pattern.
+   Blue keeps the notification distinct from the green online-presence dot. */
+.thread-dot {
+    display: none;
+    flex: none;
+    width: 10px;
+    height: 10px;
+    margin-top: 4px;
+    border-radius: 50%;
+}
+
+.thread.is-unread .thread-dot {
+    display: block;
+    background-color: var(--mimi-accent);
+}
+
+.thread-text {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.thread-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.thread-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--mimi-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.thread.is-unread .thread-name {
+    font-weight: 700;
+}
+
+.thread-when {
+    flex: none;
+    font-size: 10.5px;
+    color: var(--mimi-ink-faint);
+}
+
+/* One line of it, cut where the column ends: the row is a reminder of which
+   conversation this is, and reading it is what opening it is for. */
+.thread-last {
+    font-size: 12.5px;
+    color: var(--mimi-ink-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.thread-mine {
+    color: var(--mimi-ink-faint);
+}
+
+/* ------------------------------------------------------------- the pane */
+
+.inbox-pane {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* This is also a grid item. Its automatic block-size minimum otherwise
+       grows to fit the whole conversation, putting the composer below the
+       fixed-height inbox where the panel's overflow clips it. Keep the pane
+       inside its grid track; `.pane-messages` is the part that scrolls. */
+    min-height: 0;
+    overflow: hidden;
+}
+
+.pane-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--mimi-border);
+    background-color: var(--mimi-surface-sunken);
+    border-radius: 0 7px 0 0;
+}
+
+.pane-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--mimi-ink);
+    text-decoration: none;
+}
+
+.pane-name:hover {
+    color: var(--mimi-accent);
+    text-decoration: underline;
+}
+
+/* the way back to the list, which only exists while the list is a separate
+   screen */
+.pane-back {
+    display: none;
+    align-items: center;
+    padding: 2px;
+    margin-left: -4px;
+    background: none;
+    border: 0;
+    color: var(--mimi-ink-muted);
+    cursor: pointer;
+}
+
+.pane-messages {
+    flex: 1;
+    /* A flex child keeps its content-height minimum unless told otherwise.
+       Without this, a long conversation squeezes the composer down to its
+       border instead of scrolling inside this pane. */
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+}
+
+.pane-loading {
+    margin: auto;
+}
+
+/* Ours on the right and theirs on the left, which is the whole of who said
+   what — a chat needs no labels if the sides are honest. */
+.bubble {
+    align-self: flex-start;
+    max-width: min(72%, 560px);
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 7px 11px;
+    border-radius: 10px;
+    background-color: var(--mimi-surface-sunken);
+    border: 1px solid var(--mimi-border);
+}
+
+.bubble.is-mine {
+    align-self: flex-end;
+    background-color: var(--mimi-accent-tint);
+    border-color: #cfe0f7;
+}
+
+/* Messages are typed, not authored: a line break is a line break, and a long
+   word with no spaces in it must not push the column open. */
+.bubble-body {
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--mimi-ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.bubble-time {
+    flex: none;
+    font-size: 10px;
+    color: var(--mimi-ink-faint);
+    font-variant-numeric: tabular-nums lining-nums;
+}
+
+.pane-error {
+    margin: 0;
+    padding: 8px 14px;
+    font-size: 12.5px;
+    color: var(--mimi-miss-deep);
+    background-color: var(--mimi-miss-tint);
+    border-top: 1px solid var(--mimi-border);
+}
+
+.pane-compose {
+    flex: none;
+    display: flex;
+    /* The one-line textarea is taller than Blueprint's icon button. Centre
+       the button in that field instead of letting their bottom edges make
+       the smaller control look as though it has slipped downward. */
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid var(--mimi-border);
+    background-color: var(--mimi-surface-sunken);
+    border-radius: 0 0 7px 0;
+}
+
+.pane-input {
+    flex: 1;
+    min-width: 0;
+    /* two lines at most before it scrolls: the box is for a message, and a
+       message that needs a page of room is an email */
+    max-height: 96px;
+    height: 36px;
+    padding: 7px 11px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--mimi-ink);
+    background-color: var(--mimi-surface);
+    border: 1px solid var(--mimi-border-strong);
+    border-radius: 8px;
+    resize: none;
+}
+
+.pane-input:focus-visible {
+    outline: none;
+}
+
+/* Keep the send target square and exactly as tall as the compact field. */
+.pane-compose > .bp6-button {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
+}
+
+/* ------------------------------------------------------ nothing to show */
+
+.inbox-note {
+    margin: 0;
+    padding: 16px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--mimi-ink-muted);
+}
+
+.pane-empty {
+    margin: auto;
+    text-align: center;
+}
+
+/* signed out, or a guest: the offer, in the same box everything else is in */
+.inbox-offer {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 28px 26px;
+}
+
+.inbox-offer h1 {
+    margin: 0 0 8px;
+    font-size: 22px;
+}
+
+.inbox-offer p {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--mimi-ink-muted);
+}
+
+.inbox-offer-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ------------------------------------------------------------ one column */
+
+/* Under this width the two columns are one, stacked in the same grid cell,
+   and `.is-open` is which of them is showing. The height goes with them: on a
+   phone the inbox is the page, so it takes what is left of the screen. */
+@media (max-width: 720px) {
+    .inbox-page {
+        padding-top: 16px;
+        padding-bottom: 24px;
+    }
+
+    .inbox {
+        --inbox-h: calc(100vh - var(--mimi-topbar-h) - 100px);
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .inbox-list,
+    .inbox-pane {
+        grid-area: 1 / 1;
+        border-right: 0;
+        border-radius: 7px;
+    }
+
+    .inbox-pane,
+    .inbox.is-open .inbox-list {
+        display: none;
+    }
+
+    .inbox.is-open .inbox-pane {
+        display: flex;
+    }
+
+    .pane-back {
+        display: flex;
+    }
+
+    .pane-head,
+    .pane-compose {
+        border-radius: 0;
+    }
+
+    .bubble {
+        max-width: 84%;
+    }
+}

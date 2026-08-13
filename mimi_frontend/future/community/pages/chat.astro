@@ -1,0 +1,22 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import ChatMatch from '../../components/community/ChatMatch';
+
+/* Chat match, a subsection of the community tab (so the navbar stays lit on
+   Community). One job: pair the visitor with someone to practice with. */
+---
+
+<AppLayout title="Chat match" active="community">
+  <div class="shell community-page chat-page">
+    <header class="hub-head">
+      <span class="eyebrow">Community / Chat match</span>
+      <h1 class="hub-title">Chat match</h1>
+      <p class="hub-lede">
+        Lessons teach you the words; talking makes them stick. Pick what you
+        speak and what you&rsquo;re learning, and get paired with someone
+        complementary for a quick voice or text chat.
+      </p>
+    </header>
+    <ChatMatch client:load />
+  </div>
+</AppLayout>

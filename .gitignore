@@ -1,0 +1,23 @@
+# Editor and operating-system files
+*~
+.*.swp
+.DS_Store
+/.idea/
+/.vscode/
+
+# Bazel IDE integrations and local state
+/.aswb/
+/.bazelbsp/
+/.cache/
+/.ijwb/
+/bazel.iml
+user.bazelrc
+
+# Bazel creates workspace-specific bazel-* output symlinks.
+/bazel-*
+
+# Bazel bootstrap output
+/output/
+
+# claude
+/.claude

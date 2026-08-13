@@ -1,0 +1,218 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import FeatureIcon from "../components/FeatureIcon.astro";
+import SkillTreeArt from "../components/SkillTreeArt.astro";
+import MimiDog from "../components/MimiDog";
+import StartActions from "../components/StartActions.astro";
+import TryIt from "../components/TryIt";
+import PracticeIcon from "../components/practice/PracticeIcon.astro";
+import FlashcardMock from "../components/practice/FlashcardMock.astro";
+import { EDITOR_URL, REPO_URL } from "../data/site";
+
+/* The paper behind the 85% claim. Linked rather than paraphrased, so a reader
+   who doubts the number can go and check it. */
+const STUDY_URL = "https://www.nature.com/articles/s41467-019-12552-4";
+
+/* The feature cards are written out one by one rather than mapped over a list:
+   one of them has a link running through the middle of a sentence, and a data
+   array that can hold that stops being simpler than the markup it replaces. */
+---
+
+<AppLayout title="Learn a language">
+    <!-- ------------------------------------------------------------- hero -->
+    <section class="shell land-hero">
+        <MimiDog width={100} />
+        <h1 class="land-h1">
+            Mimi is the free language learning app that anyone can edit
+        </h1>
+        <StartActions class="land-actions" />
+    </section>
+
+    <!-- --------------------------------------------------------- features -->
+    <section class="shell land-section" id="features">
+        <h2 class="land-h2">Features</h2>
+
+        <ul class="feature-grid">
+            <li class="feature">
+                <FeatureIcon name="edit" />
+                <h3 class="feature-title">Anyone can edit</h3>
+                <p class="feature-text">
+                    Unlike other language learning apps, on Mimi anyone can add
+                    new language content, edit or reorganize existing material,
+                    and correct mistakes. Because contributing is open to
+                    everybody instead of a select few, much better courses can
+                    be created.
+                </p>
+            </li>
+
+            <li class="feature">
+                <FeatureIcon name="tailored" />
+                <h3 class="feature-title">
+                    Lessons tailored to your knowledge
+                </h3>
+                <p class="feature-text">
+                    Mimi keeps track of all the words you've met as well as a
+                    memory state for each one, derived from your review history.
+                    This lets Mimi construct lessons that contain exactly the
+                    content that you most need to review.
+                </p>
+            </li>
+
+            <li class="feature">
+                <FeatureIcon name="difficulty" />
+                <h3 class="feature-title">Desirable difficulty</h3>
+                <p class="feature-text">
+                    Mimi targets an accuracy rate of 85%, which according to one
+                    study is&nbsp;
+                    <a href={STUDY_URL}>
+                        the sweet spot for optimal learning</a
+                    >. This supports your learning by ensuring that lessons are
+                    neither easy and boring nor hard and frustrating.
+                </p>
+            </li>
+
+            <li class="feature">
+                <FeatureIcon name="schedule" />
+                <h3 class="feature-title">Modern spaced repetition</h3>
+                <p class="feature-text">
+                    Mimi uses the FSRS spaced repetition algorithm to schedule
+                    reviews of words, showing you a word right when you're about
+                    to forget it. FSRS is the strongest publicly-available
+                    memory scheduling algorithm, trained on hundreds of millions
+                    of user reviews. It is 20–30% more efficient than other
+                    flashcard algorithms.
+                </p>
+            </li>
+
+            <li class="feature">
+                <FeatureIcon name="open-source" />
+                <h3 class="feature-title">Free/libre, open-source software</h3>
+                <p class="feature-text">
+                    You can use Mimi as much as you like, free of charge. There
+                    are no subscription tiers or paid items. It is also
+                    open-source, so anyone can read the source code and make
+                    contributions.
+                </p>
+            </li>
+
+            <li class="feature">
+                <FeatureIcon name="no-ai" />
+                <h3 class="feature-title">No AI-generated content</h3>
+                <p class="feature-text">
+                    AI-generated language learning content is of questionable
+                    accuracy, can often be uncreative, and is of limited
+                    educational value. On Mimi, all course content is 100%
+                    created by humans like you!
+                </p>
+            </li>
+        </ul>
+    </section>
+
+    <!-- --------------------------------------------------------- concepts -->
+    <section class="shell land-section" id="concepts">
+        <h2 class="land-h2">Concepts</h2>
+
+        <div class="concept-row concept-row--flip">
+            <div class="concept-copy">
+                <h3 class="concept-title">Skill tree</h3>
+                <p>
+                    Courses are organized into a set of skills, which is a group
+                    of lessons focused on a particular topic. The ones at the
+                    top teach you the basics, and as you progress, the skills
+                    get harder and more interesting. Skills in the same row
+                    unlock together, so you can choose what to study next. At
+                    the end of a group of skills, castles test your knowledge to
+                    open the next branch of the tree.
+                </p>
+            </div>
+
+            <div class="concept-art">
+                <SkillTreeArt />
+            </div>
+        </div>
+
+        <div class="concept-row">
+            <div class="concept-copy">
+                <h3 class="concept-title">Exercises</h3>
+                <p>
+                    Each lesson contains exercises, which can be multiple-choice
+                    questions, word bank translation, or typing translation
+                    exercises. Exercises are tailored to you based on your
+                    review history.
+                </p>
+            </div>
+
+            <div class="concept-art">
+                {
+                    /* client:visible, not client:load: it sits well below the fold now, so
+            there is no reason to spend the first paint's budget on it. */
+                }
+                <TryIt client:visible />
+            </div>
+        </div>
+
+        <!-- Flashcards is the first standalone practice mode. -->
+        <div class="concept-row concept-row--flip">
+            <div class="concept-copy">
+                <div class="practice-row-top">
+                    <PracticeIcon name="flashcards" />
+                </div>
+                <h3 class="concept-title">Flashcards</h3>
+                <p>
+                    Practice your vocabulary with flashcards powered by spaced
+                    repetition. Every word you've encountered throughout the
+                    course is provided back to you one card at a time. Thanks to
+                    the modern FSRS algorithm, you'll encounter each card right
+                    when you're about to forget it, increasing learning
+                    efficiency.
+                </p>
+            </div>
+            <div class="concept-art">
+                <FlashcardMock />
+            </div>
+        </div>
+    </section>
+
+    <!-- ----------------------------------------------------- contributing -->
+    <section class="shell land-section land-section--spaced" id="contributing">
+        <h2 class="land-h2">Contributing</h2>
+        <p class="land-lede">
+            Mimi is a community project and we welcome contributions of any
+            kind!
+        </p>
+
+        <div class="contrib-grid">
+            <div class="contrib-block">
+                <h3 class="contrib-title">Open Source</h3>
+                <p>
+                    If you would like to help develop new features, fix bugs, or
+                    add new courses, we welcome new contributions <a
+                        href={REPO_URL}>at our GitHub</a
+                    >.
+                </p>
+            </div>
+
+            <div class="contrib-block">
+                <h3 class="contrib-title">Edit the courses</h3>
+                <p>
+                    If you spot a mistake in a course, or have words, sentences
+                    or exercises to add, you can edit the course material
+                    directly
+                    <a href={EDITOR_URL}> in the course editor</a>.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ---------------------------------------------------------- credits -->
+    <section
+        class="shell land-section land-section--spaced land-section--last"
+        id="credits"
+    >
+        <h2 class="land-h2">Credits</h2>
+        <p class="land-lede">
+            'No AI' icon derived from work created by Icon Pie from the Noun
+            Project
+        </p>
+    </section>
+</AppLayout>

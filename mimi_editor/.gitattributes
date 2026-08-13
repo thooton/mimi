@@ -1,0 +1,11 @@
+# Shell scripts and PHP are mounted straight into Linux containers, so they
+# must keep LF endings even when checked out on Windows. Without this, Git for
+# Windows' default core.autocrlf=true rewrites docker/entrypoint.sh to CRLF and
+# the container dies on a `#!/bin/sh\r` shebang.
+* text=auto eol=lf
+
+# Batch files are the exception: cmd.exe needs CRLF.
+*.bat text eol=crlf
+
+*.png binary
+*.webp binary

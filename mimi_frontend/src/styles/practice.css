@@ -1,0 +1,309 @@
+/* ==========================================================================
+   practice
+
+   Flashcards are the first way to work outside the lesson path. The marketing
+   page shows a static mockup, while /practice/flashcards uses the learner's
+   real course and memory state.
+   The working mode shares the bottom of this
+   file: its chrome is entirely the lesson player's (shell, progress strip,
+   footer, summary — lesson-player.css), so only the card itself is styled here.
+   ========================================================================== */
+
+/* icon above the mode's title on the marketing page */
+.practice-row-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.practice-mode-icon {
+  display: block;
+  color: var(--mimi-accent);
+}
+
+/* --- the mockups --- */
+
+/* the static picture uses the same surface and hairline as every panel */
+.mock {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 14px 16px 16px;
+  background-color: var(--mimi-surface);
+  border: 1px solid var(--mimi-border);
+  border-radius: 10px;
+  box-shadow: var(--mimi-lift);
+}
+
+.mock-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.mock-aside {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mimi-ink-faint);
+}
+
+/* --- flashcards: the card, then the four ratings --- */
+
+.flash-card {
+  padding: 24px 20px 16px;
+  text-align: center;
+  background-color: var(--mimi-surface-raised);
+  border: 1px solid var(--mimi-border);
+  border-radius: 8px;
+}
+
+.flash-front {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+
+  color: var(--mimi-ink);
+}
+
+/* the revealed side, in the accent — the answer is the point of the card */
+.flash-back {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--mimi-accent-deep);
+}
+
+/* NB: .flash-example names two things in this file — this mockup line and
+   the demo's revealed answer below — and both rules reach both elements.
+   Later wins on the shared properties (margin, font-size), so the mock
+   takes the demo's values; keep the two rules here, in this order, together. */
+.flash-example {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--mimi-border);
+  font-size: 14px;
+  color: var(--mimi-ink-muted);
+}
+
+.flash-grades {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* spans dressed as the default raised button, the interval FSRS would set
+   worn underneath the label */
+.flash-grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 7px 4px 6px;
+  border-radius: 6px;
+  background: linear-gradient(to bottom, #ffffff, #f2efe9);
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 27, 22, 0.19),
+    inset 0 -1px 0 0 rgba(29, 27, 22, 0.09),
+    0 1px 1.5px rgba(29, 27, 22, 0.07);
+}
+
+.flash-grade-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.flash-grade-when {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mimi-ink-faint);
+}
+
+/* a lapse is the one rating that costs you, so it takes the miss tint */
+.flash-grade.is-again {
+  background: var(--mimi-miss-tint);
+  box-shadow:
+    inset 0 0 0 1px rgba(140, 47, 35, 0.22),
+    inset 0 -1px 0 0 rgba(140, 47, 35, 0.12),
+    0 1px 1.5px rgba(29, 27, 22, 0.07);
+}
+
+.flash-grade.is-again .flash-grade-label {
+  color: var(--mimi-miss-deep);
+}
+
+/* the demo page's grades are real buttons, so they finish the recipe the
+   mockup only draws: hover deepens the face, pressing sinks it */
+button.flash-grade {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+button.flash-grade:hover {
+  background: linear-gradient(to bottom, #fbfaf8, #eae6de);
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 27, 22, 0.24),
+    inset 0 -1px 0 0 rgba(29, 27, 22, 0.11),
+    0 1px 2px rgba(29, 27, 22, 0.1);
+}
+
+button.flash-grade:active {
+  background: #e6e2d9;
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 27, 22, 0.26),
+    inset 0 2px 3px rgba(29, 27, 22, 0.14);
+}
+
+button.flash-grade.is-again:hover {
+  background: #f6ddd9;
+  box-shadow:
+    inset 0 0 0 1px rgba(140, 47, 35, 0.28),
+    inset 0 -1px 0 0 rgba(140, 47, 35, 0.14),
+    0 1px 2px rgba(29, 27, 22, 0.1);
+}
+
+button.flash-grade.is-again:active {
+  background: #f0d2cd;
+  box-shadow:
+    inset 0 0 0 1px rgba(140, 47, 35, 0.3),
+    inset 0 2px 3px rgba(140, 47, 35, 0.16);
+}
+
+button.flash-grade:focus-visible {
+  outline: var(--mimi-focus-ring);
+  outline-offset: 2px;
+}
+
+/* --- the working flashcard practice (/practice/flashcards) ---
+
+   The mockup above is the picture; this is the thing itself. The chrome is
+   entirely the lesson player's (shell, progress strip, footer, summary) —
+   what follows is only the card the chrome is carrying. */
+
+/* the flippable stage. Clicking it reveals the answer, so until it has been
+   revealed it reads as pressable — after that it is just the card */
+.flash-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* tall enough that the reveal doesn't push the footer down */
+  min-height: 300px;
+  padding: 32px 28px;
+  text-align: center;
+  background-color: var(--mimi-surface);
+  border: 1px solid var(--mimi-border);
+  border-radius: 12px;
+  box-shadow: var(--mimi-lift);
+}
+
+.flash-stage:not(.is-revealed) {
+  cursor: pointer;
+}
+
+.flash-stage:not(.is-revealed):hover {
+  border-color: var(--mimi-border-strong);
+}
+
+.flash-stage-word {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flash-word {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+
+  color: var(--mimi-ink);
+}
+
+/* the word's speaker — quiet until needed, like the lesson's quit X */
+.flash-say {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--mimi-accent);
+  cursor: pointer;
+}
+
+.flash-say:hover {
+  background-color: var(--mimi-accent-tint);
+}
+
+/* the revealed half: the meaning, then the example with its own speaker.
+   The fade it arrives with lives in motion.css. */
+.flash-reveal {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--mimi-border);
+  animation: flash-answer-in 160ms ease-out;
+}
+
+.flash-answer {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--mimi-accent-deep);
+}
+
+/* (shares its class with the mockup's example line above — see the NB there) */
+.flash-example {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--mimi-ink-muted);
+}
+
+.flash-example-say {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--mimi-ink-faint);
+  cursor: pointer;
+}
+
+.flash-example-say:hover {
+  color: var(--mimi-accent);
+  background-color: var(--mimi-accent-tint);
+}
+
+/* the ratings take the footer's whole width; the "Show answer" button that
+   otherwise sits there keeps the footer's right alignment */
+.lesson-foot .flash-grades {
+  flex: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0;
+}
+
+/* The run never ends, so there is no progress bar for the count to sit beside
+   and it takes the whole strip instead. The margin offsets the quit button so
+   the number reads as centred on the column rather than on what is left of
+   it. */
+.flash-tally {
+  flex: 1;
+  margin-right: 32px;
+  text-align: center;
+}
+
+/* the one working mode's call to action, under its copy on the landing */
+.practice-cta {
+  margin-top: 16px;
+}

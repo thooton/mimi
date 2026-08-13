@@ -1,0 +1,810 @@
+/* ==========================================================================
+   the profile page
+
+   Read top to bottom rather than across: the person, then the languages
+   they're learning as a row of cards with the shared graph they drive, then
+   the practice behind the numbers, then the day-by-day record. Everything is
+   boxed in the same parchment panels as the rest of the app — no bare rail of
+   figures — so a stranger opening the page meets the human before the stats.
+   ========================================================================== */
+
+/* This element *is* the .shell, so it sets only the vertical padding: the
+   `padding` shorthand would take the inline axis with it and drop the shell's
+   gutter, leaving the page 40px wider than Learn and hanging out past the
+   navbar. Learn gets away with `padding: 20px 0` because .learn-grid sits
+   inside its shell rather than being it. */
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 18px;
+  padding-bottom: 48px;
+}
+
+/* The page before its profile arrives, and the page when one never will.
+   Both are one panel holding one thing, centred — a spinner or the reason —
+   so the layout doesn't lurch as the real page replaces it. */
+.profile-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 240px;
+  padding: 32px 22px;
+  text-align: center;
+}
+
+/* --- shared atoms, born here --- */
+
+/* the up/down chip on a moved score */
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.delta.is-up {
+  color: var(--mimi-done);
+}
+
+.delta.is-down {
+  color: var(--mimi-miss);
+}
+
+/* the online dot before a name: filled when present, hollow when not */
+.presence {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1.5px var(--mimi-ink-faint);
+}
+
+.presence.is-online {
+  background-color: var(--mimi-done);
+  box-shadow: 0 0 0 2px var(--mimi-done-tint);
+}
+
+/* ------------------------------------------------------------ identity band */
+
+.profile-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: start;
+  padding: 20px 22px;
+}
+
+/* The face: a linked picture where somebody has one, and otherwise a big
+   soft-cornered initial in the accent. The tile is the same either way, so
+   the band doesn't reflow around whether a stranger's image loaded. */
+.profile-avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background-color: var(--mimi-accent);
+  background-image: var(--mimi-sheen);
+  color: #fff;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow:
+    inset 0 0 0 1px rgba(12, 30, 60, 0.22),
+    0 2px 4px rgba(29, 27, 22, 0.14);
+}
+
+/* A linked picture fills the same tile the initial had, so the band's layout
+   doesn't depend on whether somebody has one. `cover` rather than `contain`
+   because the URL is a stranger's file at an unknown aspect ratio: cropping a
+   wide photo to the square is right where letterboxing it inside a coloured
+   tile would look like a mistake. */
+.profile-avatar-image {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-id {
+  min-width: 0;
+}
+
+.profile-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 0 0;
+  font-size: 25px;
+  font-weight: 700;
+
+  color: var(--mimi-ink);
+}
+
+/* .eyebrow reversed out of the gold */
+.profile-title {
+  color: #fff;
+  background-color: var(--mimi-gold);
+  padding: 3px 7px;
+  border-radius: 4px;
+}
+
+.profile-bio {
+  margin: 8px 0 0;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--mimi-ink-soft);
+}
+
+/* the small facts, laid out as inline label/value pairs so they wrap into a
+   tidy block instead of a tall list */
+.profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin: 14px 0 0;
+}
+
+.profile-facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.profile-facts dt {
+  font-size: 9.5px;
+  color: var(--mimi-ink-faint);
+}
+
+.profile-facts dd {
+  margin: 0;
+  font-size: 13px;
+  color: var(--mimi-ink-soft);
+}
+
+/* --- the right column: actions, then the totals --- */
+
+.profile-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* a follow or an edit that didn't land. The page is still the profile — only
+   the button failed — so this is a line under it rather than a replacement
+   for anything. */
+.profile-action-error {
+  margin: 0;
+  max-width: 260px;
+  color: var(--mimi-miss-deep);
+  font-size: 12px;
+  text-align: right;
+}
+
+/* the totals used to sit in a bordered four-cell strip — a box inside the
+   panel's box, each figure squeezed into a quarter of a fixed width. They read
+   better as plain figures: no chrome, aligned on their baselines, spaced apart
+   far enough that nothing needs a divider to be told apart */
+.profile-counters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 8px 26px;
+}
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.counter-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 21px;
+  font-weight: 700;
+
+  color: var(--mimi-ink);
+  line-height: 1;
+}
+
+/* the one figure that can break tomorrow, so it keeps the flame accent */
+.counter--streak .counter-value {
+  color: var(--mimi-flame);
+}
+
+.counter-label {
+  font-size: 9px;
+  color: var(--mimi-ink-faint);
+}
+
+@media (max-width: 860px) {
+  .profile-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  /* the side column drops under the person and stretches full width */
+  .profile-side {
+    grid-column: 1 / -1;
+    align-items: stretch;
+  }
+
+  .profile-actions,
+  .profile-counters {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 520px) {
+  .profile-head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 27px;
+    border-radius: 16px;
+  }
+}
+
+/* ---------------------------------------------------- languages + the graph */
+
+.profile-progress-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* the row of language tiles, which is also the graph's legend: each is a
+   button toggling its own line below. Compact on purpose — the trend lives
+   in the chart, so the tile only has to say which language and where it
+   stands now. They size to their content and sit left, so two languages and
+   four look equally deliberate rather than stretching to fill the row. */
+.lang-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.lang-card {
+  --lang: var(--mimi-accent);
+  flex: 1 1 210px;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 14px;
+  text-align: left;
+  cursor: pointer;
+  background-color: var(--mimi-surface);
+  border: 1px solid var(--mimi-border);
+  /* the language's colour, claimed as a thick left edge */
+  border-left: 3px solid var(--lang);
+  border-radius: 8px;
+  box-shadow: var(--mimi-lift);
+}
+
+.lang-card:hover {
+  border-color: var(--mimi-border-strong);
+  border-left-color: var(--lang);
+}
+
+/* toggled off: greyed and flattened, so the row still shows what exists but
+   the eye reads it as dropped from the graph */
+.lang-card.is-off {
+  background-color: var(--mimi-surface-sunken);
+  border-left-color: var(--mimi-border-strong);
+  opacity: 0.6;
+}
+
+.lang-card:focus-visible {
+  outline: var(--mimi-focus-ring);
+  outline-offset: 2px;
+}
+
+.lang-glyph {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background-color: var(--lang);
+  border-radius: 7px;
+  line-height: 1;
+}
+
+.lang-card.is-off .lang-glyph {
+  background-color: var(--mimi-ink-faint);
+}
+
+.lang-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lang-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.lang-foot {
+  font-size: 10.5px;
+  color: var(--mimi-ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* the score, right-aligned, with its weekly move tucked beneath it */
+.lang-figure {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.lang-score {
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1;
+
+  color: var(--mimi-ink);
+}
+
+/* --- the shared graph --- */
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* a segmented control of ranges — one recessed track, the active segment
+   raised out of it */
+.chart-ranges {
+  display: inline-flex;
+  padding: 2px;
+  background-color: var(--mimi-surface-sunken);
+  border: 1px solid var(--mimi-border);
+  border-radius: 7px;
+}
+
+.chart-range {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+
+  color: var(--mimi-ink-muted);
+  border-radius: 5px;
+}
+
+.chart-range:hover {
+  color: var(--mimi-ink);
+}
+
+.chart-range.is-active {
+  color: var(--mimi-ink);
+  background-color: var(--mimi-surface);
+  box-shadow:
+    inset 0 0 0 1px var(--mimi-border),
+    0 1px 1.5px rgba(29, 27, 22, 0.08);
+}
+
+/* the readout: the day under the cursor and each visible line's value there */
+.chart-readout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.chart-readout-date {
+  font-weight: 700;
+  color: var(--mimi-ink-soft);
+}
+
+.chart-readout-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  color: var(--mimi-ink-muted);
+}
+
+.chart-readout-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.chart-grid {
+  stroke: var(--mimi-border);
+  stroke-width: 1;
+}
+
+.chart-axis {
+  fill: var(--mimi-ink-faint);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.chart-axis--x {
+  text-anchor: middle;
+}
+
+.chart-line {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-cross {
+  stroke: var(--mimi-border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart-dot {
+  stroke: var(--mimi-surface);
+  stroke-width: 2;
+}
+
+/* -------------------------------------------------------------- practice */
+
+.practice-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1px;
+  background-color: var(--mimi-border);
+  border-radius: 0 0 7px 7px;
+  overflow: hidden;
+}
+
+/* each practice count on its own tile, hairline-separated by the grid gap
+   showing the panel's border colour through */
+.practice-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  background-color: var(--mimi-surface);
+}
+
+.practice-icon {
+  color: var(--mimi-ink-faint);
+}
+
+.practice-count {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--mimi-ink);
+}
+
+.practice-noun {
+  font-size: 11.5px;
+  color: var(--mimi-ink-muted);
+}
+
+/* --------------------------------------------------------------- activity */
+
+.profile-activity-title {
+  margin: 8px 0 0;
+  font-size: 13px;
+
+  color: var(--mimi-ink-soft);
+}
+
+.activity {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.act-day {
+  display: grid;
+  /* a fixed date gutter on the left, the entries in the rest — so the days
+     line up in a column and read as a timeline without needing a drawn spine */
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--mimi-border);
+}
+
+.act-day:first-child {
+  border-top: none;
+}
+
+.act-date-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 3px;
+}
+
+.act-date {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+
+  color: var(--mimi-ink-muted);
+}
+
+/* the streak flag, shown only on days that are part of a real run — the
+   flame ties it to the streak counter up top and the app's flame accent */
+.act-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 2px 7px 2px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mimi-flame);
+  background-color: var(--mimi-flame-tint);
+  border: 1px solid var(--mimi-flame-border);
+  border-radius: 999px;
+}
+
+.act-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.act-row {
+  display: flex;
+  gap: 11px;
+}
+
+.act-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background-color: var(--mimi-surface-sunken);
+  border: 1px solid var(--mimi-border);
+  color: var(--mimi-ink-muted);
+}
+
+.act-main {
+  min-width: 0;
+  padding-top: 3px;
+}
+
+.act-text {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--mimi-ink-soft);
+}
+
+/* the score the language landed on that day, quoted from the same history
+   the graph is drawn from */
+.act-score {
+  font-weight: 700;
+  color: var(--mimi-ink);
+}
+
+.act-xp {
+  font-size: 11px;
+  font-weight: 700;
+
+  color: var(--mimi-gold);
+  background-color: var(--mimi-gold-tint);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* the words the day actually left behind — chips of the target language,
+   which is what a language learner's feed should show off */
+.act-learned {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.act-word {
+  font-size: 13px;
+  color: var(--mimi-ink);
+  background-color: var(--mimi-surface-sunken);
+  border: 1px solid var(--mimi-border);
+  border-radius: 6px;
+  padding: 3px 9px;
+}
+
+/* an entry about somebody else — it leads to them, and says so on hover
+   rather than shouting in blue down the whole feed */
+.act-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.act-link:hover {
+  color: var(--mimi-accent);
+  text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  /* the date gutter collapses; the day heading sits above its entries */
+  .act-day {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .act-date-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+/* ------------------------------------------------------- the profile editor
+
+   The four things a person may say about themselves, in a dialog rather than
+   an inline form: editing is a rare, deliberate act on a page that is mostly
+   somebody's record, and a form living in the identity band would put a
+   permanent invitation to fiddle above a page nobody else can change. The
+   controls are the sign-in page's, because a form should look the same
+   wherever the app puts one. */
+
+.edit-dialog {
+  width: min(460px, calc(100vw - 48px));
+}
+
+.edit-form,
+.edit-form label {
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-form {
+  gap: 16px;
+  padding: 18px 20px;
+}
+
+.edit-form label {
+  gap: 6px;
+  color: var(--mimi-ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.edit-form input,
+.edit-form textarea,
+.edit-form select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--mimi-border-strong);
+  border-radius: 6px;
+  color: var(--mimi-ink);
+  background: var(--mimi-surface);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.edit-form textarea {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.edit-form input:focus,
+.edit-form textarea:focus,
+.edit-form select:focus {
+  border-color: var(--mimi-accent);
+  outline: 2px solid var(--mimi-accent-tint);
+}
+
+.edit-form small {
+  color: var(--mimi-ink-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* The URL field with its own picture beside it: a link that isn't an image,
+   or isn't the image they meant, shows up here rather than on the public
+   page. The preview obeys exactly the rule the page does, so a URL that
+   previews as an initial will be an initial for everybody else too. */
+.edit-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: var(--mimi-accent);
+  background-image: var(--mimi-sheen);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.edit-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.edit-error {
+  margin: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--mimi-miss);
+  border-radius: 5px;
+  color: var(--mimi-miss-deep);
+  background: var(--mimi-miss-tint);
+  font-size: 13px;
+}
+
+.edit-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}

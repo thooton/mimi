@@ -1,0 +1,59 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import { boardName, FORUM_BOARDS, TRENDING } from '../../data/community';
+import { formatXp } from '../../data/social';
+
+/* The forums, a subsection of the community tab (so the navbar stays lit on
+   Community). A directory of the boards, then the week's trending threads.
+   Threads open nothing yet — the boards are the deepest level that exists. */
+---
+
+<AppLayout title="Forums" active="community">
+  <div class="shell community-page">
+    <header class="hub-head">
+      <span class="eyebrow">Community / Forums</span>
+      <h1 class="hub-title">Forums</h1>
+      <p class="hub-lede">
+        Stuck on a verb form, proud of a breakthrough, hunting for a partner —
+        there&rsquo;s a board for it.
+      </p>
+    </header>
+
+    <div class="boards-grid">
+      {
+        FORUM_BOARDS.map((board) => (
+          <div class="panel fb-card">
+            <h2 class="fb-name">{board.name}</h2>
+            <p class="fb-blurb">{board.blurb}</p>
+            <span class="eyebrow fb-count">{formatXp(board.threads)} threads</span>
+          </div>
+        ))
+      }
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 class="eyebrow panel-title">Trending this week</h2>
+        <span class="eyebrow">Across all boards</span>
+      </div>
+      <div class="panel-body threads">
+        {
+          TRENDING.map((t) => (
+            <div class="thread">
+              <span class="thread-main">
+                <span class="thread-title">{t.title}</span>
+                <span class="thread-meta">
+                  {t.club && <span class="tag-chip">{t.club}</span>}
+                  {t.author} &middot; {boardName(t.board)} &middot; {t.ago} ago
+                </span>
+              </span>
+              <span class="thread-stats">
+                {formatXp(t.replies)} replies &middot; {formatXp(t.likes)} thanks
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</AppLayout>

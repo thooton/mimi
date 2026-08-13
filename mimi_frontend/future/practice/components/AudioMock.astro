@@ -1,0 +1,57 @@
+---
+import PracticeIcon from './PracticeIcon.astro';
+
+/* The podcast player, paused mid-episode: cover, title and play button on
+   top, the transcript underneath with the line being played marked. The
+   waveform is decorative — one fixed run of heights, the first ten "played"
+   so it reads as progress, 1:04 of 3:12. */
+const HEIGHTS = [
+  7, 11, 15, 9, 13, 6, 16, 10, 8, 14, 7, 12, 16, 9, 5, 13, 8, 11, 15, 6, 10,
+  14, 8, 12, 7, 15, 9, 11, 6, 13,
+];
+const PLAYED = 10;
+---
+
+<div class="mock" role="group" aria-label="Mockup of the podcast player">
+  <div class="mock-head">
+    <span class="eyebrow">Podcast</span>
+    <span class="mock-aside">Episode 4</span>
+  </div>
+
+  <div class="pod-main">
+    <span class="pod-cover"><PracticeIcon name="audio" size={22} /></span>
+    <div class="pod-id">
+      <p class="pod-title">En el mercado</p>
+      <p class="pod-sub">Mimi en español · slow Spanish for beginners</p>
+    </div>
+  </div>
+
+  <div class="pod-player">
+    <span class="pod-play">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M8 5.5v13l11-6.5z"></path>
+      </svg>
+    </span>
+    <div class="pod-track">
+      <div class="pod-wave" aria-hidden="true">
+        {
+          HEIGHTS.map((h, i) => (
+            <span
+              class={i < PLAYED ? 'pod-wave-bar is-played' : 'pod-wave-bar'}
+              style={`height: ${h}px`}
+            ></span>
+          ))
+        }
+      </div>
+      <div class="pod-times tnum">
+        <span>1:04</span>
+        <span>3:12</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pod-transcript">
+    <p class="pod-line is-current">—¿Cuánto cuestan los tomates?</p>
+    <p class="pod-line">—Dos euros el kilo, señora.</p>
+  </div>
+</div>

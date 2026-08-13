@@ -1,0 +1,5 @@
+/mimi-auth
+*.db
+*.db-shm
+*.db-wal
+*.pem

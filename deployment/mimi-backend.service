@@ -1,0 +1,33 @@
+[Unit]
+Description=Mimi learner API and lesson builder
+PartOf=mimi.target
+Requires=mimi-auth.service
+Wants=mimi-editor.service network-online.target
+After=mimi-auth.service mimi-editor.service network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=mimi
+Group=mimi
+WorkingDirectory=/home/mimi/mimi_backend
+EnvironmentFile=/home/mimi/mimi_backend/mimi-backend.env
+ExecStart=/home/mimi/mimi_backend/mimi_backend
+Restart=on-failure
+RestartSec=5s
+UMask=0077
+
+# The backend exits when the editor has no valid COURSE_ID yet. Retrying lets
+# it recover on its own as soon as authors create or restore that course.
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadWritePaths=/home/mimi/mimi_backend
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=true
+LockPersonality=true
+

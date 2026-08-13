@@ -1,0 +1,136 @@
+---
+/* A small portrait of the course map for the landing page: a skill tree.
+
+   Drawn from the same recipe as the real one (CourseMap.tsx): rows of
+   medallions side by side — a gold progress ring, a coloured face in the
+   level's colour, a crown badge carrying the level number, and a label
+   underneath — with a castle gating the next stretch of the tree. The
+   numbers are this drawing's own — a lane 320px wide holding a three-row
+   tree, rather than a course from the backend — because the picture has to
+   sit in half a column.
+
+   Static SVG, no island: it illustrates the paragraph beside it. */
+
+/** lane width */
+const W = 320;
+
+/** ring and face radii of one medallion */
+const RING_R = 34;
+const FACE_R = 26;
+
+/* The state of play the drawing shows: the first row finished, the second
+   row being raised through level 1, the castle still shut, and the next
+   stretch of the tree locked behind it. */
+interface TreeNode {
+  x: number;
+  y: number;
+  label: string;
+  /** the face's level colour; locked medallions are grey and wear a padlock */
+  level: number;
+  /** gold ring fill, 0–1 */
+  progress: number;
+  locked?: boolean;
+  glyph: 'egg' | 'book' | 'bubble' | 'lock';
+}
+
+const NODES: TreeNode[] = [
+  { x: 160, y: 52, label: 'Basics 1', level: 2, progress: 1, glyph: 'egg' },
+  { x: 96, y: 172, label: 'Basics 2', level: 1, progress: 0.62, glyph: 'book' },
+  { x: 224, y: 172, label: 'Phrases', level: 1, progress: 0.3, glyph: 'bubble' },
+  { x: 52, y: 381, label: 'Family', level: 0, progress: 0, locked: true, glyph: 'lock' },
+  { x: 160, y: 381, label: 'Food', level: 0, progress: 0, locked: true, glyph: 'lock' },
+  { x: 268, y: 381, label: 'Travel', level: 0, progress: 0, locked: true, glyph: 'lock' },
+];
+
+const H = 452;
+---
+
+<svg
+  class="tree-art"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="A skill tree: Basics 1 finished at level 2, Basics 2 and Phrases being raised through level 1, a locked castle, and three locked skills beyond it."
+>
+  <defs>
+    {/* the face's top-left light, the same sheen the real medallions get */}
+    <linearGradient id="tree-art-sheen" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.26" />
+      <stop offset="0.42" stop-color="#fff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  {/* the castle gating the next stretch: still locked, so grey. The same
+      crenellated silhouette the real map's castles wear (see CourseMap.tsx),
+      in shared local coordinates. */}
+  <g class="tree-art-castle" transform="translate(138 258)">
+    <rect class="tree-art-castle-edge" x={0} y={12} width={44} height={30} rx={5} />
+    <rect class="tree-art-castle-body" x={0} y={8} width={44} height={30} rx={5} />
+    <rect class="tree-art-castle-body" x={3} y={0} width={10} height={12} rx={1.5} />
+    <rect class="tree-art-castle-body" x={17} y={0} width={10} height={12} rx={1.5} />
+    <rect class="tree-art-castle-body" x={31} y={0} width={10} height={12} rx={1.5} />
+    <path class="tree-art-castle-door" d="M 16 38 v -9 a 6 6 0 0 1 12 0 v 9 z" />
+  </g>
+  <text class="tree-art-castle-label" x={160} y={318} text-anchor="middle">Castle 1</text>
+
+  {
+    NODES.map((n) => (
+      <g class={n.locked ? 'tree-art-node is-locked' : `tree-art-node tree-art-l${n.level}`}>
+        <circle class="tree-art-ring tree-art-ring-track" cx={n.x} cy={n.y} r={RING_R} />
+        {!n.locked && n.progress > 0 && (
+          <circle
+            class="tree-art-ring tree-art-ring-fill"
+            cx={n.x}
+            cy={n.y}
+            r={RING_R}
+            pathLength={1}
+            stroke-dasharray={`${n.progress} 1`}
+            transform={`rotate(-90 ${n.x} ${n.y})`}
+          />
+        )}
+
+        {/* the dark rim under the face is its thickness, as on the real map */}
+        <circle class="tree-art-edge" cx={n.x} cy={n.y + 3.5} r={FACE_R} />
+        <circle class="tree-art-face" cx={n.x} cy={n.y} r={FACE_R} />
+        <circle cx={n.x} cy={n.y} r={FACE_R} fill="url(#tree-art-sheen)" />
+
+        {n.glyph === 'egg' && (
+          <ellipse class="tree-art-glyph" cx={n.x} cy={n.y} rx={7} ry={9} />
+        )}
+
+        {n.glyph === 'book' && (
+          <path
+            class="tree-art-glyph"
+            d={`M ${n.x} ${n.y - 7} q -4 -3 -9 -2 v 12 q 5 -1 9 2 q 4 -3 9 -2 v -12 q -5 -1 -9 2 z`}
+          />
+        )}
+
+        {n.glyph === 'bubble' && (
+          <Fragment>
+            <rect class="tree-art-glyph" x={n.x - 9} y={n.y - 7} width={18} height={12} rx={3} />
+            <path class="tree-art-glyph" d={`M ${n.x - 4} ${n.y + 5} L ${n.x - 5} ${n.y + 10} L ${n.x + 1} ${n.y + 5}`} />
+            <path class="tree-art-glyph" d={`M ${n.x - 5} ${n.y - 2.5} h 10 M ${n.x - 5} ${n.y + 1.5} h 6.5`} />
+          </Fragment>
+        )}
+
+        {n.glyph === 'lock' && (
+          <Fragment>
+            <rect class="tree-art-glyph" x={n.x - 7} y={n.y - 1} width={14} height={10} rx={1.8} />
+            <path class="tree-art-glyph" d={`M ${n.x - 3.7} ${n.y - 1} v -3.4 a 3.7 3.7 0 0 1 7.4 0 v 3.4`} />
+          </Fragment>
+        )}
+
+        {/* the crown badge the real map pins to the medallion's bottom right */}
+        {!n.locked && (
+          <svg class="tree-art-crown" x={n.x + 2} y={n.y + 4} width={30} height={28} viewBox="0 0 30 28" aria-hidden="true">
+            <path d="M3 7 9 13 15 4 21 13 27 7 24 24H6Z" />
+            <text x="15" y="21" text-anchor="middle">{n.level}</text>
+          </svg>
+        )}
+
+        <text class="tree-art-label" x={n.x} y={n.y + RING_R + 18} text-anchor="middle">
+          {n.label}
+        </text>
+      </g>
+    ))
+  }
+</svg>

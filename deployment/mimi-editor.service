@@ -1,0 +1,20 @@
+[Unit]
+Description=Mimi MediaWiki editor
+PartOf=mimi.target
+Requires=docker.service
+Wants=mimi-auth.service network-online.target
+After=docker.service mimi-auth.service network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+User=mimi
+Group=mimi
+WorkingDirectory=/home/mimi/mimi_editor
+ExecStartPre=/usr/bin/test -f /home/mimi/mimi_editor/config/LocalSettings.php
+ExecStart=/usr/bin/docker compose --env-file /home/mimi/mimi_editor/mimi-editor.env up -d --remove-orphans
+ExecReload=/usr/bin/docker compose --env-file /home/mimi/mimi_editor/mimi-editor.env up -d --remove-orphans
+ExecStop=/usr/bin/docker compose --env-file /home/mimi/mimi_editor/mimi-editor.env stop
+TimeoutStartSec=0
+TimeoutStopSec=120s
+

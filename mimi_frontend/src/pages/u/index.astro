@@ -1,0 +1,22 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import PublicProfile from '../../components/profile/PublicProfile';
+
+/* Public profiles live at /u/<name>, so a profile can be linked to from
+   anywhere — the leaderboard does — without the reader needing an account.
+
+   **One page serves all of them.** The site is prerendered and there is no
+   build at which the list of accounts is known, so there is no `getStaticPaths`
+   here: this emits a single /u/ page, and the host rewrites /u/<name> onto it
+   with a 200. astro.config.mjs holds that rule for the dev server and spells
+   out the nginx equivalent for deployment. `PublicProfile` then reads the name
+   back out of the address bar.
+
+   The page itself is a shell either way; the record is fetched in the browser,
+   because it changes every time its owner finishes a lesson. A signed-in
+   learner's own profile lives at /profile. */
+---
+
+<AppLayout title="Profile">
+  <PublicProfile client:load />
+</AppLayout>

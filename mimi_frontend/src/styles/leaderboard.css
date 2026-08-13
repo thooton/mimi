@@ -1,0 +1,176 @@
+/* ==========================================================================
+   individual weekly leaderboard
+   ========================================================================== */
+
+/* ------------------------------------------------------------ board tables */
+
+.board-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.board-table th {
+  font-size: 9.5px;
+  color: var(--mimi-ink-faint);
+  text-align: left;
+  padding: 0 6px 6px;
+  border-bottom: 1px solid var(--mimi-border);
+}
+
+.board-table td {
+  padding: 6px;
+  border-bottom: 1px solid var(--mimi-surface-sunken);
+  color: var(--mimi-ink-soft);
+}
+
+.board-table tr:last-child td {
+  border-bottom: none;
+}
+
+.board-table .col-rank {
+  width: 26px;
+  text-align: center;
+}
+
+.board-table .col-xp,
+.board-table th.col-xp,
+.board-table .col-num,
+.board-table th.col-num {
+  text-align: right;
+  font-weight: 500;
+  color: var(--mimi-ink);
+}
+
+.rank {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--mimi-ink-muted);
+}
+
+/* podium — flat discs of colour, held together by a shared rim */
+.rank--1,
+.rank--2,
+.rank--3 {
+  box-shadow: inset 0 0 0 1px rgba(29, 27, 22, 0.14);
+}
+
+.rank--1 {
+  background-color: #eccf87;
+  color: #61420c;
+}
+
+.rank--2 {
+  background-color: #d9d6ce;
+  color: #4d4a43;
+}
+
+.rank--3 {
+  background-color: #e0bf9f;
+  color: #633f22;
+}
+
+.board-row-you td {
+  background-color: var(--mimi-accent-tint);
+  color: var(--mimi-ink);
+  font-weight: 500;
+}
+
+.board-row-you td:first-child {
+  box-shadow: inset 2px 0 0 0 var(--mimi-accent);
+}
+
+.you-badge {
+  font-size: 9px;
+  color: var(--mimi-accent);
+}
+
+/* ------------------------------------------------------------ page header */
+
+/* A page head: eyebrow, big title, lede (born as the old practice hub's
+   head, generalised). The two shells set only their vertical padding, so as
+   not to eat the shell's gutter. */
+.board-page {
+  max-width: 940px;
+  margin: 0 auto;
+  padding-top: 40px;
+  padding-bottom: 84px;
+}
+
+.hub-head {
+  margin-bottom: 32px;
+}
+
+.hub-title {
+  margin: 4px 0 8px;
+  font-size: 27px;
+  font-weight: 900;
+
+  color: var(--mimi-ink);
+}
+
+.hub-lede {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--mimi-ink-soft);
+}
+
+.board-body {
+  padding: 8px 14px 12px;
+}
+
+/* the main board uses a little more room than the shared table defaults */
+.board-table--weekly {
+  font-size: 14px;
+}
+
+.board-table--weekly td {
+  padding: 8px;
+}
+
+.board-table--weekly .col-rank {
+  width: 34px;
+}
+
+/* one ranked member */
+.player {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+/* the name is a link to the profile behind it, and wears no link decoration
+   until it is pointed at — eighteen underlined rows would read as a list of
+   links rather than a ranking */
+.player-name {
+  font-weight: 500;
+  color: var(--mimi-ink);
+  text-decoration: none;
+}
+
+.player-name:hover {
+  text-decoration: underline;
+}
+
+.player-name:focus-visible {
+  outline: var(--mimi-focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Why the board is empty, or why the reader isn't on it. Sits under the
+   table in the same gutter the rows use. */
+.board-note {
+  margin: 0;
+  padding: 10px 8px 4px;
+  font-size: 13px;
+  color: var(--mimi-ink-soft);
+}
