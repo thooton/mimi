@@ -233,31 +233,10 @@ docker compose --env-file mimi_editor/mimi-editor.env -f mimi_editor/compose.yam
 
 ## Updating
 
-On the build machine, keep the frontend configuration from the first release.
-For a deployment created before `mimi_frontend/.env` existed, create it once
-and set the real editor hostname before rebuilding:
-
 ```sh
-test -f mimi_frontend/.env || cp deployment/mimi-frontend.env.example mimi_frontend/.env
-# Review mimi_frontend/.env, especially after adding a new PUBLIC_* setting.
-bazel build //deployment:deploy
-scp bazel-bin/deployment/mimi-deployment.tar.gz ADMIN@SERVER:/tmp/
-```
-
-Do not copy the example over an existing file: that would quietly put
-`edit.example.com` back into a release. On the server, run as root:
-
-```sh
-# Install the new stop policy before stopping the old release. Nothing else in
-# deployment/ is live application code, so extracting this one file early is
-# safe and makes the first upgrade from an older, short-timeout unit safe too.
-tar --no-same-owner -xzf /tmp/mimi-deployment.tar.gz -C /home/mimi \
-  ./deployment/mimi-editor.service
-install -m 0644 /home/mimi/deployment/mimi-editor.service /etc/systemd/system/
-systemctl daemon-reload
 systemctl stop mimi.target
 find /home/mimi/mimi_frontend -mindepth 1 -delete
-tar --no-same-owner -xzf /tmp/mimi-deployment.tar.gz -C /home/mimi
+tar --no-same-owner -xzf ./mimi-deployment.tar.gz -C /home/mimi
 chown -R mimi:mimi /home/mimi
 install -m 0644 /home/mimi/deployment/mimi-auth.service /etc/systemd/system/
 install -m 0644 /home/mimi/deployment/mimi-backend.service /etc/systemd/system/
