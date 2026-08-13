@@ -19,7 +19,7 @@ round trip), and the client reports per-exercise and per-word verdicts back.
 
 `cargo run` reads the wiki at `http://mimi.localhost:4771/api.php`, uses the private
 credential service at `http://127.0.0.1:4770`, and serves on `127.0.0.1:4772`.
-Override these with `WIKI_API`, `MIMI_AUTH_URL`, `MIMI_FRONTEND_ORIGIN`, `COURSE_ID`,
+Override these with `WIKI_API`, `MIMI_AUTH_URL`, `MIMI_FRONTEND_ORIGIN`,
 `HOST`/`PORT`, and `DB_PATH`; set `MIMI_SECURE_COOKIES=true` behind HTTPS. Repeat
 `--language NAME=CODE` for language names outside the built-in table. `cargo test` runs
 everything.
@@ -36,16 +36,15 @@ Several pieces are stubs. Don't "fix" these without being asked:
 - **`title` is the one authored field with no writer.** It is a granted badge ("Tutor"),
   and a field anybody may type into is not a badge. Everything else a person says about
   themselves is editable — `display`/`bio`/`cefr`/`avatar` through `PUT /me/profile`, and
-  `target_lang` through its own narrow writer.
+  `course_id` through its own narrow writer.
 - **Mimi hosts no images.** An avatar is a URL to somebody else's server, checked hard on
   the way in (`profile::avatar_url`) because it becomes an `<img src>` in every reader's
   browser. Uploads would mean storage, moderation and a bill; that is not a missing
   feature to add.
 - **Only `Again`/`Good` ratings** on `Card`, deliberately: the app only knows "wrong" vs
   "right".
-- **Only one course is served** (`COURSE_ID=spanish` by default), but the profile still
-  returns `languages` as a *list* — a profile is a comparison between courses the moment
-  there are two.
+- **Every valid wiki course is served.** `GET /courses` is the live catalog; learner
+  state and activity are partitioned by its stable `<target>_for_<source>` course ids.
 
 ## Architecture
 
@@ -124,8 +123,9 @@ backend session is an HttpOnly cookie. `mimi_auth` is not a browser-facing servi
   verdict.
 - **WordState** — one word for one user: its `stage` on the ladder, the
   `streak`/`lapses`/`repromoting` counters, and up to three cards.
-- **User** — a map of word → `WordState`, a map of skill → lessons done, and a count of
-  castles passed. **Progress is a set, not a point.**
+- **User** — one learner's state in one course: a map of word → `WordState`, a map of
+  skill → lessons done, and a count of castles passed. The store partitions these by
+  `(username, course_id)`. **Progress is a set, not a point.**
 - **Exercise** — one materialized question: `id`, `ask`, `prompt`, the `words` it grades,
   `row`, `skill`, the `answers` accepted (preferred first, each with its spans), and for
   word banks the correct `tiles` and a `bank` of distractors. A served introduction also
@@ -249,12 +249,16 @@ All four answer with the same viewer shape: `{"username", "email", "guest"}`, wh
 - **`GET /me/quests`** — three daily quests selected from the XP, lessons, correct-answer
   and perfect-lesson pool: `{"day", "resets_at", "quests":[{"id", "title", "done",
   "total"}]}`. Private but available to guests. Definitions rotate deterministically at
-  midnight UTC and progress is measured from that day's activity row, so neither quests
-  nor completion flags are stored and there is no reset job.
-- **`PUT /me/language`** `{"target_lang": "es"}` → 204. The account's *course choice*,
+  midnight UTC and progress is measured from that day's row for the active course, so
+  neither quests nor completion flags are stored and there is no reset job.
+- **`GET /courses`** — every usable course in the current coherent wiki generation as
+  `[{"id":"spanish_for_english","source_lang":"en","target_lang":"es"}]`. Public:
+  it is the learner site's course catalog, including before a guest account exists.
+- **`PUT /me/course`** `{"course_id": "spanish_for_english"}` → 204. The account's
+  *course choice*,
   which is why it has a writer of its own rather than going through the profile editor:
-  it is set from the language chooser, not from a form about who you are. 400 for an
-  empty or over-16-chars code, 404 no such user.
+  it is set from the course chooser, not from a form about who you are. 404 when the id
+  is absent from the current catalog or there is no such user.
 - **`PUT /me/profile`** `{"display", "bio", "cefr", "avatar"}` → 204. The authored half,
   **written whole** — the editor is a form, so a field sent back unchanged means what it
   says and an omitted one is a bad request; that is what makes clearing a field possible
@@ -591,7 +595,7 @@ opens the next row.
 
 Two halves, and keeping them apart is the whole design.
 
-**Authored** — `display`, `title`, `bio`, `cefr`, `avatar`, `target_lang` — is what the
+**Authored** — `display`, `title`, `bio`, `cefr`, `avatar`, `course_id` — is what the
 user typed, stored and handed back: a bio is a claim, and so is "B2 Spanish". Nothing is
 checked *against reality*, but a field is checked for being the **kind of thing** it
 claims to be, which is a different question — `cefr` must be a level, `display` must be
@@ -600,7 +604,7 @@ one line, and `avatar` must be a URL safe to hand a browser. A separate table fr
 
 `ProfileEdit::of` is the only way to build an edit, so holding one *is* the promise that
 the limits were applied; `PUT /me/profile` writes four of the fields and
-`PUT /me/language` writes `target_lang` alone. `title` has no writer at all — it is a
+`PUT /me/course` writes `course_id` alone. `title` has no writer at all — it is a
 granted badge, and a field anybody may type into is not a badge.
 
 **The avatar is a link, never a file.** Mimi hosts no images, so the field is an
@@ -614,8 +618,10 @@ while reading as the opposite, cannot be stored. The frontend checks the same ru
 again on the way out (`safeAvatar`), because the thing being rendered is one stranger's
 string in another stranger's browser.
 
-**Derived** is everything else, all from `activity(username, day, data)` keyed by
-`(username, day)` — **one row per user per day, holding everything they did that day**.
+**Derived** is everything else, all from `activity(username, course_id, day, data)` keyed
+by `(username, course_id, day)` — **one row per user, course and day**. Public profile
+totals and streaks fold courses together by day, while each language graph reads only its
+own rows.
 Not one row per lesson: nothing ever asks about a single lesson afterwards, and everything
 a profile *does* ask (how long is the streak, how did the score move, what was learnt in
 June) is a scan over days. A row stores **deltas only**; running totals are cumulative
@@ -633,9 +639,9 @@ request rather than stored — so a change to the score weights re-scores the wh
   a skill re-reports clearing it every time. The rows stay a faithful log; deciding what
   it *means* happens on the way out.
 
-`Store::update_user` takes the day and its closure returns `(result, Activity)`, so the
-memory update and the record of it land under one lock — a lesson that moved cards but
-left no trace would break the streak.
+`Store::update_user` takes the course id and day, and its closure returns
+`(result, Activity)`, so that course's memory update and activity row land under one lock
+— a lesson that moved cards but left no trace would break the streak.
 
 Daily quests read this record at its natural resolution: one primary-key lookup for the
 current UTC day. Three of four definitions are selected from the day number, advancing by

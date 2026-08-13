@@ -366,7 +366,14 @@ fn convert_course(
         .map(|(castle, rows)| CastleDef { castle, rows })
         .collect();
 
-    let course_id = unique(&slug(&target_name), course_ids);
+    // A course is a direction, not merely a target language. Spanish for
+    // English speakers and Spanish for French speakers must never share the
+    // learner state keyed by this id, so both halves of the authored title
+    // participate in its stable identity.
+    let course_id = unique(
+        &format!("{}_for_{}", slug(&target_name), slug(&source_name)),
+        course_ids,
+    );
     Some(Converted {
         id: course_id.clone(),
         index: CourseIndex {
@@ -946,7 +953,7 @@ mod tests {
         let course = only(&conversion);
         assert_eq!(course.index.source_lang, "en");
         assert_eq!(course.index.target_lang, "es");
-        assert_eq!(course.id, "spanish");
+        assert_eq!(course.id, "spanish_for_english");
     }
 
     #[test]

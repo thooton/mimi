@@ -4,8 +4,7 @@ import type { ApiCourse, ApiDailyQuests, ApiLesson, ApiLessonTarget, ApiPosition
 import { createCastle, createLesson, ensureUser, fetchCourse, fetchProfile, fetchQuests, submitLesson } from '../../data/api';
 import { useAuth } from '../../data/auth';
 import { treeFromCourse } from '../../data/course';
-import { languageByCode } from '../../data/languages';
-import { useTargetLang } from '../../data/targetLang';
+import { useCourseSelection } from '../../data/courseSelection';
 import CourseMap from './CourseMap';
 import Sidebar from './Sidebar';
 import LessonPlayer from './LessonPlayer';
@@ -21,8 +20,15 @@ const QUIT_MS = 180;
    the presentational components. Everything backend-shaped lives here. */
 export default function LearnApp() {
   const { user, ready: authReady, startAsGuest } = useAuth();
-  const { lang, ready, setLang } = useTargetLang();
-  const language = languageByCode(lang);
+  const {
+    courseId,
+    course: selectedCourse,
+    courses,
+    ready,
+    error: courseError,
+    setCourse: selectCourse,
+    retry: retryCourses,
+  } = useCourseSelection();
   const [course, setCourse] = useState<ApiCourse | null>(null);
   const [dailyQuests, setDailyQuests] = useState<ApiDailyQuests | null>(null);
   const [xpSchedule, setXpSchedule] = useState<ApiXpSchedule | null>(null);
@@ -71,14 +77,10 @@ export default function LearnApp() {
     setDailyQuests(quests);
   }, [user]);
 
-  /* `lang` is a dependency even though nothing below reads it: the backend
-     serves one course and `/course` takes no language, so switching can't
-     change the answer *today*. Keying the effect on it anyway means that the
-     day the endpoint grows a target_lang, switching already refetches — and
-     in the meantime it clears a course belonging to the language you just
-     left. */
+  /* Course selection is account state. Changing it invalidates every
+     course-shaped value on this page before the active course is refetched. */
   useEffect(() => {
-    if (!user || !language?.available) return;
+    if (!user || !selectedCourse) return;
     let cancelled = false;
     setCourse(null);
     setDailyQuests(null);
@@ -91,7 +93,7 @@ export default function LearnApp() {
     return () => {
       cancelled = true;
     };
-  }, [load, lang, language, user]);
+  }, [load, courseId, selectedCourse, user]);
 
   /* A tree has no global position: the selected skill supplies its reached
      lesson address, and completed skills may request their last one again. */
@@ -150,20 +152,20 @@ export default function LearnApp() {
     return null;
   }
 
-  // no choice yet, or one this build does not offer
-  if (user && !language?.available) {
-    return <LanguageChooser onPick={setLang} />;
-  }
-
-  if (error) {
+  const problem = error ?? courseError;
+  if (problem) {
     return (
       <div className="learn-status">
         <p className="learn-status-title">Can't reach the mimi server</p>
-        <p className="learn-status-detail">{error}</p>
+        <p className="learn-status-detail">{problem}</p>
         <Button
           intent="primary"
           text="Retry"
           onClick={() => {
+            if (courseError && !error) {
+              retryCourses();
+              return;
+            }
             setError(null);
             setCourse(null);
             setDailyQuests(null);
@@ -176,6 +178,11 @@ export default function LearnApp() {
         />
       </div>
     );
+  }
+
+  // No choice yet, or a previously selected wiki course is no longer usable.
+  if (user && !selectedCourse) {
+    return <LanguageChooser courses={courses} onPick={selectCourse} />;
   }
 
   /* the course, profile policy and quest fetches are one loading wait —

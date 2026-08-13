@@ -47,7 +47,7 @@ function guestNext(path: string): string {
 
    `settled` flips when the request finishes either way, and it's what the
    whole right side waits on: the flag's own fetch (the same profile, via
-   targetLang.ts) lands at about the same time, and showing the bar piecemeal
+   courseSelection.ts) lands at about the same time, and showing the bar piecemeal
    made it reveal in two pops — flag first, then the counters flashing in
    around it. Holding everything for the one signal makes the three appear
    in a single paint. A profile that won't load still settles, so the flag

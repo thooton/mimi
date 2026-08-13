@@ -23,8 +23,25 @@ use crate::word::{Stage, WordState};
 const FEED_DAYS: usize = 60;
 
 #[derive(Debug, Deserialize)]
-pub struct SetLanguageRequest {
+pub struct SetCourseRequest {
+    pub course_id: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CourseSummaryView {
+    pub id: String,
+    pub source_lang: String,
     pub target_lang: String,
+}
+
+impl CourseSummaryView {
+    pub fn of(course: &Course) -> Self {
+        Self {
+            id: course.id.clone(),
+            source_lang: course.source_lang.clone(),
+            target_lang: course.target_lang.clone(),
+        }
+    }
 }
 
 // The two settings a learner may edit about their account. Neither body names
@@ -52,8 +69,8 @@ pub struct SetEmailRequest {
 ///
 /// `avatar` is the exception, and null there does mean cleared: it is the one
 /// field whose empty value is the absence of a thing rather than an empty
-/// string. `title` and `target_lang` are absent because neither is the
-/// editor's to write (see `Profile` and `Store::save_language`).
+/// string. `title` and `course_id` are absent because neither is the
+/// editor's to write (see `Profile` and `Store::save_course`).
 #[derive(Debug, Deserialize)]
 pub struct EditProfileRequest {
     pub display: String,
@@ -703,8 +720,8 @@ pub struct ProfileView {
     /// where they haven't linked one, which is most people.
     pub avatar: Option<String>,
     // the course they're learning, or null while they haven't picked — the
-    // one authored field with a writer of its own (PUT /me/language)
-    pub target_lang: Option<String>,
+    // one authored field with a writer of its own (PUT /me/course)
+    pub course_id: Option<String>,
     pub joined: u64,
     /// how many accounts follow this one, and how many it follows
     pub followers: u32,
@@ -743,6 +760,7 @@ pub struct TotalsView {
 pub struct LanguageView {
     pub id: String,
     pub code: String,
+    pub source_code: String,
     pub score: u32,
     pub delta: i32,
     pub provisional: bool,
@@ -792,29 +810,40 @@ impl ProfileView {
         profile: Profile,
         history: &History,
         social: Social,
-        course: &Course,
+        course_histories: &[(&Course, &History)],
         online: bool,
         today: u32,
     ) -> Self {
         let counts = history.counts();
         let (exercises, correct) = history.exercises();
         let since = day_start(crate::profile::day_of(profile.joined));
-        let languages = vec![LanguageView {
-            id: course.id.clone(),
-            code: course.target_lang.clone(),
-            score: counts.score(),
-            delta: history.week_delta(today),
-            provisional: history.provisional(),
-            words: counts.words,
-            skills: counts.skills,
-            lessons: counts.lessons,
-            since,
-            points: history
-                .score_points(since, today)
-                .into_iter()
-                .map(|(t, v)| PointView { t, v })
-                .collect(),
-        }];
+        let languages = course_histories
+            .iter()
+            .map(|(course, course_history)| {
+                let course_counts = course_history.counts();
+                let course_since = course_history
+                    .days
+                    .first()
+                    .map_or(since, |day| day_start(day.day));
+                LanguageView {
+                    id: course.id.clone(),
+                    code: course.target_lang.clone(),
+                    source_code: course.source_lang.clone(),
+                    score: course_counts.score(),
+                    delta: course_history.week_delta(today),
+                    provisional: course_history.provisional(),
+                    words: course_counts.words,
+                    skills: course_counts.skills,
+                    lessons: course_counts.lessons,
+                    since: course_since,
+                    points: course_history
+                        .score_points(course_since, today)
+                        .into_iter()
+                        .map(|(t, v)| PointView { t, v })
+                        .collect(),
+                }
+            })
+            .collect();
         // The feed is the activity record and the follow log read together,
         // so a day either of them mentions is a day of the feed. Following
         // somebody is deliberately *not* folded into the activity table: a
@@ -856,14 +885,18 @@ impl ProfileView {
                     exercises: day.map_or(0, |day| day.activity.exercises),
                     correct: day.map_or(0, |day| day.activity.correct),
                     xp: day.map_or(0, |day| day.activity.xp()),
-                    learned: day.map_or_else(Vec::new, |day| {
+                    learned: day.map_or_else(Vec::new, |day| day.activity.learned.clone()),
+                    skills: day.map_or_else(Vec::new, |day| {
                         day.activity
-                            .learned
+                            .skills
                             .iter()
-                            .map(|w| course.vocab.word_for(w))
+                            .map(|skill| {
+                                skill
+                                    .rsplit_once('\n')
+                                    .map_or_else(|| skill.clone(), |(_, name)| name.to_string())
+                            })
                             .collect()
                     }),
-                    skills: day.map_or_else(Vec::new, |day| day.activity.skills.clone()),
                     followed: followed.remove(&date).unwrap_or_default(),
                     score,
                     delta: score as i32
@@ -878,7 +911,7 @@ impl ProfileView {
             bio: profile.bio,
             cefr: profile.cefr,
             avatar: profile.avatar,
-            target_lang: profile.target_lang,
+            course_id: profile.course_id,
             joined: profile.joined,
             followers: social.followers,
             following: social.following,
@@ -1030,7 +1063,7 @@ mod tests {
             Profile::new("sam", day_start(10)),
             &history,
             social,
-            &course,
+            &[(&course, &history)],
             true,
             12,
         ))
@@ -1084,7 +1117,7 @@ mod tests {
                     display: "Ren".into(),
                 }],
             },
-            &course,
+            &[(&course, &history)],
             false,
             10,
         );
@@ -1092,6 +1125,63 @@ mod tests {
         assert_eq!(view.days.len(), 1);
         assert_eq!(view.days[0].lessons, 1);
         assert_eq!(view.days[0].followed.len(), 1);
+    }
+
+    #[test]
+    fn profile_language_scores_are_derived_per_course() {
+        let mut spanish = course_of(
+            vec![skill("intro", 0, 0, &["hola"], 1)],
+            vec![sentence("intro:1", &["hola"], 0)],
+        );
+        spanish.id = "spanish_for_english".into();
+        let mut french = course_of(
+            vec![skill("intro", 0, 0, &["bonjour"], 1)],
+            vec![sentence("intro:1", &["bonjour"], 0)],
+        );
+        french.id = "french_for_english".into();
+        french.target_lang = "fr".into();
+        let spanish_history = History::of(vec![(
+            10,
+            crate::profile::Activity {
+                lessons: 2,
+                learned: vec!["hola".into()],
+                ..crate::profile::Activity::default()
+            },
+        )]);
+        let french_history = History::of(vec![(
+            11,
+            crate::profile::Activity {
+                lessons: 5,
+                learned: vec!["bonjour".into(), "merci".into()],
+                ..crate::profile::Activity::default()
+            },
+        )]);
+        let overall = History::of(vec![
+            (10, spanish_history.days[0].activity.clone()),
+            (11, french_history.days[0].activity.clone()),
+        ]);
+
+        let view = ProfileView::of(
+            "sam".into(),
+            Profile::new("sam", day_start(10)),
+            &overall,
+            Social {
+                followers: 0,
+                following: 0,
+                viewer_follows: false,
+                log: Vec::new(),
+            },
+            &[(&spanish, &spanish_history), (&french, &french_history)],
+            false,
+            11,
+        );
+
+        assert_eq!(view.languages.len(), 2);
+        assert_eq!(view.languages[0].id, "spanish_for_english");
+        assert_eq!(view.languages[0].lessons, 2);
+        assert_eq!(view.languages[1].id, "french_for_english");
+        assert_eq!(view.languages[1].lessons, 5);
+        assert_eq!(view.totals.lessons, 7);
     }
 
     #[test]

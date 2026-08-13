@@ -86,7 +86,7 @@ function profileWith(days: ApiProfile['days']): ApiProfile {
     bio: '',
     cefr: '',
     avatar: null,
-    target_lang: 'es',
+    course_id: 'spanish_for_english',
     joined: 0,
     online: false,
     last_active: null,
@@ -98,7 +98,7 @@ function profileWith(days: ApiProfile['days']): ApiProfile {
     xp_schedule: { lesson: 20, perfect_lesson: 40 },
     totals: { xp: 0, lessons: 0, exercises: 0, correct: 0, words: 0, skills: 0, days: 0 },
     languages: [{
-      id: 'spanish', code: 'es', score: 400, delta: 0, provisional: true,
+      id: 'spanish_for_english', code: 'es', source_code: 'en', score: 400, delta: 0, provisional: true,
       words: 0, skills: 0, lessons: 0, since: 0, points: [],
     }],
     days,
@@ -146,5 +146,5 @@ test('a day with a follow and no lesson has no lesson entry', () => {
     day({ lessons: 2, exercises: 20, correct: 18, xp: 40, followed: [{ username: 'ren', display: 'Ren' }] }),
   ]));
   assert.equal(studied.entries.length, 2);
-  assert.equal(studied.entries[0].text, 'Completed 2 Spanish lessons · 18 of 20 right');
+  assert.equal(studied.entries[0].text, 'Completed 2 lessons · 18 of 20 right');
 });

@@ -1,8 +1,8 @@
 import { Icon, Menu, MenuDivider, MenuItem, Popover } from '@blueprintjs/core';
 import Flag from './Flag';
-import { AVAILABLE } from '../data/languages';
-import type { LanguageOption } from '../data/languages';
-import { useTargetLang } from '../data/targetLang';
+import { languageByCode, languageName } from '../data/languages';
+import type { ApiCourseSummary } from '../data/api';
+import { useCourseSelection } from '../data/courseSelection';
 
 /* The one piece of chrome that answers "what am I learning right now?".
 
@@ -12,8 +12,7 @@ import { useTargetLang } from '../data/targetLang';
    a setting you have to go looking for is one people forget they set. */
 
 export default function LanguagePicker({ visible = true }: { visible?: boolean }) {
-  const { lang, ready: loaded, setLang } = useTargetLang();
-  const current = AVAILABLE.find((language) => language.code === lang);
+  const { courseId, course: current, courses, ready: loaded, setCourse } = useCourseSelection();
 
   /* Until the backend has answered there is no button at all: rendering
      the globe here would be a flicker at best and the wrong flag's stand-in
@@ -28,16 +27,23 @@ export default function LanguagePicker({ visible = true }: { visible?: boolean }
      it's allowed to show. */
   if (!visible || !loaded) return null;
 
-  function item(l: LanguageOption) {
+  function item(course: ApiCourseSummary) {
+    const language = languageByCode(course.target_lang);
     return (
       <MenuItem
-        key={l.code}
+        key={course.id}
         roleStructure="listoption"
-        selected={l.code === lang}
-        icon={<Flag region={l.region} size={18} className="flag-menu" />}
-        text={l.name}
-        labelElement={<span className="lang-endonym">{l.endonym}</span>}
-        onClick={() => setLang(l.code)}
+        selected={course.id === courseId}
+        icon={language
+          ? <Flag region={language.region} size={18} className="flag-menu" />
+          : <Icon icon="globe" size={18} />}
+        text={languageName(course.target_lang)}
+        labelElement={
+          <span className="lang-endonym">
+            {language?.endonym ?? course.target_lang.toUpperCase()} · from {languageName(course.source_lang)}
+          </span>
+        }
+        onClick={() => setCourse(course.id)}
       />
     );
   }
@@ -54,19 +60,21 @@ export default function LanguagePicker({ visible = true }: { visible?: boolean }
            in a list that doesn't allow them. */
         <Menu className="lang-menu" role="listbox" aria-label="Language">
           <MenuDivider title="Courses" />
-          {AVAILABLE.map(item)}
+          {courses.map(item)}
         </Menu>
       }
     >
       <button
         className="lang-btn"
         type="button"
-        aria-label={current ? `Learning ${current.name} — change language` : 'Choose a language'}
+        aria-label={current
+          ? `Learning ${languageName(current.target_lang)} from ${languageName(current.source_lang)} — change course`
+          : 'Choose a course'}
       >
         {/* nothing picked yet — a hollow slot with the same footprint as the
             flag, and the only state left once `!loaded` returns early above */}
-        {current ? (
-          <Flag region={current.region} size={22} className="flag-btn" aspect="4x3" />
+        {current && languageByCode(current.target_lang) ? (
+          <Flag region={languageByCode(current.target_lang)!.region} size={22} className="flag-btn" aspect="4x3" />
         ) : (
           <span className="lang-empty" aria-hidden="true">
             <Icon icon="globe" size={13} />

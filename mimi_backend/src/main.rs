@@ -31,27 +31,27 @@ use std::time::Duration;
 // where user data is persisted
 const DB_PATH: &str = "mimi.db";
 const WIKI_API: &str = "http://mimi.localhost:4771/api.php";
-const COURSE_ID: &str = "spanish";
 const POLL_EVERY: Duration = Duration::from_secs(5);
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api = std::env::var("WIKI_API").unwrap_or_else(|_| WIKI_API.to_string());
-    let course_id = std::env::var("COURSE_ID").unwrap_or_else(|_| COURSE_ID.to_string());
     let language_codes = language_codes()?;
     let wiki = Arc::new(wiki::Wiki::new(&api));
 
     let mut report = |message: &str| println!("wiki: {message}");
     let snapshot = snapshot::refresh(&wiki, None, &mut report).await?;
-    let (course, dictionary) =
-        content_of(&snapshot, &course_id, &language_codes).map_err(io::Error::other)?;
-    println!(
-        "loaded '{course_id}' from {api}: {} words, {} skills, {} sentences ({} questions)",
-        course.vocab.len(),
-        course.skills().len(),
-        course.sentences.len(),
-        course.sentences.len() * exercise::Ask::ALL.len()
-    );
+    let courses = content_of(&snapshot, &language_codes).map_err(io::Error::other)?;
+    println!("loaded {} course(s) from {api}", courses.len());
+    for (id, (course, _)) in &courses {
+        println!(
+            "  '{id}': {} words, {} skills, {} sentences ({} questions)",
+            course.vocab.len(),
+            course.skills().len(),
+            course.sentences.len(),
+            course.sentences.len() * exercise::Ask::ALL.len()
+        );
+    }
 
     let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| DB_PATH.to_string());
     let store = store::Store::open(&db_path)?;
@@ -67,8 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let frontend_origin = std::env::var("MIMI_FRONTEND_ORIGIN")
         .unwrap_or_else(|_| "http://localhost:4773".to_string());
     let state = server::AppState::new(
-        course,
-        dictionary,
+        courses,
         store,
         auth::CredentialService::new(&auth_url),
         secure_cookies,
@@ -77,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = server::router(state.clone());
     println!("using private authentication service {auth_url}");
     println!("accepting browser requests from {frontend_origin}");
-    tokio::spawn(poll(wiki, snapshot, course_id, language_codes, state));
+    tokio::spawn(poll(wiki, snapshot, language_codes, state));
 
     let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = std::env::var("PORT").unwrap_or_else(|_| "4772".to_string());
@@ -88,41 +87,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// Build both runtime projections from one coherent snapshot. Conversion may
-// describe several courses; this process serves one, selected by its stable
-// generated id.
+// Build every course and its dictionary from one coherent snapshot. Serving
+// all of them from the same generation means a chooser never advertises a
+// course whose content belongs to a different point in wiki history.
 fn content_of(
     snapshot: &snapshot::Snapshot,
-    course_id: &str,
     language_codes: &HashMap<String, String>,
-) -> Result<(course::Course, dictionary::Dictionary), String> {
+) -> Result<HashMap<String, (course::Course, dictionary::Dictionary)>, String> {
     let conversion = convert::convert(snapshot, language_codes);
     for warning in conversion.warnings {
         eprintln!("wiki content warning: {warning}");
     }
-    let converted = conversion
-        .courses
-        .into_iter()
-        .find(|course| course.id == course_id)
-        .ok_or_else(|| format!("the wiki has no usable course with id '{course_id}'"))?;
-    let dictionary = dictionary::Dictionary::from_entries(converted.glossary);
-    let course = loader::assemble(
-        converted.index,
-        converted.words,
-        converted.layout,
-        converted.skills,
-    )
-    .map_err(|error| error.to_string())?;
-    Ok((course, dictionary))
+    let mut courses = HashMap::new();
+    for converted in conversion.courses {
+        let id = converted.id.clone();
+        let dictionary = dictionary::Dictionary::from_entries(converted.glossary);
+        let course = loader::assemble(
+            converted.index,
+            converted.words,
+            converted.layout,
+            converted.skills,
+        )
+        .map_err(|error| format!("course '{id}': {error}"))?;
+        courses.insert(id, (course, dictionary));
+    }
+    if courses.is_empty() {
+        return Err("the wiki has no usable courses".to_string());
+    }
+    Ok(courses)
 }
 
 // Keep the last known-good snapshot and content alive. A network, conversion
 // or validation failure is reported and retried on the next tick; it never
-// takes the current course away from learners.
+// takes the current courses away from learners.
 async fn poll(
     wiki: Arc<wiki::Wiki>,
     mut snapshot: snapshot::Snapshot,
-    course_id: String,
     language_codes: HashMap<String, String>,
     state: Arc<server::AppState>,
 ) {
@@ -154,20 +154,15 @@ async fn poll(
                     continue;
                 }
             };
-        let (course, dictionary) = match content_of(&refreshed, &course_id, &language_codes) {
+        let courses = match content_of(&refreshed, &language_codes) {
             Ok(content) => content,
             Err(error) => {
                 eprintln!("wiki rebuild failed: {error}");
                 continue;
             }
         };
-        println!(
-            "reloaded '{course_id}': {} words, {} skills, {} sentences",
-            course.vocab.len(),
-            course.skills().len(),
-            course.sentences.len()
-        );
-        state.replace_content(course, dictionary);
+        println!("reloaded {} course(s)", courses.len());
+        state.replace_content(courses);
         snapshot = refreshed;
     }
 }

@@ -1,30 +1,34 @@
 import Flag from '../Flag';
-import { AVAILABLE } from '../../data/languages';
-import type { LanguageOption } from '../../data/languages';
+import { languageByCode, languageName } from '../../data/languages';
+import type { ApiCourseSummary } from '../../data/api';
 
 /* The first thing a new user sees on /: nothing else on the page makes
    sense before this is answered, so it takes the whole page rather than
    sitting in a modal over a course map that isn't theirs yet.
 
    It's shown exactly once — after this, the choice lives on the account
-   (see targetLang.ts) and the navbar dropdown is where it gets changed. */
+   (see courseSelection.ts) and the navbar dropdown is where it gets changed. */
 
 interface Props {
-  onPick: (code: string) => void;
+  courses: ApiCourseSummary[];
+  onPick: (courseId: string) => void;
 }
 
-export default function LanguageChooser({ onPick }: Props) {
-  function tile(l: LanguageOption) {
+export default function LanguageChooser({ courses, onPick }: Props) {
+  function tile(course: ApiCourseSummary) {
+    const language = languageByCode(course.target_lang);
     return (
       <button
-        key={l.code}
+        key={course.id}
         type="button"
         className="lang-tile"
-        onClick={() => onPick(l.code)}
+        onClick={() => onPick(course.id)}
       >
-        <Flag region={l.region} size={44} className="flag-tile" />
-        <span className="lang-tile-name">{l.name}</span>
-        <span className="lang-tile-endonym">{l.endonym}</span>
+        {language && <Flag region={language.region} size={44} className="flag-tile" />}
+        <span className="lang-tile-name">{languageName(course.target_lang)}</span>
+        <span className="lang-tile-endonym">
+          {language?.endonym ?? course.target_lang.toUpperCase()} · from {languageName(course.source_lang)}
+        </span>
       </button>
     );
   }
@@ -36,7 +40,7 @@ export default function LanguageChooser({ onPick }: Props) {
         You can change this at any time from the flag in the top right.
       </p>
 
-      <div className="lang-grid">{AVAILABLE.map(tile)}</div>
+      <div className="lang-grid">{courses.map(tile)}</div>
     </div>
   );
 }

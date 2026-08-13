@@ -155,7 +155,7 @@ pub enum SkillState {
     Locked,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct User {
     pub words: HashMap<String, WordState>,
     // skill id -> how many of its lessons are finished. A skill missing from

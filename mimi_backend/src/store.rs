@@ -2,23 +2,22 @@
 // SQLite database: the users (their position and their FSRS memory state),
 // their profiles and the day-by-day record of what they have done.
 //
-// A user's memory state is a map of word -> `WordState` (see word.rs), and the
-// way the server uses it is all-or-nothing: building a lesson walks *every*
-// card to find what is most due, so there is no query for a single word to
-// optimize for. That makes the natural storage the whole map at once — one row
-// per user, deserialized on the way in and reserialized on the way out. Their
-// progress through the tree is stored the same way and for the same reason:
-// in a branching course it is a map of skill -> lessons done, not a
-// coordinate.
+// A course's memory state is a map of word -> `WordState` (see word.rs), and
+// the way the server uses it is all-or-nothing: building a lesson walks
+// *every* card to find what is most due. Each account therefore stores a map
+// of course id -> `User`, and each `User` is the whole state of that course.
+// This outer partition is load-bearing: two courses may both contain a skill
+// named `basics` without either one inheriting the other's progress.
 //
 // The **activity** table follows the same principle one level up: one row per
-// user per day, holding everything they did that day as a blob (see
+// user, course and day, holding everything they did there as a blob (see
 // profile.rs). Nothing ever asks about a single lesson after the fact, and
 // everything the profile asks — how long the streak is, how the score moved,
 // what was learnt in June — is a scan over days, so days are what is stored.
-// `(username, day)` is the primary key, which makes "add this lesson to
-// today" a single-row read-modify-write and "this user's whole history" a
-// primary-key range scan.
+// `(username, course_id, day)` is the primary key, which makes "add this
+// lesson to this course today" a single-row read-modify-write. Profiles fold
+// those rows together for overall totals and keep them apart for each
+// language's score.
 //
 // Profiles are a separate table rather than more columns on `users` because
 // they are separate things: `users` is the account the learning algorithm
@@ -47,6 +46,7 @@
 // for the whole read-modify-write, so a submission can't lose an update to a
 // concurrent one.
 
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 use rand::RngExt;
@@ -93,9 +93,7 @@ impl Store {
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS users (
                  username TEXT PRIMARY KEY,
-                 progress TEXT    NOT NULL,
-                 castles  INTEGER NOT NULL,
-                 words    TEXT    NOT NULL,
+                 courses  TEXT    NOT NULL,
                  guest    INTEGER NOT NULL DEFAULT 0
              );
              CREATE TABLE IF NOT EXISTS profiles (
@@ -105,7 +103,7 @@ impl Store {
                  bio         TEXT    NOT NULL,
                  cefr        TEXT    NOT NULL,
                  avatar      TEXT,
-                 target_lang TEXT,
+                 course_id   TEXT,
                  joined      INTEGER NOT NULL
              );
              -- Who follows whom, and **every follow that has ever happened**:
@@ -130,10 +128,11 @@ impl Store {
              -- follower count asks the transposed question
              CREATE INDEX IF NOT EXISTS follows_by_followee ON follows (followee);
              CREATE TABLE IF NOT EXISTS activity (
-                 username TEXT    NOT NULL,
-                 day      INTEGER NOT NULL,
-                 data     TEXT    NOT NULL,
-                 PRIMARY KEY (username, day)
+                 username  TEXT    NOT NULL,
+                 course_id TEXT    NOT NULL,
+                 day       INTEGER NOT NULL,
+                 data      TEXT    NOT NULL,
+                 PRIMARY KEY (username, course_id, day)
              );
              -- the primary key answers 'this user's history', which is what a
              -- profile asks; the leaderboard asks the transposed question
@@ -298,10 +297,11 @@ impl Store {
         delete_account(&conn, username)
     }
 
-    // the user, or None if there's no such name
-    pub fn load_user(&self, username: &str) -> rusqlite::Result<Option<User>> {
+    // This learner's state in one course, or None if there is no such
+    // account. A course they have never opened is a real, empty state.
+    pub fn load_user(&self, username: &str, course_id: &str) -> rusqlite::Result<Option<User>> {
         let conn = self.conn.lock().unwrap();
-        load_user(&conn, username)
+        load_user(&conn, username, course_id)
     }
 
     // The cookie contains 256 random bits; only its SHA-256 digest is kept in
@@ -386,8 +386,9 @@ impl Store {
         Ok(())
     }
 
-    // Load a user, hand them to `f` to mutate, store the result, and fold the
-    // activity `f` reports into the user's row for `day` — all under one
+    // Load one course's user state, hand it to `f` to mutate, store the
+    // result, and fold the activity `f` reports into that course's row for
+    // `day` — all under one
     // lock, so the whole read-modify-write is atomic. Returns None (touching
     // nothing) if there's no such user, otherwise whatever `f` returned.
     //
@@ -399,21 +400,22 @@ impl Store {
     pub fn update_user<T>(
         &self,
         username: &str,
+        course_id: &str,
         day: u32,
         f: impl FnOnce(&mut User) -> (T, Activity),
     ) -> rusqlite::Result<Option<T>> {
         let conn = self.conn.lock().unwrap();
-        let Some(mut user) = load_user(&conn, username)? else {
+        let Some(mut user) = load_user(&conn, username, course_id)? else {
             return Ok(None);
         };
         let (result, activity) = f(&mut user);
-        save_user(&conn, username, &user)?;
+        save_user(&conn, username, course_id, &user)?;
         if !activity.is_empty() {
-            // a day the user has already been active on has a row to grow;
-            // otherwise this is the first thing they did today
-            let mut today = load_activity_on(&conn, username, day)?.unwrap_or_default();
+            // a course-day the user has already been active on has a row to
+            // grow; otherwise this is their first lesson there today
+            let mut today = load_activity_on(&conn, username, course_id, day)?.unwrap_or_default();
             today.absorb(activity);
-            save_activity(&conn, username, day, &today)?;
+            save_activity(&conn, username, course_id, day, &today)?;
         }
         Ok(Some(result))
     }
@@ -426,7 +428,7 @@ impl Store {
     pub fn load_profile(&self, username: &str) -> rusqlite::Result<Option<Profile>> {
         let conn = self.conn.lock().unwrap();
         conn.query_row(
-            "SELECT display, title, bio, cefr, avatar, target_lang, joined
+            "SELECT display, title, bio, cefr, avatar, course_id, joined
              FROM profiles WHERE username = ?1",
             [username],
             |row| {
@@ -436,7 +438,7 @@ impl Store {
                     bio: row.get(2)?,
                     cefr: row.get(3)?,
                     avatar: row.get(4)?,
-                    target_lang: row.get(5)?,
+                    course_id: row.get(5)?,
                     joined: row.get::<_, i64>(6)? as u64,
                 })
             },
@@ -450,7 +452,7 @@ impl Store {
     //
     // The columns are named rather than the row replaced, because two of the
     // profile's fields are not the editor's to write: `title` is granted, and
-    // `target_lang` belongs to the writer below.
+    // `course_id` belongs to the writer below.
     pub fn save_profile_edit(
         &self,
         username: &str,
@@ -473,27 +475,27 @@ impl Store {
         Ok(())
     }
 
-    // The target language gets a writer of its own rather than going through
+    // The active course gets a writer of its own rather than going through
     // the edit above: the app can't function without the user setting it (it
     // *is* the account's course choice, not a public claim like a bio), it is
     // set from the course chooser rather than the profile editor, and the
     // worst a vandal can do with it is change what that user sees next visit.
-    pub fn save_language(
+    pub fn save_course(
         &self,
         username: &str,
-        target_lang: &str,
+        course_id: &str,
         joined: u64,
     ) -> rusqlite::Result<()> {
         let conn = self.conn.lock().unwrap();
         let rows = conn.execute(
-            "UPDATE profiles SET target_lang = ?1 WHERE username = ?2",
-            params![target_lang, username],
+            "UPDATE profiles SET course_id = ?1 WHERE username = ?2",
+            params![course_id, username],
         )?;
         if rows == 0 {
             // an account that predates profile rows: open one with the
             // choice already made (the handler has checked the user exists)
             let mut profile = Profile::new(username, joined);
-            profile.target_lang = Some(target_lang.to_string());
+            profile.course_id = Some(course_id.to_string());
             save_profile(&conn, username, &profile)?;
         }
         Ok(())
@@ -759,33 +761,41 @@ impl Store {
 
     // --- activity ---
 
-    // Everything the user has ever done, one entry per day they did anything,
-    // oldest first. The whole record, because the whole record is what a
+    // Everything the user has ever done, one entry per course-day, oldest
+    // first. The whole record, because the whole record is what a
     // profile is: the streak, the totals and the score graph are each a scan
     // over all of it, and a user who studies daily for five years still has
     // fewer rows than a week of per-lesson logging would give.
-    pub fn load_activity(&self, username: &str) -> rusqlite::Result<Vec<(u32, Activity)>> {
+    pub fn load_activity(&self, username: &str) -> rusqlite::Result<Vec<(String, u32, Activity)>> {
         let conn = self.conn.lock().unwrap();
-        let mut statement =
-            conn.prepare("SELECT day, data FROM activity WHERE username = ?1 ORDER BY day")?;
+        let mut statement = conn.prepare(
+            "SELECT course_id, day, data FROM activity WHERE username = ?1 ORDER BY day",
+        )?;
         let rows = statement.query_map([username], |row| {
-            let day: i64 = row.get(0)?;
-            let data: String = row.get(1)?;
+            let course_id: String = row.get(0)?;
+            let day: i64 = row.get(1)?;
+            let data: String = row.get(2)?;
             Ok((
+                course_id,
                 day as u32,
-                serde_json::from_str(&data).map_err(from_json(1))?,
+                serde_json::from_str(&data).map_err(from_json(2))?,
             ))
         })?;
         rows.collect()
     }
 
-    // One user's one UTC day, for features whose entire window is today.
+    // One user's one course on one UTC day, for features whose window is today.
     // Daily quests should not scan a five-year history to find the row that
     // is already keyed exactly this way, and no row is the ordinary meaning
     // of "nothing done yet", not an error.
-    pub fn load_activity_on(&self, username: &str, day: u32) -> rusqlite::Result<Option<Activity>> {
+    pub fn load_activity_on(
+        &self,
+        username: &str,
+        course_id: &str,
+        day: u32,
+    ) -> rusqlite::Result<Option<Activity>> {
         let conn = self.conn.lock().unwrap();
-        load_activity_on(&conn, username, day)
+        load_activity_on(&conn, username, course_id, day)
     }
 
     // Everyone's activity from `from_day` onwards, as `(username, display,
@@ -845,17 +855,10 @@ fn insert_account(
     guest: bool,
     profile: &Profile,
 ) -> rusqlite::Result<bool> {
-    let user = User::new();
     let rows = conn.execute(
-        "INSERT OR IGNORE INTO users (username, progress, castles, words, guest)
-         VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![
-            username,
-            json(&user.progress),
-            user.castles as i64,
-            json(&user.words),
-            guest,
-        ],
+        "INSERT OR IGNORE INTO users (username, courses, guest)
+         VALUES (?1, ?2, ?3)",
+        params![username, json(&HashMap::<String, User>::new()), guest],
     )?;
     if rows != 1 {
         return Ok(false);
@@ -943,21 +946,18 @@ fn expire_sessions(conn: &Connection, timestamp: u64) -> rusqlite::Result<()> {
     Ok(())
 }
 
-// read one user row into a `User`, deserializing its two blobs back into the
-// maps the rest of the server works with
-fn load_user(conn: &Connection, username: &str) -> rusqlite::Result<Option<User>> {
+// Read one course out of an account's course map. Course state is nested
+// under its stable id so identically named skills and words in two courses
+// can never see or mutate one another.
+fn load_user(conn: &Connection, username: &str, course_id: &str) -> rusqlite::Result<Option<User>> {
     conn.query_row(
-        "SELECT progress, castles, words FROM users WHERE username = ?1",
+        "SELECT courses FROM users WHERE username = ?1",
         [username],
         |row| {
-            let progress: String = row.get(0)?;
-            let castles: i64 = row.get(1)?;
-            let words: String = row.get(2)?;
-            Ok(User {
-                progress: serde_json::from_str(&progress).map_err(from_json(0))?,
-                castles: castles.max(0) as usize,
-                words: serde_json::from_str(&words).map_err(from_json(2))?,
-            })
+            let stored: String = row.get(0)?;
+            let courses: HashMap<String, User> =
+                serde_json::from_str(&stored).map_err(from_json(0))?;
+            Ok(courses.get(course_id).cloned().unwrap_or_default())
         },
     )
     .optional()
@@ -972,20 +972,28 @@ fn load_user(conn: &Connection, username: &str) -> rusqlite::Result<Option<User>
 // seeded one — and it names the columns it is updating rather than replacing
 // the row, because `guest` is not the learning state's to write: a lesson
 // submitted by a guest must not quietly turn them into somebody else.
-fn save_user(conn: &Connection, username: &str, user: &User) -> rusqlite::Result<()> {
+fn save_user(
+    conn: &Connection,
+    username: &str,
+    course_id: &str,
+    user: &User,
+) -> rusqlite::Result<()> {
+    let stored: Option<String> = conn
+        .query_row(
+            "SELECT courses FROM users WHERE username = ?1",
+            [username],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let mut courses: HashMap<String, User> = match stored {
+        Some(stored) => serde_json::from_str(&stored).map_err(from_json(0))?,
+        None => HashMap::new(),
+    };
+    courses.insert(course_id.to_string(), user.clone());
     conn.execute(
-        "INSERT INTO users (username, progress, castles, words)
-         VALUES (?1, ?2, ?3, ?4)
-         ON CONFLICT (username) DO UPDATE SET
-             progress = excluded.progress,
-             castles  = excluded.castles,
-             words    = excluded.words",
-        params![
-            username,
-            json(&user.progress),
-            user.castles as i64,
-            json(&user.words),
-        ],
+        "INSERT INTO users (username, courses) VALUES (?1, ?2)
+         ON CONFLICT (username) DO UPDATE SET courses = excluded.courses",
+        params![username, json(&courses)],
     )?;
     Ok(())
 }
@@ -993,7 +1001,7 @@ fn save_user(conn: &Connection, username: &str, user: &User) -> rusqlite::Result
 fn save_profile(conn: &Connection, username: &str, profile: &Profile) -> rusqlite::Result<()> {
     conn.execute(
         "INSERT OR REPLACE INTO profiles
-             (username, display, title, bio, cefr, avatar, target_lang, joined)
+             (username, display, title, bio, cefr, avatar, course_id, joined)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
             username,
@@ -1002,7 +1010,7 @@ fn save_profile(conn: &Connection, username: &str, profile: &Profile) -> rusqlit
             profile.bio,
             profile.cefr,
             profile.avatar,
-            profile.target_lang,
+            profile.course_id,
             profile.joined as i64,
         ],
     )?;
@@ -1014,11 +1022,12 @@ fn save_profile(conn: &Connection, username: &str, profile: &Profile) -> rusqlit
 fn load_activity_on(
     conn: &Connection,
     username: &str,
+    course_id: &str,
     day: u32,
 ) -> rusqlite::Result<Option<Activity>> {
     conn.query_row(
-        "SELECT data FROM activity WHERE username = ?1 AND day = ?2",
-        params![username, day],
+        "SELECT data FROM activity WHERE username = ?1 AND course_id = ?2 AND day = ?3",
+        params![username, course_id, day],
         |row| {
             let data: String = row.get(0)?;
             serde_json::from_str(&data).map_err(from_json(0))
@@ -1030,12 +1039,19 @@ fn load_activity_on(
 fn save_activity(
     conn: &Connection,
     username: &str,
+    course_id: &str,
     day: u32,
     activity: &Activity,
 ) -> rusqlite::Result<()> {
     conn.execute(
-        "INSERT OR REPLACE INTO activity (username, day, data) VALUES (?1, ?2, ?3)",
-        params![username, day, serde_json::to_string(activity).unwrap()],
+        "INSERT OR REPLACE INTO activity (username, course_id, day, data)
+         VALUES (?1, ?2, ?3, ?4)",
+        params![
+            username,
+            course_id,
+            day,
+            serde_json::to_string(activity).unwrap()
+        ],
     )?;
     Ok(())
 }
@@ -1071,12 +1087,14 @@ mod tests {
     use super::*;
     use crate::word::{Stage, WordState};
 
+    const TEST_COURSE: &str = "spanish_for_english";
+
     #[test]
     fn a_users_tree_progress_and_word_state_round_trip() {
         let store = Store::memory().unwrap();
         assert!(matches!(store.create_user("sam", 1).unwrap(), Created::Ok));
         store
-            .update_user("sam", 0, |user| {
+            .update_user("sam", TEST_COURSE, 0, |user| {
                 user.progress.insert("greetings".into(), 2);
                 user.castles = 1;
                 user.words
@@ -1084,37 +1102,87 @@ mod tests {
                 ((), Activity::default())
             })
             .unwrap();
-        let user = store.load_user("sam").unwrap().unwrap();
+        let user = store.load_user("sam", TEST_COURSE).unwrap().unwrap();
         assert_eq!(user.progress["greetings"], 2);
         assert_eq!(user.castles, 1);
         assert_eq!(user.words["hola"].stage, Stage::Scaffolding);
     }
 
     #[test]
-    fn the_target_language_round_trips_without_touching_the_rest() {
+    fn courses_with_the_same_local_ids_keep_separate_learning_state() {
+        let store = Store::memory().unwrap();
+        store.create_user("sam", 1).unwrap();
+        for (course, lessons) in [(TEST_COURSE, 3), ("french_for_english", 9)] {
+            store
+                .update_user("sam", course, 1, |user| {
+                    user.progress.insert("basics".into(), lessons);
+                    (
+                        (),
+                        Activity {
+                            lessons: lessons as u32,
+                            ..Activity::default()
+                        },
+                    )
+                })
+                .unwrap();
+        }
+
+        assert_eq!(
+            store
+                .load_user("sam", TEST_COURSE)
+                .unwrap()
+                .unwrap()
+                .progress["basics"],
+            3
+        );
+        assert_eq!(
+            store
+                .load_user("sam", "french_for_english")
+                .unwrap()
+                .unwrap()
+                .progress["basics"],
+            9
+        );
+        assert_eq!(
+            store
+                .load_activity_on("sam", TEST_COURSE, 1)
+                .unwrap()
+                .unwrap()
+                .lessons,
+            3
+        );
+        assert_eq!(
+            store
+                .load_activity_on("sam", "french_for_english", 1)
+                .unwrap()
+                .unwrap()
+                .lessons,
+            9
+        );
+    }
+
+    #[test]
+    fn the_active_course_round_trips_without_touching_the_rest() {
         let store = Store::memory().unwrap();
         assert!(matches!(store.create_user("sam", 1).unwrap(), Created::Ok));
         // a fresh account hasn't picked one yet
-        assert_eq!(
-            store.load_profile("sam").unwrap().unwrap().target_lang,
-            None
-        );
-        store.save_language("sam", "es", 2).unwrap();
+        assert_eq!(store.load_profile("sam").unwrap().unwrap().course_id, None);
+        store.save_course("sam", TEST_COURSE, 2).unwrap();
         let profile = store.load_profile("sam").unwrap().unwrap();
-        assert_eq!(profile.target_lang.as_deref(), Some("es"));
+        assert_eq!(profile.course_id.as_deref(), Some(TEST_COURSE));
         // the rest of the authored profile is what create_user opened
         assert_eq!(profile.display, "sam");
         assert_eq!(profile.joined, 1);
         // and a change of mind overwrites rather than stacking
-        store.save_language("sam", "fr", 3).unwrap();
+        store.save_course("sam", "french_for_english", 3).unwrap();
         assert_eq!(
             store
                 .load_profile("sam")
                 .unwrap()
                 .unwrap()
-                .target_lang
+                .course_id
                 .as_deref(),
-            Some("fr")
+            Some("french_for_english")
         );
     }
 
@@ -1122,7 +1190,7 @@ mod tests {
     fn an_edit_writes_the_authored_fields_and_leaves_the_rest_alone() {
         let store = Store::memory().unwrap();
         store.create_user("sam", 1).unwrap();
-        store.save_language("sam", "es", 1).unwrap();
+        store.save_course("sam", TEST_COURSE, 1).unwrap();
 
         store
             .save_profile_edit(
@@ -1144,7 +1212,7 @@ mod tests {
         assert_eq!(profile.cefr, "B1");
         assert_eq!(profile.avatar.as_deref(), Some("https://x.example/a.png"));
         // the course choice and the join date are not the editor's to write
-        assert_eq!(profile.target_lang.as_deref(), Some("es"));
+        assert_eq!(profile.course_id.as_deref(), Some(TEST_COURSE));
         assert_eq!(profile.joined, 1);
 
         // and clearing the picture is an ordinary edit, not a missing one
@@ -1317,12 +1385,25 @@ mod tests {
         study(&store, "sam", 22, 3);
 
         assert_eq!(
-            store.load_activity_on("sam", 20).unwrap().unwrap().lessons,
+            store
+                .load_activity_on("sam", TEST_COURSE, 20)
+                .unwrap()
+                .unwrap()
+                .lessons,
             2
         );
-        assert!(store.load_activity_on("sam", 21).unwrap().is_none());
+        assert!(
+            store
+                .load_activity_on("sam", TEST_COURSE, 21)
+                .unwrap()
+                .is_none()
+        );
         assert_eq!(
-            store.load_activity_on("sam", 22).unwrap().unwrap().lessons,
+            store
+                .load_activity_on("sam", TEST_COURSE, 22)
+                .unwrap()
+                .unwrap()
+                .lessons,
             3
         );
     }
@@ -1349,7 +1430,7 @@ mod tests {
         );
 
         store
-            .update_user(&username, 0, |user| {
+            .update_user(&username, TEST_COURSE, 0, |user| {
                 user.words
                     .insert("hola".into(), WordState::new(Stage::Scaffolding));
                 ((), Activity::default())
@@ -1365,7 +1446,7 @@ mod tests {
         let store = Store::memory().unwrap();
         let (guest, token) = store.create_guest(200, 100).unwrap();
         store
-            .update_user(&guest, 7, |user| {
+            .update_user(&guest, TEST_COURSE, 7, |user| {
                 user.progress.insert("greetings".into(), 3);
                 user.words
                     .insert("hola".into(), WordState::new(Stage::Recognition));
@@ -1381,14 +1462,14 @@ mod tests {
 
         store.claim_guest(&guest, "sam", 100).unwrap();
 
-        let user = store.load_user("sam").unwrap().unwrap();
+        let user = store.load_user("sam", TEST_COURSE).unwrap().unwrap();
         assert_eq!(user.progress["greetings"], 3);
         assert_eq!(user.words["hola"].stage, Stage::Recognition);
-        assert_eq!(store.load_activity("sam").unwrap()[0].1.lessons, 1);
+        assert_eq!(store.load_activity("sam").unwrap()[0].2.lessons, 1);
         // they are not a guest any more, and the guest is gone
         let profile = store.load_profile("sam").unwrap().unwrap();
         assert_eq!(profile.display, "sam");
-        assert!(store.load_user(&guest).unwrap().is_none());
+        assert!(store.load_user(&guest, TEST_COURSE).unwrap().is_none());
         assert!(store.load_session(&token, 150).unwrap().is_none());
         let fresh = store
             .create_session("sam", "sam@example.com", 300, 200)
@@ -1412,18 +1493,18 @@ mod tests {
         // past the abandoned guest's expiry, and past sam's session too
         store.create_guest(1_000, 300).unwrap();
 
-        assert!(store.load_user(&abandoned).unwrap().is_none());
-        assert!(store.load_user(&live).unwrap().is_some());
+        assert!(store.load_user(&abandoned, TEST_COURSE).unwrap().is_none());
+        assert!(store.load_user(&live, TEST_COURSE).unwrap().is_some());
         // sam's session has expired, but an account with credentials behind
         // it can always be signed back into
-        assert!(store.load_user("sam").unwrap().is_some());
+        assert!(store.load_user("sam", TEST_COURSE).unwrap().is_some());
     }
 
     // record one day of study for `username`, which is all the leaderboard
     // reads them through
     fn study(store: &Store, username: &str, day: u32, lessons: u32) {
         store
-            .update_user(username, day, |_| {
+            .update_user(username, TEST_COURSE, day, |_| {
                 (
                     (),
                     Activity {
@@ -1502,7 +1583,13 @@ mod tests {
             },
         )
         .unwrap();
-        save_user(&store.conn.lock().unwrap(), "nameless", &User::new()).unwrap();
+        save_user(
+            &store.conn.lock().unwrap(),
+            "nameless",
+            TEST_COURSE,
+            &User::new(),
+        )
+        .unwrap();
         study(&store, "sam", 20, 1);
         study(&store, "nameless", 20, 1);
 

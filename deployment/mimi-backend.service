@@ -17,8 +17,8 @@ Restart=on-failure
 RestartSec=5s
 UMask=0077
 
-# The backend exits when the editor has no valid COURSE_ID yet. Retrying lets
-# it recover on its own as soon as authors create or restore that course.
+# The backend exits when the editor has no valid course yet. Retrying lets it
+# recover on its own as soon as authors create or restore one.
 NoNewPrivileges=true
 PrivateDevices=true
 PrivateTmp=true
@@ -30,4 +30,3 @@ ReadWritePaths=/home/mimi/mimi_backend
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictSUIDSGID=true
 LockPersonality=true
-

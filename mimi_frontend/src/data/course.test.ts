@@ -9,7 +9,7 @@ const skill = (id: string, level = 0, lessons_done = 0): ApiSkill => ({
 
 test('course castles and sibling rows keep their branching structure', () => {
   const course: ApiCourse = {
-    id: 'spanish', source_lang: 'en', target_lang: 'es',
+    id: 'spanish_for_english', source_lang: 'en', target_lang: 'es',
     castles: [{ castle: 0, state: 'available', rows: [{ skills: [skill('a'), skill('b')] }, { skills: [skill('c')] }] }],
   };
   const tree = treeFromCourse(course);

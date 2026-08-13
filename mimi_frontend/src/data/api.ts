@@ -114,6 +114,13 @@ export interface ApiCourse {
   castles: ApiCastle[];
 }
 
+/** One currently usable wiki course, as advertised by the backend. */
+export interface ApiCourseSummary {
+  id: string;
+  source_lang: string;
+  target_lang: string;
+}
+
 /** One quest measured from today's activity row. `done` is deliberately not
     capped at `total`: it is the fact the backend recorded, and completion is
     the simple `done >= total` comparison. */
@@ -255,14 +262,15 @@ export interface ApiPoint {
   v: number;
 }
 
-/** One course, scored so that two of them could share an axis. Only Spanish
-    exists today, so the list has one entry; `code` is what names and flags
-    it (see languages.ts). */
+/** One course, scored so that several of them can share an axis. `id` is the
+    course identity; `code` supplies its language name and flag. */
 export interface ApiLanguage {
-  /** the course id, e.g. "spanish" */
+  /** the course id, e.g. "spanish_for_english" */
   id: string;
   /** ISO 639-1 target language, e.g. "es" */
   code: string;
+  /** ISO 639-1 language the course teaches from, e.g. "en" */
+  source_code: string;
   score: number;
   /** movement over the last week, in points */
   delta: number;
@@ -333,9 +341,8 @@ export interface ApiProfile {
       client checks it again on the way in: see safeAvatar in profile.ts.
       Null for the great majority of people, who have linked none. */
   avatar: string | null;
-  /** the course they're learning, e.g. "es" — null while they haven't
-      picked. The one authored field with a writer: setTargetLang below. */
-  target_lang: string | null;
+  /** the exact course they're learning — null until they pick one. */
+  course_id: string | null;
   joined: number;
   /** Live, process-local presence: the server authenticated a request from
       this account during the last 30 seconds. Independent of study days. */
@@ -476,7 +483,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new Error(`${init?.method ?? 'GET'} ${path}: ${detail}`);
   }
-  // a 204 is a successful reply with no body to parse (setTargetLang)
+  // a 204 is a successful reply with no body to parse (setActiveCourse)
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
@@ -491,6 +498,11 @@ export function ensureUser(): Promise<ApiUser> {
 /** the course map (outline + per-node state) for a user */
 export function fetchCourse(): Promise<ApiCourse> {
   return request<ApiCourse>('/me/course');
+}
+
+/** Every valid course in the backend's current coherent wiki snapshot. */
+export function fetchCourses(): Promise<ApiCourseSummary[]> {
+  return request<ApiCourseSummary[]>('/courses');
 }
 
 /** Three server-selected quests measured from the current learner's activity
@@ -587,13 +599,13 @@ export function unfollowUser(username: string): Promise<void> {
   });
 }
 
-/** Record which language the signed-in user is learning (204 on success). */
-export function setTargetLang(
-  code: string,
+/** Select the exact course the signed-in user is learning (204). */
+export function setActiveCourse(
+  courseId: string,
 ): Promise<void> {
-  return request<void>('/me/language', {
+  return request<void>('/me/course', {
     method: 'PUT',
-    body: JSON.stringify({ target_lang: code }),
+    body: JSON.stringify({ course_id: courseId }),
   });
 }
 

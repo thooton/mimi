@@ -9,13 +9,11 @@
 // question and the only one with an answer. Everything else on the profile
 // page is *derived*, and the thing it is derived from is one table: activity.
 //
-// **One row per user per day, holding everything they did that day.** Not one
-// row per lesson: a profile never asks "which lesson was that", it asks how
-// many, on which days, and what came out of it — and the answer to every one
-// of those is a scan over days. A day is also the unit the streak is counted
-// in and the resolution the score graph is drawn at, so storing days is
-// storing the shape the questions come in. `Activity` is the whole of one
-// such row.
+// **One row per user, course and day.** Not one row per lesson: a profile
+// never asks "which lesson was that", it asks how many, on which days, in
+// which course, and what came out of it. Overall streaks fold course rows on
+// the same day together; language scores keep them apart. `Activity` is the
+// whole of one such course-day row.
 //
 // What a row stores is *deltas* — what happened that day and nothing more.
 // Running totals (how many concepts you know, how many units you've cleared,
@@ -86,11 +84,10 @@ pub struct Profile {
     // has to be checked hard before it is ever handed to a browser as an
     // `<img src>` — see `avatar_url`.
     pub avatar: Option<String>,
-    // the course the user is learning, by ISO 639-1 code ("es"). A
-    // preference rather than a claim like the rest, but authored all the
-    // same — and None until they pick one, which the client reads as "show
-    // the chooser".
-    pub target_lang: Option<String>,
+    // The exact course the user is learning. A target-language code is not
+    // enough: Spanish for English speakers and Spanish for French speakers
+    // are different courses with different trees and memories.
+    pub course_id: Option<String>,
     // when the account was created, unix seconds
     pub joined: u64,
 }
@@ -106,7 +103,7 @@ impl Profile {
             bio: String::new(),
             cefr: String::new(),
             avatar: None,
-            target_lang: None,
+            course_id: None,
             joined,
         }
     }
@@ -124,7 +121,7 @@ impl Profile {
 
 // What the owner of a profile may write, **already checked**: the only way to
 // build one is `ProfileEdit::of`, so a value of this type is a promise that
-// the limits below have been applied. `target_lang` is not here — it has a
+// the limits below have been applied. `course_id` is not here — it has a
 // writer of its own, because it is the account's course choice rather than
 // anything a reader is shown — and neither is `title`, which is granted.
 
@@ -293,9 +290,10 @@ pub struct Follow {
 
 // --- what they did ---
 
-// One day of one user's activity: every lesson they finished that day rolled
-// into one record. Finishing a lesson adds its numbers to the day's row (see
-// `absorb`), so the row grows through the day and is read back whole.
+// One day of one user's activity in one course: every lesson they finished
+// there that day rolled into one record. Finishing a lesson adds its numbers
+// to the course-day row (see `absorb`), so it grows through the day and is
+// read back whole.
 //
 // Only deltas live here. "How many concepts does this user know" is not a
 // field — it is the sum of `learned` over every row up to that day, which

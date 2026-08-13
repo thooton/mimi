@@ -14,9 +14,9 @@ use rand::RngExt;
 use tower_http::cors::{AllowOrigin, CorsLayer};
 
 use crate::api::{
-    CourseView, CreateLessonRequest, DailyQuestsView, EditProfileRequest, ErrorBody,
-    FlashcardDeckView, LeaderboardView, LessonView, ProfileView, SetEmailRequest,
-    SetLanguageRequest, SetPasswordRequest, Social, SubmitFlashcardsRequest, SubmitFlashcardsView,
+    CourseSummaryView, CourseView, CreateLessonRequest, DailyQuestsView, EditProfileRequest,
+    ErrorBody, FlashcardDeckView, LeaderboardView, LessonView, ProfileView, SetCourseRequest,
+    SetEmailRequest, SetPasswordRequest, Social, SubmitFlashcardsRequest, SubmitFlashcardsView,
     SubmitRequest, SubmitView, TipsView, UserSearchView, UserView,
 };
 use crate::auth::{
@@ -35,8 +35,7 @@ use crate::store::{Created, SessionIdentity, Store};
 use crate::user::{FlashcardSubmissionError, SubmissionError, User};
 
 pub struct AppState {
-    course: RwLock<Arc<Course>>,
-    dictionary: RwLock<Arc<Dictionary>>,
+    courses: RwLock<Arc<HashMap<String, CourseContent>>>,
     store: Store,
     credentials: CredentialService,
     // Who is looking at their inbox right now, so that a message can reach
@@ -53,18 +52,23 @@ pub struct AppState {
     // does not cover, so the two would otherwise disagree about who we serve.
     frontend_origin: String,
 }
+
+#[derive(Clone)]
+struct CourseContent {
+    course: Arc<Course>,
+    dictionary: Arc<Dictionary>,
+}
+
 impl AppState {
     pub fn new(
-        course: Course,
-        dictionary: Dictionary,
+        courses: HashMap<String, (Course, Dictionary)>,
         store: Store,
         credentials: CredentialService,
         secure_cookies: bool,
         frontend_origin: String,
     ) -> Arc<Self> {
         Arc::new(Self {
-            course: RwLock::new(Arc::new(course)),
-            dictionary: RwLock::new(Arc::new(dictionary)),
+            courses: RwLock::new(Arc::new(Self::wrap_courses(courses))),
             store,
             credentials,
             broker: Broker::new(),
@@ -74,30 +78,62 @@ impl AppState {
         })
     }
 
-    // Swap the two projections of one wiki snapshot as a pair. Readers take
-    // the locks in the same order and clone both Arcs before doing any work,
-    // so no request can combine a new course with an old glossary.
-    pub fn replace_content(&self, course: Course, dictionary: Dictionary) {
-        let mut current_course = self.course.write().unwrap();
-        let mut current_dictionary = self.dictionary.write().unwrap();
-        *current_course = Arc::new(course);
-        *current_dictionary = Arc::new(dictionary);
+    fn wrap_courses(
+        courses: HashMap<String, (Course, Dictionary)>,
+    ) -> HashMap<String, CourseContent> {
+        courses
+            .into_iter()
+            .map(|(id, (course, dictionary))| {
+                (
+                    id,
+                    CourseContent {
+                        course: Arc::new(course),
+                        dictionary: Arc::new(dictionary),
+                    },
+                )
+            })
+            .collect()
     }
 
-    fn course(&self) -> Arc<Course> {
-        self.course.read().unwrap().clone()
+    // Swap one coherent wiki generation at once. A request clones the whole
+    // catalog snapshot before selecting from it, so its course and dictionary
+    // can never come from different rebuilds.
+    pub fn replace_content(&self, courses: HashMap<String, (Course, Dictionary)>) {
+        *self.courses.write().unwrap() = Arc::new(Self::wrap_courses(courses));
     }
 
-    fn content(&self) -> (Arc<Course>, Arc<Dictionary>) {
-        let course = self.course.read().unwrap();
-        let dictionary = self.dictionary.read().unwrap();
-        (course.clone(), dictionary.clone())
+    fn catalog(&self) -> Arc<HashMap<String, CourseContent>> {
+        self.courses.read().unwrap().clone()
     }
 
-    fn user(&self, username: &str) -> Result<User, ApiError> {
-        self.store
-            .load_user(username)
+    fn active_content(&self, username: &str) -> Result<(String, CourseContent), ApiError> {
+        let course_id = self
+            .store
+            .load_profile(username)
             .map_err(db_error)?
+            .and_then(|profile| profile.course_id)
+            .ok_or_else(|| error(StatusCode::CONFLICT, "choose a course first"))?;
+        let content = self.catalog().get(&course_id).cloned().ok_or_else(|| {
+            error(
+                StatusCode::CONFLICT,
+                format!("the selected course '{course_id}' is not available"),
+            )
+        })?;
+        Ok((course_id, content))
+    }
+
+    fn user(&self, username: &str, course_id: &str) -> Result<User, ApiError> {
+        self.store
+            .load_user(username, course_id)
+            .map_err(db_error)?
+            .ok_or_else(|| error(StatusCode::NOT_FOUND, format!("no user named '{username}'")))
+    }
+
+    fn account(&self, username: &str) -> Result<(), ApiError> {
+        self.store
+            .account_is_guest(username)
+            .map_err(db_error)?
+            .map(|_| ())
             .ok_or_else(|| error(StatusCode::NOT_FOUND, format!("no user named '{username}'")))
     }
 
@@ -125,11 +161,10 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/auth/me", get(get_session))
         .route("/me/keepalive", post(keep_alive))
         .route("/me", get(get_user))
-        .route("/me/course", get(get_user_course))
+        .route("/me/course", get(get_user_course).put(set_user_course))
         .route("/me/quests", get(get_daily_quests))
         .route("/me/flashcards", get(get_flashcards))
         .route("/me/flashcards/submit", post(submit_flashcards))
-        .route("/me/language", put(set_user_language))
         .route("/me/profile", put(edit_user_profile))
         .route("/me/password", put(set_user_password))
         .route("/me/email", put(set_user_email))
@@ -167,6 +202,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .allow_credentials(true);
 
     Router::new()
+        .route("/courses", get(get_courses))
         .route("/auth/register", post(register))
         .route("/auth/login", post(login))
         .route("/auth/guest", post(start_guest))
@@ -484,12 +520,31 @@ fn credential_error(value: CredentialError) -> ApiError {
     }
 }
 
+async fn get_courses(State(state): State<Arc<AppState>>) -> Json<Vec<CourseSummaryView>> {
+    let mut courses: Vec<_> = state
+        .catalog()
+        .values()
+        .map(|content| CourseSummaryView::of(&content.course))
+        .collect();
+    courses.sort_by(|a, b| a.id.cmp(&b.id));
+    Json(courses)
+}
+
 async fn get_user(
     State(state): State<Arc<AppState>>,
     Extension(identity): Extension<SessionIdentity>,
 ) -> Result<Json<UserView>, ApiError> {
     let username = identity.username;
-    let user = state.user(&username)?;
+    state.account(&username)?;
+    let course_id = state
+        .store
+        .load_profile(&username)
+        .map_err(db_error)?
+        .and_then(|profile| profile.course_id);
+    let user = match course_id {
+        Some(course_id) => state.user(&username, &course_id)?,
+        None => User::new(),
+    };
     Ok(Json(UserView::of(username, &user, now())))
 }
 
@@ -498,9 +553,9 @@ async fn get_user_course(
     Extension(identity): Extension<SessionIdentity>,
 ) -> Result<Json<CourseView>, ApiError> {
     let username = identity.username;
-    let user = state.user(&username)?;
-    let course = state.course();
-    Ok(Json(CourseView::of(&course, &user)))
+    let (course_id, content) = state.active_content(&username)?;
+    let user = state.user(&username, &course_id)?;
+    Ok(Json(CourseView::of(&content.course, &user)))
 }
 
 async fn get_daily_quests(
@@ -510,11 +565,12 @@ async fn get_daily_quests(
     let username = identity.username;
     // Keep a stale session from turning a deleted account into a convincing
     // board of zeroes. Other private reads make the same existence check.
-    state.user(&username)?;
+    let (course_id, _) = state.active_content(&username)?;
+    state.user(&username, &course_id)?;
     let day = day_of(now());
     let activity = state
         .store
-        .load_activity_on(&username, day)
+        .load_activity_on(&username, &course_id, day)
         .map_err(db_error)?
         .unwrap_or_default();
     Ok(Json(DailyQuestsView::of(DailyQuests::of(&activity, day))))
@@ -524,9 +580,9 @@ async fn get_flashcards(
     State(state): State<Arc<AppState>>,
     Extension(identity): Extension<SessionIdentity>,
 ) -> Result<Json<FlashcardDeckView>, ApiError> {
-    let user = state.user(&identity.username)?;
-    let course = state.course();
-    Ok(Json(FlashcardDeckView::of(&course, &user, now())))
+    let (course_id, content) = state.active_content(&identity.username)?;
+    let user = state.user(&identity.username, &course_id)?;
+    Ok(Json(FlashcardDeckView::of(&content.course, &user, now())))
 }
 
 // A profile is public, so the session is read rather than required: a
@@ -539,9 +595,36 @@ async fn get_user_profile(
     Path(username): Path<String>,
 ) -> Result<Json<ProfileView>, ApiError> {
     let timestamp = now();
-    state.user(&username)?;
-    let course = state.course();
-    let history = History::of(state.store.load_activity(&username).map_err(db_error)?);
+    state.account(&username)?;
+    let rows = state.store.load_activity(&username).map_err(db_error)?;
+    let mut by_day: HashMap<u32, Activity> = HashMap::new();
+    let mut by_course: HashMap<String, Vec<(u32, Activity)>> = HashMap::new();
+    let catalog = state.catalog();
+    for (course_id, day, activity) in &rows {
+        let mut display_activity = activity.clone();
+        if let Some(content) = catalog.get(course_id) {
+            display_activity.learned = display_activity
+                .learned
+                .iter()
+                .map(|word| content.course.vocab.word_for(word))
+                .collect();
+        }
+        // History deduplicates a cleared skill by its stored key. Prefix the
+        // display name only in this cross-course projection so two unrelated
+        // courses may both have a "Basics" without losing a profile count;
+        // ProfileView removes the prefix again for the feed.
+        display_activity.skills = display_activity
+            .skills
+            .iter()
+            .map(|skill| format!("{course_id}\n{skill}"))
+            .collect();
+        by_day.entry(*day).or_default().absorb(display_activity);
+        by_course
+            .entry(course_id.clone())
+            .or_default()
+            .push((*day, activity.clone()));
+    }
+    let history = History::of(by_day.into_iter().collect());
     let profile = state
         .store
         .load_profile(&username)
@@ -552,6 +635,22 @@ async fn get_user_profile(
                 history.days.first().map_or(timestamp, |d| day_start(d.day)),
             )
         });
+    if let Some(course_id) = &profile.course_id {
+        by_course.entry(course_id.clone()).or_default();
+    }
+    let mut course_histories: Vec<_> = by_course
+        .into_iter()
+        .filter_map(|(id, rows)| {
+            catalog
+                .get(&id)
+                .map(|content| (content.course.clone(), History::of(rows)))
+        })
+        .collect();
+    course_histories.sort_by(|a, b| a.0.id.cmp(&b.0.id));
+    let course_history_refs: Vec<_> = course_histories
+        .iter()
+        .map(|(course, history)| (course.as_ref(), history))
+        .collect();
     let (followers, following) = state.store.follow_counts(&username).map_err(db_error)?;
     let viewer_follows = match current_session(&state, &headers)? {
         Some(identity) => state
@@ -572,7 +671,7 @@ async fn get_user_profile(
         profile,
         &history,
         social,
-        &course,
+        &course_history_refs,
         online,
         day_of(timestamp),
     )))
@@ -583,8 +682,8 @@ async fn get_user_profile(
 // who is asking. Which row is "you" is a comparison against a username the
 // client already holds, so asking for it would buy nothing.
 //
-// The whole board is served. There is no page and no cut-off: with one course
-// and a young user base the honest answer is the short one, and inventing a
+// The whole board is served. There is no page and no cut-off: with a young
+// user base the honest answer is the short one, and inventing a
 // limit now would fix a number nobody has measured. When the response gets
 // big enough to notice, the shape to reach for is a top slice plus the
 // caller's own row — which needs the session this handler currently doesn't.
@@ -603,23 +702,23 @@ async fn get_leaderboard(
 
 // The one writable piece of a profile. The session middleware binds it to
 // the owner; a path parameter can no longer select somebody else's account.
-async fn set_user_language(
+async fn set_user_course(
     State(state): State<Arc<AppState>>,
     Extension(identity): Extension<SessionIdentity>,
-    Json(request): Json<SetLanguageRequest>,
+    Json(request): Json<SetCourseRequest>,
 ) -> Result<StatusCode, ApiError> {
     let username = identity.username;
-    let code = request.target_lang.trim();
-    if code.is_empty() || code.len() > 16 {
+    let course_id = request.course_id.trim();
+    if !state.catalog().contains_key(course_id) {
         return Err(error(
-            StatusCode::BAD_REQUEST,
-            "target_lang must be 1-16 characters",
+            StatusCode::NOT_FOUND,
+            format!("no available course with id '{course_id}'"),
         ));
     }
-    state.user(&username)?;
+    state.account(&username)?;
     state
         .store
-        .save_language(&username, code, now())
+        .save_course(&username, course_id, now())
         .map_err(db_error)?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -638,7 +737,7 @@ async fn edit_user_profile(
     let edit = request
         .into_edit()
         .map_err(|message| error(StatusCode::BAD_REQUEST, message))?;
-    state.user(&username)?;
+    state.account(&username)?;
     state
         .store
         .save_profile_edit(&username, edit, now())
@@ -877,8 +976,10 @@ async fn create_lesson(
     request: Option<Json<CreateLessonRequest>>,
 ) -> Result<(StatusCode, Json<LessonView>), ApiError> {
     let username = identity.username;
-    let user = state.user(&username)?;
-    let (course, dictionary) = state.content();
+    let (course_id, content) = state.active_content(&username)?;
+    let user = state.user(&username, &course_id)?;
+    let course = content.course;
+    let dictionary = content.dictionary;
     let position = match request {
         Some(Json(r)) => r.into(),
         None => user.next_lesson(&course).ok_or_else(|| {
@@ -913,8 +1014,9 @@ async fn get_lesson_tips(
     Path((skill, lesson)): Path<(String, u8)>,
 ) -> Result<Json<TipsView>, ApiError> {
     let username = identity.username;
-    let user = state.user(&username)?;
-    let course = state.course();
+    let (course_id, content) = state.active_content(&username)?;
+    let user = state.user(&username, &course_id)?;
+    let course = content.course;
     let position = Position::new(skill, lesson);
     if !course.has_lesson(&position) {
         return Err(error(
@@ -939,8 +1041,10 @@ async fn create_castle(
     Extension(identity): Extension<SessionIdentity>,
 ) -> Result<(StatusCode, Json<LessonView>), ApiError> {
     let username = identity.username;
-    let user = state.user(&username)?;
-    let (course, dictionary) = state.content();
+    let (course_id, content) = state.active_content(&username)?;
+    let user = state.user(&username, &course_id)?;
+    let course = content.course;
+    let dictionary = content.dictionary;
     let castle = user.castle_due(&course).ok_or_else(|| {
         error(
             StatusCode::FORBIDDEN,
@@ -985,10 +1089,11 @@ async fn submit_lesson(
     let username = identity.username;
     let submission = request.into_submission();
     let timestamp = now();
-    let course = state.course();
+    let (course_id, content) = state.active_content(&username)?;
+    let course = content.course;
     let applied = state
         .store
-        .update_user(&username, day_of(timestamp), |user| {
+        .update_user(&username, &course_id, day_of(timestamp), |user| {
             let result = user.submit_lesson(&course, &submission, timestamp);
             let activity = result.as_ref().map_or_else(
                 |_| Activity::default(),
@@ -1014,10 +1119,11 @@ async fn submit_flashcards(
     let username = identity.username;
     let reports = request.into_reports();
     let timestamp = now();
-    let course = state.course();
+    let (course_id, content) = state.active_content(&username)?;
+    let course = content.course;
     let applied = state
         .store
-        .update_user(&username, day_of(timestamp), |user| {
+        .update_user(&username, &course_id, day_of(timestamp), |user| {
             (
                 user.submit_flashcards(&course, &reports, timestamp),
                 Activity::default(),
@@ -1118,7 +1224,7 @@ mod tests {
         let identity = current_session(&state, &headers).unwrap().unwrap();
         assert!(identity.guest);
         assert!(identity.email.is_none());
-        get_user(State(state.clone()), Extension(identity))
+        let _ = get_user(State(state.clone()), Extension(identity))
             .await
             .unwrap();
 
@@ -1133,10 +1239,14 @@ mod tests {
     async fn daily_quests_read_the_authenticated_learners_activity_today() {
         let state = test_state();
         state.store.create_user("sam", now()).unwrap();
+        state
+            .store
+            .save_course("sam", "spanish_for_english", now())
+            .unwrap();
         let today = day_of(now());
         state
             .store
-            .update_user("sam", today, |_| {
+            .update_user("sam", "spanish_for_english", today, |_| {
                 (
                     (),
                     Activity {
@@ -1174,6 +1284,48 @@ mod tests {
             };
             assert_eq!(quest.done, expected);
         }
+    }
+
+    #[tokio::test]
+    async fn course_selection_accepts_only_the_live_catalog() {
+        let state = test_state();
+        state.store.create_user("sam", now()).unwrap();
+        let identity = SessionIdentity {
+            username: "sam".into(),
+            email: Some("sam@example.com".into()),
+            guest: false,
+        };
+
+        let missing = set_user_course(
+            State(state.clone()),
+            Extension(identity.clone()),
+            Json(SetCourseRequest {
+                course_id: "french_for_english".into(),
+            }),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(missing.0, StatusCode::NOT_FOUND);
+
+        set_user_course(
+            State(state.clone()),
+            Extension(identity),
+            Json(SetCourseRequest {
+                course_id: "spanish_for_english".into(),
+            }),
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            state
+                .store
+                .load_profile("sam")
+                .unwrap()
+                .unwrap()
+                .course_id
+                .as_deref(),
+            Some("spanish_for_english")
+        );
     }
 
     // Who may follow whom, from the handler's side. The rules exist because a
@@ -1334,9 +1486,12 @@ mod tests {
             vec![skill],
             crate::course::tests::solo_sentences(&["hola"], 0),
         );
+        let courses = HashMap::from([(
+            "spanish_for_english".to_string(),
+            (course, Dictionary::from_entries(Vec::new())),
+        )]);
         AppState::new(
-            course,
-            Dictionary::from_entries(Vec::new()),
+            courses,
             Store::memory().unwrap(),
             CredentialService::new("http://127.0.0.1:1"),
             false,

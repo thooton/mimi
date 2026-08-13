@@ -77,7 +77,6 @@ chmod 0600 mimi_auth/mimi-auth.env mimi_backend/mimi-backend.env mimi_editor/mim
 Edit the three `.env` files:
 
 - replace `learn.example.com` and `edit.example.com` with the real hostnames;
-- set `COURSE_ID` in `mimi-backend.env` if the course is not `spanish`; and
 - replace the four `REPLACE_WITH_...` values in `mimi-editor.env` with four
   independent values from these commands:
 
@@ -152,8 +151,8 @@ systemctl --no-pager --full status mimi.target mimi-auth mimi-editor mimi-backen
 
 A fresh wiki has no course. Create one at
 `https://edit.example.com/Special:NewCourse`, or restore the editor database.
-Its generated id must match `COURSE_ID`; the backend retries until that course
-contains valid content.
+The backend retries until at least one course contains valid content, then
+publishes every usable course through its catalog.
 
 Check the public routes:
 

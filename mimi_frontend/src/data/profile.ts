@@ -232,6 +232,11 @@ export function onProfileEdit(listener: () => void): () => void {
 
 export function profileFrom(api: ApiProfile): Profile {
   const today = ms(api.today);
+  const repeatedTargets = new Set(
+    api.languages
+      .map((language) => language.code)
+      .filter((code, index, all) => all.indexOf(code) !== index),
+  );
   return {
     username: api.username,
     display: api.display,
@@ -247,8 +252,10 @@ export function profileFrom(api: ApiProfile): Profile {
     lastActive: agoLabel(api.last_active === null ? null : ms(api.last_active), today),
     daysActive: api.totals.days,
     languages: api.languages.map((lang, i) => ({
-      id: lang.code,
-      name: languageName(lang.code),
+      id: lang.id,
+      name: repeatedTargets.has(lang.code)
+        ? `${languageName(lang.code)} for ${languageName(lang.source_code)} speakers`
+        : languageName(lang.code),
       glyph: glyphOf(lang.code),
       color: STROKES[i % STROKES.length],
       counts: { words: lang.words, skills: lang.skills, lessons: lang.lessons },
@@ -323,11 +330,8 @@ export interface ActivityDay {
  * lessons" would be a report of something that didn't happen.
  */
 export function activityFrom(api: ApiProfile): ActivityDay[] {
-  const language = api.languages[0];
-  const name = language ? languageName(language.code) : '';
-
   return api.days.map((day) => {
-    const lessons = `${day.lessons} ${name} lesson${day.lessons === 1 ? '' : 's'}`;
+    const lessons = `${day.lessons} lesson${day.lessons === 1 ? '' : 's'}`;
     const accuracy = day.exercises > 0 ? ` · ${day.correct} of ${day.exercises} right` : '';
     const entries: ActivityEntry[] = [
       ...(day.lessons > 0
@@ -342,7 +346,7 @@ export function activityFrom(api: ApiProfile): ActivityDay[] {
         : []),
       ...day.skills.map((skill): ActivityEntry => ({
         icon: 'learning',
-        text: `Cleared a ${name} skill · ${skill}`,
+        text: `Cleared a skill · ${skill}`,
       })),
       /* Whether the follow is still live is not asked and not shown: the
          entry says what happened on the day, and un-following somebody later
