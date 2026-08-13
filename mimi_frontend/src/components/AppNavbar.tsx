@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Ref } from 'react';
 import { Icon, Menu, MenuDivider, MenuItem, Popover, Tooltip } from '@blueprintjs/core';
+import { ShareIcon } from '@blueprintjs/icons';
 import Flame from './Flame';
 import LanguagePicker from './LanguagePicker';
 import MimiDog from './MimiDog';
@@ -259,7 +260,13 @@ export default function AppNavbar({ active = '' }: Props) {
               >
                 {item.label}
                 {'external' in item && item.external && (
-                  <Icon className="topnav-external" icon="share" size={11} aria-hidden />
+                  /* The generic Icon renders its font fallback during SSR,
+                     then replaces it with an SVG after its paths load in the
+                     browser. At this non-standard 11px size the fallback
+                     inherits the nav's 14px type, so it visibly shrinks on
+                     hydration. The static component has its paths up front
+                     and renders the same 11px SVG on both sides. */
+                  <ShareIcon className="topnav-external" size={11} aria-hidden />
                 )}
               </a>
             );
@@ -409,7 +416,7 @@ export default function AppNavbar({ active = '' }: Props) {
               >
                 {item.label}
                 {external && (
-                  <Icon className="topnav-external" icon="share" size={11} aria-hidden />
+                  <ShareIcon className="topnav-external" size={11} aria-hidden />
                 )}
               </a>
             );

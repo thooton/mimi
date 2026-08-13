@@ -1,5 +1,6 @@
 ---
 import Arrow from "./Arrow.astro";
+import { Icon } from "@blueprintjs/core";
 import { EDITOR_URL } from "../data/site";
 
 /* The landing page's pair of buttons: start learning, or open the course
@@ -16,9 +17,14 @@ const { class: className } = Astro.props;
 <div class={className}>
     <a class="land-btn land-btn--regular" href="/learn">
         Get started
-        <Arrow />
+        <Arrow size={16} />
     </a>
-    <a class="land-btn land-btn--quiet land-btn--regular" href={EDITOR_URL}
-        >Open the course editor</a
-    >
+    <a
+        class="land-btn land-btn--quiet land-btn--regular"
+        href={EDITOR_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        >Open the course editor
+        <Icon icon="share" size={11} aria-hidden />
+    </a>
 </div>
