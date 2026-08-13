@@ -695,7 +695,10 @@ open conversation; live changes arrive through one EventSource per open page.
   `Broker` is the routing table — username → their live feeds, holding no messages and
   no history — and a learner with no page open simply has no entry, which is the same
   thing as being offline. EventSource reconnects itself; the fresh `threads` snapshot
-  makes the client reopen its visible conversation and recover anything missed.
+  makes the client reopen its visible conversation and recover anything missed. The SSE
+  response sends `X-Accel-Buffering: no`, and `deployment/nginx.conf` also disables
+  buffering, caching, compression, and the short read timeout on this exact endpoint;
+  without that, NGINX may hold events instead of forwarding them as they arrive.
 - **Every send publishes to both ends, the sender's own included.** The tab that wrote a
   message learns it landed the same way every other tab does, so the client has one path
   into its state rather than an optimistic copy and a real one that have to agree. The

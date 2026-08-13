@@ -831,12 +831,22 @@ fn check_follow<'a>(
 //
 // SSE is ordinary HTTP, so the router's credentialed CORS policy covers this
 // response and the command requests rather than needing a second origin rule.
+// `X-Accel-Buffering` is deliberately local to this response: NGINX otherwise
+// collects the tiny events before forwarding them, which turns a live inbox
+// into a batch that appears only when its buffer fills.
 async fn inbox_events(
     State(state): State<Arc<AppState>>,
     Extension(identity): Extension<SessionIdentity>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> Result<Response, ApiError> {
     let username = inbox_owner(&identity)?;
-    messages::events(username.to_string(), &state.store, &state.broker).map_err(db_error)
+    let events =
+        messages::events(username.to_string(), &state.store, &state.broker).map_err(db_error)?;
+    let mut response = events.into_response();
+    response.headers_mut().insert(
+        HeaderName::from_static("x-accel-buffering"),
+        HeaderValue::from_static("no"),
+    );
+    Ok(response)
 }
 
 async fn open_inbox_thread(
@@ -1216,6 +1226,33 @@ mod tests {
             HeaderValue::from_static("not_mimi_session=secret"),
         );
         assert_eq!(session_cookie(&headers), None);
+    }
+
+    // NGINX buffers proxied responses by default. An SSE feed with no header
+    // telling it otherwise appears connected but delivers small events only
+    // in batches, so the exception belongs to this response itself as well as
+    // the deployment configuration around it.
+    #[tokio::test]
+    async fn the_inbox_event_stream_disables_proxy_buffering() {
+        let state = test_state();
+        state.store.create_user("sam", now()).unwrap();
+        let response = inbox_events(
+            State(state),
+            Extension(SessionIdentity {
+                username: "sam".into(),
+                email: Some("sam@example.com".into()),
+                guest: false,
+            }),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            response.headers()[header::CONTENT_TYPE],
+            "text/event-stream"
+        );
+        assert_eq!(response.headers()[header::CACHE_CONTROL], "no-cache");
+        assert_eq!(response.headers()["x-accel-buffering"], "no");
     }
 
     #[test]

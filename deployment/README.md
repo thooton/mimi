@@ -165,6 +165,12 @@ systemctl reload nginx
 If the distribution uses `/etc/nginx/conf.d/*.conf`, install the file as
 `/etc/nginx/conf.d/mimi.conf` instead; do not install it in both places.
 
+Keep the exact `/api/me/inbox` location from the supplied configuration when
+customizing NGINX. It disables response buffering and caching for the
+Server-Sent Events feed while leaving ordinary API responses buffered; the
+long read timeout keeps an otherwise quiet inbox connected between events,
+and compression stays off so it cannot introduce another output buffer.
+
 MediaWiki deliberately keeps `MIMI_FORCE_HTTPS=false`. NGINX handles public
 HTTPS while the backend polls MediaWiki through its private HTTP listener.
 
