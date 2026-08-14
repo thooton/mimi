@@ -61,6 +61,24 @@ pub struct SetEmailRequest {
     pub email: String,
 }
 
+// The two halves of a forgotten password, and the only account bodies with no
+// session and no password behind them. `ForgotPasswordRequest` names an account
+// the way the sign-in form does, by username or address, because somebody who
+// has forgotten their password may equally have forgotten which of the two they
+// registered with. `ResetPasswordRequest` carries the token from the email in
+// its place: for the hour it lives, holding it is what proves the account is
+// yours to change.
+#[derive(Debug, Deserialize)]
+pub struct ForgotPasswordRequest {
+    pub login: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ResetPasswordRequest {
+    pub token: String,
+    pub new_password: String,
+}
+
 /// Everything the owner of a profile may write, in one body: the editor is a
 /// form, and a form is submitted whole. Sending a field back unchanged is
 /// therefore normal and means what it says, while an absent one is a bad

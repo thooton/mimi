@@ -2,8 +2,10 @@ package auth
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"runtime"
@@ -58,4 +60,26 @@ func VerifyPassword(password, encoded string) (bool, error) {
 	}
 	got := argon2.IDKey([]byte(password), salt, timeCost, memory, threads, uint32(len(want)))
 	return subtle.ConstantTimeCompare(got, want) == 1, nil
+}
+
+// newResetToken mints a password reset token and the hash to file it under.
+//
+// 32 bytes because the token *is* the authorisation: for the minutes it lives,
+// holding it is as good as knowing the password, so it has to be far past
+// guessing at any rate an attacker could try. URL-safe and unpadded because it
+// travels as a query parameter and gets copied out of emails by hand.
+func newResetToken() (token, tokenHash string, err error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", "", err
+	}
+	token = base64.RawURLEncoding.EncodeToString(raw)
+	return token, hashResetToken(token), nil
+}
+
+// hashResetToken is what the database stores. See Store.CreateReset for why a
+// plain SHA-256 is enough here when a password would need Argon2id.
+func hashResetToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
 }

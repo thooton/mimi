@@ -87,9 +87,15 @@ change may be a frontend change even though it sounds like a backend one.
 **Credentials (both → auth).** `mimi_auth` is the only place passwords and addresses
 live. The backend and the wiki each verify against it and each keep their own session;
 neither knows about the other, and signing in on one does not sign you in on the other. It
-issues no tokens, which is why editing a credential requires the current password and why
-`mimi_auth` itself cannot log anybody out, ending sessions is each consumer's job, and
-the backend does it (`Store::delete_other_sessions`) when a password changes. Browsers
+issues no tokens for sessions, which is why editing a credential requires the current
+password and why `mimi_auth` itself cannot log anybody out, ending sessions is each
+consumer's job, and the backend does it (`Store::delete_other_sessions`) when a password
+changes. A forgotten password is the exception to all of that: `mimi_auth` emails a
+short-lived single-use token (through Resend, its one outbox) and that token stands in for
+the password, so the reset link must point at a *consumer's* page, `MIMI_RESET_URL`, and
+the backend closes **every** session on the account when it proxies one
+(`Store::delete_all_sessions`), because the reason to reset a forgotten password is often
+that somebody else has been using it. Browsers
 talk to a consumer's own `/auth/*`, never to `mimi_auth` directly.
 
 ## Bringing the stack up
@@ -108,6 +114,16 @@ The equivalent Bazel entry points, run from this directory in the same order, ar
 `//mimi_auth:dev`, `//mimi_editor:dev`, `//mimi_backend:dev`, and
 `//mimi_frontend:dev`. `bazel build //...` builds every non-interactive target; the dev
 wrappers are tagged `manual`, so that command does not start services.
+
+Password reset email is off until `mimi_auth` is given a Resend key. Without one it
+starts anyway and logs each reset link at `WARN` instead of sending it, which is enough
+for a local stack; with one, set the link's destination too, since its default assumes the
+frontend is on 4773:
+
+```sh
+MIMI_RESEND_API_KEY=re_… MIMI_RESEND_FROM='Mimi <no-reply@your-verified-domain>' \
+  MIMI_RESET_URL=http://localhost:4773/reset-password go run ./cmd/mimi-auth
+```
 
 `MIMI_AUTH_ADDR=0.0.0.0:4770` is not optional if you want wiki sign-in: the default
 `127.0.0.1` means *inside the container* when MediaWiki dials it. The backend, running on

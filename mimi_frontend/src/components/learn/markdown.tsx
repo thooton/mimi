@@ -1,4 +1,4 @@
-/ The inline marks material text may carry, bold** and italic, shared
+/* The inline marks material text may carry, bold and italic, shared
     by the lesson player's teaching tasks and the map's tips dialog. */
 export function markdown(text: string): React.ReactNode[] {
   return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).filter(Boolean).map((part, i) => {

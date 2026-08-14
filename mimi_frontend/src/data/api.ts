@@ -314,8 +314,8 @@ export interface ApiActivityDay {
   learned: string[];
   /** skills finished that day, by name */
   skills: string[];
-  / who they started following that day. Unfollowing does not remove
-      this**: the feed records what was done, not what is still true. */
+  /** who they started following that day. Unfollowing does not remove
+      this: the feed records what was done, not what is still true. */
   followed: ApiFollow[];
   score: number;
   /** how far this day moved the score */
@@ -349,7 +349,7 @@ export interface ApiProfile {
   online: boolean;
   /** null if they have never done anything */
   last_active: number | null;
-  / the server's** idea of what day it is (midnight UTC). Dates are read
+  /** the server's idea of what day it is (midnight UTC). Dates are read
       against this rather than the browser's clock, so a reader in another
       timezone sees the same "yesterday" the record was written with. */
   today: number;
@@ -373,7 +373,7 @@ export interface ApiProfile {
     days: number;
   };
   languages: ApiLanguage[];
-  / newest first**, and capped by the backend at its most recent 60 days */
+  /** newest first, and capped by the backend at its most recent 60 days */
   days: ApiActivityDay[];
 }
 
@@ -660,6 +660,40 @@ export function loginUser(login: string, password: string): Promise<ApiViewer> {
   return request<ApiViewer>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ login, password }),
+  });
+}
+
+/** Ask for a reset link by email (204 on success).
+
+    It answers the same way whether or not the login names an account, and that
+    is deliberate all the way down: an email address is a login here, so a
+    "no such account" would let anybody test who has signed up. The screen
+    therefore says the same thing every time, and only the inbox knows the
+    difference. Do not add a check that would tell them apart. */
+export function requestPasswordReset(login: string): Promise<void> {
+  return request<void>('/auth/forgot', {
+    method: 'POST',
+    body: JSON.stringify({ login }),
+  });
+}
+
+/** Spend the token from that email and set a new password (204 on success).
+
+    The token stands in for the current password, which is the one thing the
+    person asking does not have. It works once and expires an hour after it was
+    sent, so the failure to expect here is an ordinary one: a link that has been
+    used, superseded by a newer request, or left until tomorrow.
+
+    Every session on the account ends, this browser included, so there is
+    nothing to hand to the auth store afterwards: the next step is signing in
+    with the new password. */
+export function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  return request<void>('/auth/reset', {
+    method: 'POST',
+    body: JSON.stringify({ token, new_password: newPassword }),
   });
 }
 

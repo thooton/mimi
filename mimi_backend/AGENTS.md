@@ -194,6 +194,23 @@ next to the `of(...)` that builds it.
 
 All four answer with the same viewer shape: `{"username", "email", "guest"}`, where
 `email` is null for a guest.
+
+The two halves of a forgotten password are public for the obvious reason, and neither
+answers with a viewer: they are the only account routes with no session and no password
+behind them.
+- **`POST /auth/forgot`** `{"login"}` → **204, always**, whether or not that login has an
+  account. `mimi_auth` answers identically and this passes the silence on: an email
+  address is a login, so any difference would let anybody test who has signed up. Do not
+  add one. Nothing changes on the account; the old password keeps working until a token
+  is actually spent, which is what makes an unrequested reset email harmless.
+- **`POST /auth/reset`** `{"token","new_password"}` → 204. The token comes from the
+  emailed link, works once, and expires an hour after it was issued; `mimi_auth` owns all
+  of that, and the password rules, so its refusal is the message worth showing. On
+  success **every** session on the account is deleted (`Store::delete_all_sessions`),
+  keeping none, unlike `PUT /me/password`, which spares the browser that asked: here
+  nobody proved themselves with a cookie, and the reason to reset a forgotten password is
+  often that somebody else has been using it. It deliberately does not sign anybody in,
+  so the frontend sends them to `/login` afterwards.
 - **`GET /me`**, `progress`, `castles`, and every word met: ladder
   `stage`, counters, and its up-to-three cards. The **tuning dashboard** for `word.rs`.
 - **`GET /me/course`**, the course map: castles → rows → skills. A castle

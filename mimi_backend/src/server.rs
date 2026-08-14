@@ -15,13 +15,14 @@ use tower_http::cors::{AllowOrigin, CorsLayer};
 
 use crate::api::{
     CourseSummaryView, CourseView, CreateLessonRequest, DailyQuestsView, EditProfileRequest,
-    ErrorBody, FlashcardDeckView, LeaderboardView, LessonView, ProfileView, SetCourseRequest,
-    SetEmailRequest, SetPasswordRequest, Social, SubmitFlashcardsRequest, SubmitFlashcardsView,
-    SubmitRequest, SubmitView, TipsView, UserSearchView, UserView,
+    ErrorBody, FlashcardDeckView, ForgotPasswordRequest, LeaderboardView, LessonView, ProfileView,
+    ResetPasswordRequest, SetCourseRequest, SetEmailRequest, SetPasswordRequest, Social,
+    SubmitFlashcardsRequest, SubmitFlashcardsView, SubmitRequest, SubmitView, TipsView,
+    UserSearchView, UserView,
 };
 use crate::auth::{
     AuthUser, ChangeEmailRequest, ChangePasswordRequest, CredentialError, CredentialService,
-    LoginRequest, RegisterRequest,
+    LoginRequest, RegisterRequest, ResetConfirmRequest, ResetRequestRequest,
 };
 use crate::course::Course;
 use crate::dictionary::Dictionary;
@@ -212,6 +213,10 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/auth/login", post(login))
         .route("/auth/guest", post(start_guest))
         .route("/auth/logout", post(logout))
+        // Public because they have to be: whoever is asking cannot sign in,
+        // which is the whole problem they are here about.
+        .route("/auth/forgot", post(forgot_password))
+        .route("/auth/reset", post(reset_password))
         .route("/users/{username}/profile", get(get_user_profile))
         .route("/leaderboard", get(get_leaderboard))
         .merge(private)
@@ -330,6 +335,69 @@ async fn login(
         state.store.delete_account(&guest).map_err(db_error)?;
     }
     session_response(&state, StatusCode::OK, user)
+}
+
+// The first half of a forgotten password: ask mimi_auth to mail a link.
+//
+// Always 204, whatever the login was. mimi_auth answers the same way for an
+// account that exists and one that does not, and this passes that silence on
+// rather than improving upon it: an address is a login, so any difference here
+// would let anybody test whether somebody has a Mimi account. The learner is
+// told to check their email, which is true in the only case that matters to
+// them.
+//
+// Nothing about the session on this browser changes. Whoever is asking is
+// probably signed out, but a guest part-way through the course is not disturbed
+// for having typed an address into a form.
+async fn forgot_password(
+    State(state): State<Arc<AppState>>,
+    Json(request): Json<ForgotPasswordRequest>,
+) -> Result<StatusCode, ApiError> {
+    let login = request.login.trim().to_string();
+    if login.is_empty() {
+        return Err(error(
+            StatusCode::BAD_REQUEST,
+            "enter your username or email",
+        ));
+    }
+    state
+        .credentials
+        .request_reset(&ResetRequestRequest { login })
+        .await
+        .map_err(credential_error)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+// The second half: spend the token and set the new password.
+//
+// Every session for the account ends, keeping none, which is the difference
+// between this and `set_user_password`. There a browser proves itself with the
+// current password and keeps its own cookie; here the reason to reset a
+// forgotten password is often that somebody else has been using it, and that
+// somebody is holding a session this server issued. Sparing any of them would
+// leave the account exactly as reachable as before.
+//
+// It deliberately does not sign the learner in. The token is proof of reading
+// an email, which is not the same as proof that the browser holding it should
+// become the account; typing the new password on the sign-in page, once, is
+// both the confirmation and the simpler path.
+async fn reset_password(
+    State(state): State<Arc<AppState>>,
+    Json(request): Json<ResetPasswordRequest>,
+) -> Result<StatusCode, ApiError> {
+    let user = state
+        .credentials
+        .confirm_reset(&ResetConfirmRequest {
+            token: request.token.trim().to_string(),
+            new_password: request.new_password,
+        })
+        .await
+        .map_err(credential_error)?;
+    state
+        .store
+        .delete_all_sessions(&user.username)
+        .map_err(db_error)?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // Start the course without an account: open a credential-less learning

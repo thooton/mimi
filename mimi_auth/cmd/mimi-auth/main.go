@@ -31,6 +31,20 @@ func run() error {
 	defer store.Close()
 
 	handler := auth.NewHandler(store)
+	// The key is read from the environment and never from a file in the tree:
+	// it is the one secret this service holds besides the hashes themselves,
+	// and a key committed by accident is a key that sends mail as Mimi. With
+	// none set the handler keeps its LogMailer and says so once here, so a
+	// local stack still resets passwords by way of the log.
+	if key := strings.TrimSpace(os.Getenv("MIMI_RESEND_API_KEY")); key != "" {
+		from := env("MIMI_RESEND_FROM", auth.DefaultResendFrom)
+		handler.SetMailer(auth.NewResendMailer(key, from))
+		slog.Info("password reset email enabled", "from", from)
+	} else {
+		slog.Warn("MIMI_RESEND_API_KEY is not set; password reset links will be logged, not emailed")
+	}
+	handler.SetResetURL(env("MIMI_RESET_URL", auth.DefaultResetURL))
+
 	mux := http.NewServeMux()
 	handler.Routes(mux)
 

@@ -46,6 +46,23 @@ pub struct ChangeEmailRequest {
     pub new_email: String,
 }
 
+// Forgetting a password is the one thing here that cannot be authorised by
+// knowing it, so these two carry no credential at all. `ResetRequest` asks
+// mimi_auth to mail a link, and answers the same way whether or not the login
+// names an account; `ResetConfirm` spends the token from that link. The token
+// is the authorisation, which is why it is short-lived and single-use over
+// there rather than checked here.
+#[derive(Deserialize, Serialize)]
+pub struct ResetRequestRequest {
+    pub login: String,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ResetConfirmRequest {
+    pub token: String,
+    pub new_password: String,
+}
+
 #[derive(Clone, Deserialize, Serialize)]
 pub struct AuthUser {
     pub username: String,
@@ -110,7 +127,31 @@ impl CredentialService {
         self.post("/v1/email", request).await
     }
 
+    // Asks for the reset email. Nothing comes back but success, because there
+    // is nothing mimi_auth is willing to say: an answer that varied would tell
+    // an unauthenticated caller whether an address has an account.
+    pub async fn request_reset(
+        &self,
+        request: &ResetRequestRequest,
+    ) -> Result<(), CredentialError> {
+        self.send("/v1/reset/request", request).await.map(|_| ())
+    }
+
+    pub async fn confirm_reset(
+        &self,
+        request: &ResetConfirmRequest,
+    ) -> Result<AuthUser, CredentialError> {
+        self.post("/v1/reset/confirm", request).await
+    }
+
     async fn post<T: Serialize>(&self, path: &str, value: &T) -> Result<AuthUser, CredentialError> {
+        let body = self.send(path, value).await?;
+        serde_json::from_slice(&body).map_err(|_| CredentialError::Unavailable)
+    }
+
+    // The transport the two above share: everything up to deciding whether the
+    // successful body is a user record or nothing worth reading.
+    async fn send<T: Serialize>(&self, path: &str, value: &T) -> Result<Bytes, CredentialError> {
         let uri = format!("{}{path}", self.base_url)
             .parse::<hyper::Uri>()
             .map_err(|_| CredentialError::Unavailable)?;
@@ -133,7 +174,7 @@ impl CredentialService {
             .map_err(|_| CredentialError::Unavailable)?
             .to_bytes();
         if status.is_success() {
-            return serde_json::from_slice(&body).map_err(|_| CredentialError::Unavailable);
+            return Ok(body);
         }
         if status.is_client_error() {
             let message = serde_json::from_slice::<ErrorResponse>(&body)

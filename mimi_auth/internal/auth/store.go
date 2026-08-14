@@ -50,6 +50,25 @@ func Open(path string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
+	// One row per outstanding "I forgot my password". Only the token's SHA-256
+	// is kept, so a copy of this database is not a pile of working reset links;
+	// see CreateReset for why a fast hash is the right one here.
+	//
+	// expires_at is unix seconds rather than a DATETIME because it is compared
+	// rather than displayed, and an integer comparison cannot be thrown off by
+	// the several string formats SQLite is willing to call a date. ON DELETE
+	// CASCADE matters little today (nothing deletes accounts) but means a row
+	// here can never outlive the account it resets.
+	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS password_resets (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		token_hash TEXT NOT NULL UNIQUE,
+		expires_at INTEGER NOT NULL,
+		created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	)`); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return &Store{db: db}, nil
 }
 
@@ -96,6 +115,86 @@ func (s *Store) UpdateEmail(ctx context.Context, id int64, email string) (User, 
 		return User{}, fmt.Errorf("update email: %w", err)
 	}
 	return s.UserByID(ctx, id)
+}
+
+// ErrResetInvalid covers every way a reset token can fail to be usable:
+// never issued, already spent, or expired. They are deliberately one error,
+// because the difference is not something the person holding the token can act
+// on and telling them apart would say whether a token was ever real.
+var ErrResetInvalid = errors.New("this reset link is invalid or has expired")
+
+// CreateReset records a reset token for one account, replacing any earlier one.
+//
+// Only the token's hash arrives here; the caller keeps the token itself just
+// long enough to mail it. A SHA-256 with no salt or stretching is right for
+// this and wrong for a password: the token is 256 bits from crypto/rand, so
+// there is no guessing to slow down, and the property actually wanted is that
+// the lookup in ConsumeReset can be an indexed one.
+//
+// Replacing the previous row is what makes "email it to me again" safe to press
+// twice: the older link stops working the moment a newer one is sent, so a
+// message sitting in an inbox from an hour ago is not a second key.
+func (s *Store) CreateReset(ctx context.Context, userID int64, tokenHash string, expiresAt time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("create reset: %w", err)
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM password_resets WHERE user_id=?`, userID); err != nil {
+		return fmt.Errorf("create reset: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO password_resets(user_id,token_hash,expires_at) VALUES(?,?,?)`,
+		userID, tokenHash, expiresAt.Unix()); err != nil {
+		return fmt.Errorf("create reset: %w", err)
+	}
+	return tx.Commit()
+}
+
+// ConsumeReset spends a token and writes the new hash in the same transaction.
+//
+// Spending and using have to be one step. If the row were deleted after the
+// password was written, a crash in between would leave a live link; if it were
+// deleted first, a failed write would burn the token and strand somebody who
+// has no way to ask for another except by starting over. Deleting rather than
+// flagging the row also means expiry and use are the same state, which is why
+// there is no used_at column.
+func (s *Store) ConsumeReset(ctx context.Context, tokenHash, passwordHash string, now time.Time) (User, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return User{}, fmt.Errorf("consume reset: %w", err)
+	}
+	defer tx.Rollback()
+	var userID int64
+	var expiresAt int64
+	err = tx.QueryRowContext(ctx, `SELECT user_id,expires_at FROM password_resets WHERE token_hash=?`, tokenHash).
+		Scan(&userID, &expiresAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, ErrResetInvalid
+	}
+	if err != nil {
+		return User{}, fmt.Errorf("consume reset: %w", err)
+	}
+	if now.Unix() >= expiresAt {
+		// Clear it on the way past: an expired row is only litter, and this is
+		// the one moment we are certain somebody is looking at it.
+		_, _ = tx.ExecContext(ctx, `DELETE FROM password_resets WHERE token_hash=?`, tokenHash)
+		_ = tx.Commit()
+		return User{}, ErrResetInvalid
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM password_resets WHERE token_hash=?`, tokenHash); err != nil {
+		return User{}, fmt.Errorf("consume reset: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE users SET password_hash=? WHERE id=?`, passwordHash, userID); err != nil {
+		return User{}, fmt.Errorf("consume reset: %w", err)
+	}
+	user, err := scanUser(tx.QueryRowContext(ctx, `SELECT id,username,email,password_hash,created_at FROM users WHERE id=?`, userID))
+	if err != nil {
+		return User{}, fmt.Errorf("consume reset: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return User{}, fmt.Errorf("consume reset: %w", err)
+	}
+	return user, nil
 }
 
 type scanner interface{ Scan(...any) error }

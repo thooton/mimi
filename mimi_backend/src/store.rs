@@ -351,6 +351,20 @@ impl Store {
         Ok(())
     }
 
+    // End every session for this account, keeping none.
+    //
+    // The counterpart to `delete_other_sessions` for a password *reset*, where
+    // there is no session to spare: the person proved themselves by reading an
+    // email, not by presenting a cookie, and the reason somebody resets a
+    // forgotten password is often that somebody else has been using it. Whoever
+    // that was is holding a cookie this server issued, and this is the only
+    // thing that takes it away.
+    pub fn delete_all_sessions(&self, username: &str) -> rusqlite::Result<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM sessions WHERE username = ?1", [username])?;
+        Ok(())
+    }
+
     // Load one course's user state, hand it to `f` to mutate, store the
     // result, and fold the activity `f` reports into that course's row for
     // `day`, all under one lock so the read-modify-write is atomic. Returns

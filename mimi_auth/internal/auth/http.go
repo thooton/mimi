@@ -1,17 +1,46 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/mail"
 	"strings"
+	"time"
 )
 
-type Handler struct{ store *Store }
+type Handler struct {
+	store  *Store
+	mailer Mailer
+	// resetBase is the consumer page a reset link points at. It is a consumer's
+	// URL, never one of ours: this service serves JSON to the backend and the
+	// wiki, and a person following a link from their inbox has to land on a
+	// site that can render a form and hold a session.
+	resetBase string
+}
 
-func NewHandler(store *Store) *Handler { return &Handler{store: store} }
+func NewHandler(store *Store) *Handler {
+	return &Handler{store: store, mailer: LogMailer{}, resetBase: DefaultResetURL}
+}
+
+// SetMailer replaces the log-only fallback. Separate from NewHandler so that
+// every existing caller, and every test that does not care about email, keeps
+// working without a mailer to hand.
+func (h *Handler) SetMailer(m Mailer) {
+	if m != nil {
+		h.mailer = m
+	}
+}
+
+// SetResetURL points reset links at a consumer's page.
+func (h *Handler) SetResetURL(base string) {
+	if strings.TrimSpace(base) != "" {
+		h.resetBase = strings.TrimSpace(base)
+	}
+}
 
 func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -21,6 +50,8 @@ func (h *Handler) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /v1/login", h.login)
 	mux.HandleFunc("POST /v1/password", h.changePassword)
 	mux.HandleFunc("POST /v1/email", h.changeEmail)
+	mux.HandleFunc("POST /v1/reset/request", h.requestReset)
+	mux.HandleFunc("POST /v1/reset/confirm", h.confirmReset)
 }
 
 type registerRequest struct {
@@ -41,6 +72,13 @@ type changeEmailRequest struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 	NewEmail string `json:"new_email"`
+}
+type resetRequestRequest struct {
+	Login string `json:"login"`
+}
+type resetConfirmRequest struct {
+	Token       string `json:"token"`
+	NewPassword string `json:"new_password"`
 }
 type userResponse struct {
 	ID       int64  `json:"id"`
@@ -227,6 +265,125 @@ func (h *Handler) changeEmail(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJSON(w, http.StatusOK, response(updated))
 }
+
+// requestReset is the way in for somebody who cannot authorise anything,
+// because what they have lost is the only thing that authorises. It is
+// therefore the one endpoint here that acts on an unauthenticated request, and
+// its whole design is about giving that request as little as possible.
+//
+// It always answers 202 with the same body, whether or not the login names an
+// account. Anything else turns this into a free membership oracle: an address
+// is a login, so "no such account" would say who has signed up. The person who
+// really owns the address learns the difference from their inbox, which is the
+// only place that distinction belongs.
+//
+// A successful request does not sign anybody out and does not touch the
+// existing password. Until a token is spent, the old password still works,
+// which is what makes an unrequested reset email harmless to ignore.
+func (h *Handler) requestReset(w http.ResponseWriter, r *http.Request) {
+	var in resetRequestRequest
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	login := strings.TrimSpace(in.Login)
+	if login == "" {
+		writeError(w, http.StatusBadRequest, "login is required")
+		return
+	}
+	u, err := h.store.UserByLogin(r.Context(), login)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		// Deliberately nothing: same answer as success, below.
+	case err != nil:
+		writeError(w, http.StatusInternalServerError, "could not start a password reset")
+		return
+	default:
+		token, tokenHash, err := newResetToken()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "could not start a password reset")
+			return
+		}
+		if err := h.store.CreateReset(r.Context(), u.ID, tokenHash, time.Now().Add(resetLifetime)); err != nil {
+			writeError(w, http.StatusInternalServerError, "could not start a password reset")
+			return
+		}
+		// Sent without waiting, and without the request's context, for two
+		// reasons: a mail provider's latency should not be the reply's, and a
+		// reply that is slow exactly when the account exists would give away
+		// what the identical bodies are there to hide. A failure to send is
+		// logged rather than returned, because there is no answer we are
+		// willing to give that distinguishes it from having no account.
+		link := resetLink(h.resetBase, token)
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			if err := h.mailer.SendPasswordReset(ctx, u.Email, u.Username, link); err != nil {
+				slog.Error("could not send password reset email", "username", u.Username, "error", err)
+			}
+		}()
+	}
+	WriteJSON(w, http.StatusAccepted, map[string]string{
+		"status": "if that account exists, a reset link is on its way",
+	})
+}
+
+// confirmReset spends a token and sets the new password.
+//
+// The token replaces the current password that every other edit here demands:
+// holding one is proof of reaching the account's inbox, which is the only proof
+// available to somebody who has forgotten the password. That is why it is
+// single-use and short-lived, and why it is the store, not this handler, that
+// decides a token is spent.
+//
+// Unlike changePassword there is no "must differ from the current one" rule.
+// The whole premise is that the person does not know the current password, so
+// the check could only be a way of telling them what it was.
+func (h *Handler) confirmReset(w http.ResponseWriter, r *http.Request) {
+	var in resetConfirmRequest
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	in.Token = strings.TrimSpace(in.Token)
+	if in.Token == "" {
+		writeError(w, http.StatusBadRequest, "token is required")
+		return
+	}
+	if !validPassword(in.NewPassword) {
+		writeError(w, http.StatusBadRequest, passwordLengthMessage)
+		return
+	}
+	if IsCommonPassword(in.NewPassword) {
+		writeError(w, http.StatusBadRequest, commonPasswordMessage)
+		return
+	}
+	hash, err := HashPassword(in.NewPassword)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not reset the password")
+		return
+	}
+	u, err := h.store.ConsumeReset(r.Context(), hashResetToken(in.Token), hash, time.Now())
+	if errors.Is(err, ErrResetInvalid) {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not reset the password")
+		return
+	}
+	WriteJSON(w, http.StatusOK, response(u))
+}
+
+// An hour is long enough to survive a slow mail server and somebody who reads
+// their email after dinner, and short enough that a forwarded or archived
+// message stops being a key to the account fairly soon. resetLifetimeText says
+// the same thing in the email; keep them in step.
+const resetLifetime = time.Hour
+
+const resetLifetimeText = "1 hour"
+
+// DefaultResetURL is the learner site's page in the default local layout, where
+// the frontend is 4773. A deployment sets MIMI_RESET_URL instead.
+const DefaultResetURL = "http://localhost:4773/reset-password"
 
 // Eight is the floor NIST SP 800-63B sets for a password a person chooses, and
 // the upper bound only exists so that hashing cannot be turned into a denial of

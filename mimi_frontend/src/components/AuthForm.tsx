@@ -156,6 +156,16 @@ export default function AuthForm({ mode }: { mode: Mode }) {
                         {signup && <small>Use at least 8 characters.</small>}
                     </label>
 
+                    {/* Only on the sign-in side: on the sign-up side there is
+                        no password yet to have forgotten. */}
+                    {!signup && (
+                        <p className="auth-forgot">
+                            <a href="/forgot-password">
+                                Forgot your password?
+                            </a>
+                        </p>
+                    )}
+
                     {signup && (
                         <label>
                             <span>Confirm password</span>

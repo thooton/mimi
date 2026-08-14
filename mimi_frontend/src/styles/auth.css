@@ -76,6 +76,27 @@
   font-size: 13px;
 }
 
+/* The counterpart of .auth-error, in the same slot and the same shape, so a
+   screen can never show both at once and disagree with itself. (settings.css
+   has .settings-done for the same reason on its own forms.) */
+.auth-done {
+  margin: 0 0 16px;
+  padding: 9px 11px;
+  border: 1px solid var(--mimi-done);
+  border-radius: 5px;
+  color: var(--mimi-done-deep);
+  background: var(--mimi-done-tint);
+  font-size: 13px;
+}
+
+/* Under the password field rather than beside it: the sign-in form is one
+   column, and the way out of it belongs at the end of the column. Small and
+   quiet, because it is the rarer of the two things to do here. */
+.auth-forgot {
+  margin: -6px 0 0;
+  font-size: 13px;
+}
+
 .auth-switch {
   margin: 22px 0 0;
   padding-top: 18px;
